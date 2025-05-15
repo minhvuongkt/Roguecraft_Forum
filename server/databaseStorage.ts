@@ -8,7 +8,7 @@ import {
   InsertChatMessage, ChatMessage,
   InsertTopicLike, TopicLike 
 } from '@shared/schema';
-import { eq, and, gte, lt, desc, sql } from 'drizzle-orm';
+import { eq, and, gte, lt, desc, asc, sql } from 'drizzle-orm';
 
 export class DatabaseStorage implements IStorage {
   // User operations

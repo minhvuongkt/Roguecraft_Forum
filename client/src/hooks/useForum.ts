@@ -28,6 +28,8 @@ export interface Comment {
   media: any;
   createdAt: string;
   isAnonymous: boolean;
+  parentCommentId?: number | null;
+  replies?: Comment[];
   user: {
     id: number;
     username: string;

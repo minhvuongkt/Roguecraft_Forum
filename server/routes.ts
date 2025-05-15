@@ -6,7 +6,9 @@ import { WebSocketHandler } from "./websocketHandler";
 import { chatService } from "./chatService";
 import { forumService } from "./forumService";
 import { z } from "zod";
-import { insertChatMessageSchema, insertUserSchema, insertTopicSchema, insertCommentSchema, WebSocketMessageType } from "@shared/schema";
+import { insertChatMessageSchema, insertUserSchema, insertTopicSchema, insertCommentSchema, WebSocketMessageType, comments } from "@shared/schema";
+import { db } from "./db";
+import { and, eq } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -174,12 +176,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .omit({ topicId: true })
         .parse(req.body);
         
+      // If this is a reply, check if the parent comment exists and belongs to this topic
+      if (validatedData.parentCommentId) {
+        const [parentComment] = await db.select()
+          .from(comments)
+          .where(
+            and(
+              eq(comments.id, validatedData.parentCommentId),
+              eq(comments.topicId, topicId)
+            )
+          );
+          
+        if (!parentComment) {
+          return res.status(404).json({ message: 'Parent comment not found or does not belong to this topic' });
+        }
+      }
+      
       const comment = await forumService.createComment({
         ...validatedData,
         topicId
       });
       
-      res.status(201).json(comment);
+      // After creating a comment, return all comments for the topic to update the UI
+      const allComments = await storage.getCommentsByTopicId(topicId);
+      
+      res.status(201).json({
+        newComment: comment,
+        allComments
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.errors[0].message });
