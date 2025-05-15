@@ -6,13 +6,23 @@ import { WebSocketHandler } from "./websocketHandler";
 import { chatService } from "./chatService";
 import { forumService } from "./forumService";
 import { z } from "zod";
-import { insertChatMessageSchema, insertUserSchema, insertTopicSchema, insertCommentSchema } from "@shared/schema";
+import { insertChatMessageSchema, insertUserSchema, insertTopicSchema, insertCommentSchema, WebSocketMessageType } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
   // Initialize WebSocket server
   const wsHandler = new WebSocketHandler(httpServer);
+  
+  // Setup periodic broadcast of online users
+  setInterval(() => {
+    console.log("Broadcasting online users");
+    const onlineUsersMessage = {
+      type: WebSocketMessageType.USER_STATUS,
+      payload: { users: [] } // This will be filled by the handler
+    };
+    wsHandler.broadcast(onlineUsersMessage);
+  }, 10000);
   
   // User Routes
   app.post('/api/auth/register', async (req: Request, res: Response) => {
