@@ -89,7 +89,7 @@ const CommentItem = ({
       {/* Render replies if they exist */}
       {comment.replies && comment.replies.length > 0 && (
         <div className="space-y-3 mt-2">
-          {comment.replies.map(reply => (
+          {comment.replies.map((reply: CommentType) => (
             <CommentItem 
               key={reply.id} 
               comment={reply} 

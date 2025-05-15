@@ -58,6 +58,8 @@ export interface Comment {
   media?: any;
   isAnonymous?: boolean;
   parentCommentId?: number | null;
+  // Các bình luận phản hồi
+  replies?: Comment[];
   // Thông tin người bình luận
   user?: {
     id: number;

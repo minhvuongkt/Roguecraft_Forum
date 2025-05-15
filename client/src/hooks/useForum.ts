@@ -113,7 +113,7 @@ export function useForum() {
       
       toast({
         title: 'Thành công',
-        description: parentCommentId ? 'Đã thêm câu trả lời' : 'Đã thêm bình luận',
+        description: variables.parentCommentId ? 'Đã thêm câu trả lời' : 'Đã thêm bình luận',
       });
     },
     onError: (error) => {
@@ -210,8 +210,8 @@ export function useForum() {
   };
 
   // Helper function to format date for display (memoized)
-  const formatDate = useCallback((dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = useCallback((dateInput: string | Date) => {
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     
