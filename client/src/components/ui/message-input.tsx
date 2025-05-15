@@ -3,12 +3,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { EmojiPicker } from '@/components/ui/emoji-picker';
 import { FileUpload } from '@/components/ui/file-upload';
-import { Image, Send, Loader2, User } from 'lucide-react';
+import { Image, Send, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { uploadMultipleFiles } from '@/lib/uploadAPI';
 import { useToast } from '@/hooks/use-toast';
 import { useWebSocket } from '@/contexts/WebSocketContext';
+import { MentionList } from './mention-list';
 
 interface MessageInputProps {
   onSend: (message: string, media?: any) => void;
@@ -44,9 +44,58 @@ export function MessageInput({
     }
   }, [message]);
   
+  // Xử lý gợi ý người dùng khi gõ @
+  useEffect(() => {
+    const regex = /@(\w*)$/;
+    const match = message.substring(0, textareaRef.current?.selectionStart || message.length).match(regex);
+    
+    if (match) {
+      const searchTerm = match[1].toLowerCase();
+      setMentionSearch(searchTerm);
+      setIsMentioning(true);
+      setMentionPosition({
+        start: match.index || 0,
+        end: (match.index || 0) + match[0].length
+      });
+    } else {
+      setIsMentioning(false);
+    }
+  }, [message]);
+  
+  // Lọc người dùng phù hợp với từ khóa tìm kiếm
+  const filteredUsers = isMentioning 
+    ? onlineUsers.filter(user => 
+        user.username.toLowerCase().includes(mentionSearch.toLowerCase())
+      )
+    : [];
+    
+  // Chọn một người dùng trong danh sách gợi ý
+  const handleSelectUser = (username: string) => {
+    const before = message.substring(0, mentionPosition.start);
+    const after = message.substring(mentionPosition.end);
+    setMessage(`${before}@${username} ${after}`);
+    setIsMentioning(false);
+    
+    // Focus lại vào textarea và đặt con trỏ sau tên người dùng
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        const cursorPosition = mentionPosition.start + username.length + 2; // @ + username + space
+        textareaRef.current.setSelectionRange(cursorPosition, cursorPosition);
+      }
+    }, 0);
+  };
+  
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Nếu đang hiển thị gợi ý và nhấn Tab hoặc Enter, chọn người dùng đầu tiên
+    if (isMentioning && filteredUsers.length > 0 && (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey))) {
+      e.preventDefault();
+      handleSelectUser(filteredUsers[0].username);
+      return;
+    }
+    
     // Submit on Enter (without Shift)
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !isMentioning) {
       e.preventDefault();
       handleSend();
     }
@@ -72,7 +121,6 @@ export function MessageInput({
       // Nếu có file, upload trước khi gửi tin nhắn
       if (files.length > 0) {
         setIsUploading(true);
-        // Đã được định dạng thành {"1":"path1", "2":"path2", ...} trong uploadMultipleFiles
         media = await uploadMultipleFiles(files, type);
         setIsUploading(false);
       }
@@ -103,37 +151,43 @@ export function MessageInput({
     <div className="relative">
       <div className="flex items-start space-x-2">
         <div className="flex-1 min-h-[40px]">
-          <Textarea
-            ref={textareaRef}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            className="resize-none min-h-[40px] py-2 pr-12"
-            disabled={disabled}
-          />
-          
-          <div className="absolute bottom-2 right-12 flex items-center space-x-1">
-            <Popover open={showFileUpload} onOpenChange={setShowFileUpload}>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                  disabled={disabled}
-                >
-                  <Image className="h-5 w-5" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80" align="end">
-                <FileUpload 
-                  onFileSelect={handleFileSelect}
-                  value={files}
-                />
-              </PopoverContent>
-            </Popover>
+          <div className="relative">
+            <Textarea
+              ref={textareaRef}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
+              className="resize-none min-h-[40px] py-2 pr-12"
+              disabled={disabled}
+            />
             
-            <EmojiPicker onSelect={handleAddEmoji} />
+            {isMentioning && (
+              <MentionList users={filteredUsers} onSelect={handleSelectUser} />
+            )}
+            
+            <div className="absolute bottom-2 right-2 flex items-center space-x-1">
+              <Popover open={showFileUpload} onOpenChange={setShowFileUpload}>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    disabled={disabled}
+                  >
+                    <Image className="h-5 w-5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" align="end">
+                  <FileUpload 
+                    onFileSelect={handleFileSelect}
+                    value={files}
+                  />
+                </PopoverContent>
+              </Popover>
+              
+              <EmojiPicker onSelect={handleAddEmoji} />
+            </div>
           </div>
         </div>
         
