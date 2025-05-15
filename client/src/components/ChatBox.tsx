@@ -4,10 +4,11 @@ import { Message } from '@/components/Message';
 import { MessageInput } from '@/components/ui/message-input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Search, MoreVertical, Send, User, AlertCircle } from 'lucide-react';
+import { Search, MoreVertical, Send, User, AlertCircle, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWebSocket } from '@/contexts/WebSocketContext';
 import { FixedSizeList as VirtualList } from 'react-window';
+import { ChatMessage } from '@/types';
 import { 
   Dialog,
   DialogContent,
@@ -32,6 +33,7 @@ export function ChatBox() {
   const [isUsernameDialogOpen, setIsUsernameDialogOpen] = useState(false);
   const [username, setUsername] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   
   // Create flattened message list for virtual scrolling
   const flattenedMessages = useMemo(() => {
@@ -84,6 +86,16 @@ export function ChatBox() {
     setAutoScroll(isNearBottom);
   };
   
+  // Handle reply to a message
+  const handleReplyToMessage = (message: ChatMessage) => {
+    setReplyingTo(message);
+  };
+  
+  // Handle canceling a reply
+  const handleCancelReply = () => {
+    setReplyingTo(null);
+  };
+  
   // Handle sending a message
   const handleSendMessage = (message: string, media?: any) => {
     // Check if message starts with /ten command
@@ -100,12 +112,22 @@ export function ChatBox() {
       return;
     }
     
+    // Nếu đang trả lời, thêm mention vào nội dung
+    let finalMessage = message;
+    if (replyingTo && replyingTo.user) {
+      // Nếu tin nhắn chưa có mention người dùng, thêm vào
+      if (!message.includes(`@${replyingTo.user.username}`)) {
+        finalMessage = `@${replyingTo.user.username} ${message}`;
+      }
+    }
+    
     // MessageInput component đã xử lý upload file và trả về media object
     // với định dạng {"1": "/chat-images/..."}
     console.log("Sending message with media:", media);
     
     // Gửi tin nhắn với media đã được upload
-    sendMessage(message, media);
+    sendMessage(finalMessage, media);
+    setReplyingTo(null); // Reset reply state
     setAutoScroll(true);
   };
   
@@ -206,6 +228,7 @@ export function ChatBox() {
                         key={item.message.id}
                         message={item.message}
                         showUser={item.showUser}
+                        onReply={handleReplyToMessage}
                       />
                     )}
                   </div>
@@ -232,9 +255,37 @@ export function ChatBox() {
             </div>
           </div>
         )}
+        
+        {/* Reply info bar */}
+        {replyingTo && (
+          <div className="bg-muted/60 rounded-md p-2 mb-3 flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="text-sm mr-2">
+                Đang trả lời <span className="font-semibold">{replyingTo.user?.username || 'Unknown'}</span>:
+              </div>
+              <div className="text-xs text-muted-foreground truncate max-w-[200px]">
+                {replyingTo.content}
+              </div>
+            </div>
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              onClick={handleCancelReply}
+              className="h-6 w-6"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+        
         <MessageInput 
           onSend={handleSendMessage}
-          placeholder={user ? "Nhập tin nhắn..." : "Nhập /ten [tên của bạn] để đặt tên"}
+          placeholder={user 
+            ? replyingTo 
+              ? `Trả lời ${replyingTo.user?.username || 'user'}...` 
+              : "Nhập tin nhắn..." 
+            : "Nhập /ten [tên của bạn] để đặt tên"
+          }
           type="chat"
           disabled={!user}
         />

@@ -3,10 +3,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { EmojiPicker } from '@/components/ui/emoji-picker';
 import { FileUpload } from '@/components/ui/file-upload';
-import { Image, Send, Loader2 } from 'lucide-react';
+import { Image, Send, Loader2, User } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { uploadMultipleFiles } from '@/lib/uploadAPI';
 import { useToast } from '@/hooks/use-toast';
+import { useWebSocket } from '@/contexts/WebSocketContext';
 
 interface MessageInputProps {
   onSend: (message: string, media?: any) => void;
@@ -27,8 +29,12 @@ export function MessageInput({
   const [files, setFiles] = useState<File[]>([]);
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [mentionSearch, setMentionSearch] = useState('');
+  const [isMentioning, setIsMentioning] = useState(false);
+  const [mentionPosition, setMentionPosition] = useState({ start: 0, end: 0 });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
+  const { onlineUsers } = useWebSocket();
   
   // Auto-resize textarea
   useEffect(() => {
