@@ -220,37 +220,53 @@ export class WebSocketHandler {
       lastActive: Date;
     }[] = [];
     
-    // Create a Set of unique userIds from connected clients
-    const userIds = new Set<number>();
-    
-    for (const client of this.clients) {
-      if (client.userId && client.readyState === WebSocket.OPEN) {
-        userIds.add(client.userId);
-        
-        // Update the user's last active timestamp in the database
-        try {
-          await storage.updateUserLastActive(client.userId);
-        } catch (error) {
-          console.error(`Error updating last active status for user ${client.userId}:`, error);
+    try {
+      // Create a Set of unique userIds from connected clients
+      const userIds = new Set<number>();
+      
+      // First collect all user IDs
+      for (const client of this.clients) {
+        if (client.userId && client.readyState === WebSocket.OPEN) {
+          userIds.add(client.userId);
         }
       }
-    }
-    
-    // Fetch user information from the database for each connected user
-    for (const userId of userIds) {
-      try {
-        const user = await storage.getUser(userId);
-        if (user) {
-          users.push({
-            id: user.id,
-            username: user.username,
-            avatar: user.avatar,
-            lastActive: user.lastActive || new Date()
-          });
-        }
-      } catch (error) {
-        console.error(`Error fetching user ${userId}:`, error);
+      
+      // Now batch update last active status for all online users
+      const updatePromises: Promise<void>[] = [];
+      for (const userId of userIds) {
+        updatePromises.push(
+          storage.updateUserLastActive(userId)
+            .catch(error => {
+              console.error(`Error updating last active status for user ${userId}:`, error);
+            })
+        );
       }
+      
+      // Wait for all updates to complete
+      await Promise.allSettled(updatePromises);
+      
+      // Now fetch all user data
+      const fetchPromises = Array.from(userIds).map(userId => 
+        storage.getUser(userId)
+          .then(user => {
+            if (user) {
+              users.push({
+                id: user.id,
+                username: user.username,
+                avatar: user.avatar,
+                lastActive: user.lastActive || new Date()
+              });
+            }
+          })
+          .catch(error => {
+            console.error(`Error fetching user ${userId}:`, error);
+          })
+      );
+      
+      // Wait for all fetches to complete
+      await Promise.allSettled(fetchPromises);
+    } catch (error) {
+      console.error('Error getting online users:', error);
     }
     
     return users;
@@ -264,28 +280,50 @@ export class WebSocketHandler {
   
   // Helper method for non-async broadcasts (without user status)
   private broadcastMessage(message: WebSocketMessage, excludeClient: ExtendedWebSocket | null = null) {
-    console.log(`Broadcasting message of type ${message.type} to ${this.clients.size} clients`);
-    
-    this.clients.forEach(client => {
-      if (client !== excludeClient && client.readyState === WebSocket.OPEN) {
-        try {
-          client.send(JSON.stringify(message));
-        } catch (error) {
-          console.error('Error sending message to client:', error);
+    try {
+      console.log(`Broadcasting message of type ${message.type} to ${this.clients.size} clients`);
+      
+      const messageStr = JSON.stringify(message);
+      let sentCount = 0;
+      
+      this.clients.forEach(client => {
+        if (client !== excludeClient && client.readyState === WebSocket.OPEN) {
+          try {
+            client.send(messageStr);
+            sentCount++;
+          } catch (error) {
+            console.error('Error sending message to client:', error);
+            // If we encounter an error while sending, mark the client as not alive
+            // so it will be cleaned up in the next ping cycle
+            client.isAlive = false;
+          }
         }
-      }
-    });
+      });
+      
+      console.log(`Successfully delivered message to ${sentCount}/${this.clients.size} clients`);
+    } catch (error) {
+      console.error('Error in broadcastMessage:', error);
+    }
   }
   
   // Make this method accessible from outside (for periodic broadcasts)
   public async broadcast(message: WebSocketMessage, excludeClient: ExtendedWebSocket | null = null) {
-    // If this is a user status message, fetch the actual users from the database
-    if (message.type === WebSocketMessageType.USER_STATUS) {
-      const users = await this.getOnlineUsers();
-      message.payload.users = users;
-      console.log(`Broadcasting online users: ${users.length}`);
+    try {
+      // If this is a user status message, fetch the actual users from the database
+      if (message.type === WebSocketMessageType.USER_STATUS) {
+        const users = await this.getOnlineUsers();
+        message.payload.users = users;
+        console.log(`Broadcasting online users: ${users.length}`);
+      }
+      
+      this.broadcastMessage(message, excludeClient);
+    } catch (error) {
+      console.error('Error in broadcast:', error);
+      // Even if we have an error, try to send a minimal message
+      if (message.type === WebSocketMessageType.USER_STATUS) {
+        message.payload.users = [];
+        this.broadcastMessage(message, excludeClient);
+      }
     }
-    
-    this.broadcastMessage(message, excludeClient);
   }
 }
