@@ -67,47 +67,47 @@ async function createSampleUsers() {
 async function createSampleTopics(users: any[]) {
   if (users.length === 0) return [];
   
-  const categories = ['Công nghệ', 'Giải trí', 'Hỏi đáp', 'Chia sẻ'];
+  const categories = ['Survival', 'Creative', 'Mods', 'Redstone', 'PvP', 'Servers'];
   
   const topics: InsertTopic[] = [
     {
       userId: users[0].id,
-      title: 'Chào mừng đến với diễn đàn!',
-      content: 'Đây là diễn đàn thảo luận và trò chuyện trực tuyến. Hãy tham gia và chia sẻ ý kiến của bạn!',
+      title: 'Chào mừng đến với diễn đàn Minecraft!',
+      content: 'Đây là diễn đàn thảo luận về Minecraft. Hãy tham gia và chia sẻ kinh nghiệm chơi game của bạn!',
       media: null,
-      category: 'Công nghệ',
+      category: 'Servers',
       isAnonymous: false
     },
     {
       userId: users[1].id,
-      title: 'Cách tối ưu hóa website React',
-      content: 'Có ai biết các cách tối ưu hóa hiệu suất cho ứng dụng React không? Tôi đang gặp vấn đề với việc render lại quá nhiều lần.',
+      title: 'Cách xây dựng farm hiệu quả trong Minecraft Survival',
+      content: 'Có ai biết cách xây farm hiệu quả trong chế độ Survival không? Tôi muốn tăng nguồn tài nguyên để xây dựng các công trình lớn.',
       media: null,
-      category: 'Công nghệ',
+      category: 'Survival',
       isAnonymous: false
     },
     {
       userId: users[2].id,
-      title: 'Review phim mới - Avengers',
-      content: 'Phim rất hay với những cảnh hành động mãn nhãn. Tôi đánh giá 9/10. Ai đã xem rồi thì chia sẻ cảm nhận nhé!',
+      title: 'Top 10 mod Minecraft hay nhất năm 2025',
+      content: 'Tôi đã thử qua nhiều mod và đánh giá 10 mod hay nhất. Đặc biệt ấn tượng với Create mod và Biomes O Plenty. Ai cũng đang dùng mod nào thì chia sẻ nhé!',
       media: null,
-      category: 'Giải trí',
+      category: 'Mods',
       isAnonymous: false
     },
     {
       userId: users[3].id,
-      title: 'Cách nấu phở ngon tại nhà',
-      content: 'Tôi muốn học cách nấu phở ngon tại nhà. Ai có công thức chia sẻ không?',
+      title: 'Hướng dẫn tạo cơ chế Redstone tự động craft',
+      content: 'Tôi muốn học cách tạo hệ thống tự động craft items bằng Redstone. Ai có hướng dẫn chi tiết không?',
       media: null,
-      category: 'Chia sẻ',
+      category: 'Redstone',
       isAnonymous: false
     },
     {
       userId: users[1].id,
-      title: 'Bài tập lập trình khó quá, giúp với!',
-      content: 'Tôi đang gặp khó khăn với bài tập về thuật toán đệ quy. Có ai giúp được không?',
+      title: 'Tìm server PvP có nhiều người chơi',
+      content: 'Tôi đang tìm server PvP chất lượng với nhiều người chơi. Ai biết server nào tốt không?',
       media: null,
-      category: 'Hỏi đáp',
+      category: 'PvP',
       isAnonymous: true
     }
   ];
@@ -144,42 +144,42 @@ async function createSampleComments(users: any[], topics: any[]) {
     {
       topicId: topics[0].id,
       userId: users[1].id,
-      content: 'Cảm ơn admin vì đã tạo diễn đàn này!',
+      content: 'Cảm ơn admin vì đã tạo diễn đàn Minecraft này! Rất vui được là một phần của cộng đồng.',
       media: null,
       isAnonymous: false
     },
     {
       topicId: topics[1].id,
       userId: users[2].id,
-      content: 'Bạn có thể sử dụng React.memo hoặc useMemo để tránh render không cần thiết.',
+      content: 'Bạn nên thử farm nguyên liệu bằng villagers, hiệu quả nhất là farm lúa mì và khoai tây.',
       media: null,
       isAnonymous: false
     },
     {
       topicId: topics[1].id,
       userId: users[0].id,
-      content: 'Việc sử dụng các hook như useCallback cũng rất quan trọng.',
+      content: 'Iron golem farm cũng rất quan trọng để có nhiều sắt, nhất là khi chơi ở chế độ survival lâu dài.',
       media: null,
       isAnonymous: false
     },
     {
       topicId: topics[2].id,
       userId: users[3].id,
-      content: 'Tôi cũng đã xem và đánh giá 8/10. Nội dung hơi dài nhưng cảnh quay rất đẹp.',
+      content: 'Tôi rất thích mod Applied Energistics 2, giúp quản lý kho đồ dễ dàng hơn nhiều.',
       media: null,
       isAnonymous: false
     },
     {
       topicId: topics[3].id,
       userId: users[2].id,
-      content: 'Tôi có công thức nấu phở gia truyền, để tôi chia sẻ cho bạn...',
+      content: 'Bạn có thể dùng comparator, hopper và chest để tạo hệ thống sorting tự động rất hiệu quả.',
       media: null,
       isAnonymous: false
     },
     {
       topicId: topics[4].id,
       userId: users[0].id,
-      content: 'Bạn có thể chia sẻ đoạn code cụ thể không để tôi giúp đỡ?',
+      content: 'Bạn có thể thử server Hypixel, rất nhiều người chơi và có nhiều mini-game PvP hay.',
       media: null,
       isAnonymous: false
     }

@@ -26,7 +26,7 @@ interface CreateTopicModalProps {
 export function CreateTopicModal({ isOpen, onClose }: CreateTopicModalProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [category, setCategory] = useState('Công nghệ');
+  const [category, setCategory] = useState('Survival');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   

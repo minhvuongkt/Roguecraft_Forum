@@ -15,10 +15,12 @@ export function Forum() {
 
   const categories = [
     { id: 'all', name: 'Tất cả' },
-    { id: 'tech', name: 'Công nghệ' },
-    { id: 'entertainment', name: 'Giải trí' },
-    { id: 'qa', name: 'Hỏi đáp' },
-    { id: 'share', name: 'Chia sẻ' }
+    { id: 'survival', name: 'Survival' },
+    { id: 'creative', name: 'Creative' },
+    { id: 'mods', name: 'Mods' },
+    { id: 'redstone', name: 'Redstone' },
+    { id: 'pvp', name: 'PvP' },
+    { id: 'servers', name: 'Servers' }
   ];
 
   const handleCreateTopicClick = () => {
@@ -32,7 +34,7 @@ export function Forum() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Forum Thảo Luận</h1>
+        <h1 className="text-2xl font-bold">Forum Minecraft</h1>
         <Button
           onClick={handleCreateTopicClick}
           className="bg-primary hover:bg-primary/90 text-white"
