@@ -140,10 +140,12 @@ export function CreateTopicModal({ isOpen, onClose }: CreateTopicModalProps) {
                   <SelectValue placeholder="Chọn danh mục" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Công nghệ">Công nghệ</SelectItem>
-                  <SelectItem value="Giải trí">Giải trí</SelectItem>
-                  <SelectItem value="Hỏi đáp">Hỏi đáp</SelectItem>
-                  <SelectItem value="Chia sẻ">Chia sẻ</SelectItem>
+                  <SelectItem value="Survival">Survival</SelectItem>
+                  <SelectItem value="Creative">Creative</SelectItem>
+                  <SelectItem value="Mods">Mods</SelectItem>
+                  <SelectItem value="Redstone">Redstone</SelectItem>
+                  <SelectItem value="PvP">PvP</SelectItem>
+                  <SelectItem value="Servers">Servers</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'wouter';
 import { Topic } from '@/components/Topic';
 import { CreateTopicModal } from '@/components/CreateTopicModal';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ export function Forum() {
   const [isCreateTopicModalOpen, setIsCreateTopicModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const { topics, isTopicsLoading, selectedCategory, setSelectedCategory } = useForum();
+  const [, navigate] = useLocation();
   const { isAuthenticated } = useAuth();
 
   const categories = [
@@ -29,6 +31,10 @@ export function Forum() {
     } else {
       setIsLoginModalOpen(true);
     }
+  };
+
+  const handleTopicClick = (topicId: number) => {
+    navigate(`/forum/${topicId}`);
   };
 
   return (
