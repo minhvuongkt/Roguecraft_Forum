@@ -4,16 +4,32 @@ import { Message } from '@/components/Message';
 import { MessageInput } from '@/components/ui/message-input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Search, MoreVertical } from 'lucide-react';
+import { Search, MoreVertical, Send, User, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { FixedSizeList as VirtualList } from 'react-window';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 export function ChatBox() {
   const { groupedMessages, sendMessage } = useChat();
-  const { user } = useAuth();
+  const { user, setTemporaryUser } = useAuth();
+  const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<VirtualList>(null);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [isUsernameDialogOpen, setIsUsernameDialogOpen] = useState(false);
+  const [username, setUsername] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Create flattened message list for virtual scrolling
   const flattenedMessages = useMemo(() => {
@@ -68,8 +84,53 @@ export function ChatBox() {
   
   // Handle sending a message
   const handleSendMessage = (message: string, files?: File[]) => {
+    // Check if message starts with /ten command
+    if (message.startsWith('/ten ')) {
+      const newUsername = message.substring(5).trim();
+      if (newUsername) {
+        handleSetUsername(newUsername);
+        return;
+      }
+    }
+    
+    if (!user) {
+      setIsUsernameDialogOpen(true);
+      return;
+    }
+    
     sendMessage(message);
     setAutoScroll(true);
+  };
+  
+  const handleSetUsername = async (newUsername: string) => {
+    if (!newUsername || newUsername.trim() === '') {
+      toast({
+        title: "Tên người dùng không hợp lệ",
+        description: "Vui lòng nhập tên hợp lệ",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      await setTemporaryUser(newUsername);
+      toast({
+        title: "Đặt tên thành công",
+        description: `Bạn đã được đặt tên là "${newUsername}"`,
+        variant: "default"
+      });
+      setIsUsernameDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "Lỗi khi đặt tên",
+        description: "Không thể đặt tên. Vui lòng thử lại sau",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+      setUsername('');
+    }
   };
   
   return (
@@ -81,6 +142,17 @@ export function ChatBox() {
           <Button variant="ghost" size="icon">
             <Search className="h-5 w-5 text-muted-foreground" />
           </Button>
+          {!user && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setIsUsernameDialogOpen(true)}
+              className="flex items-center gap-1"
+            >
+              <User className="h-4 w-4" />
+              <span>Đặt tên</span>
+            </Button>
+          )}
           <Button variant="ghost" size="icon">
             <MoreVertical className="h-5 w-5 text-muted-foreground" />
           </Button>
@@ -141,15 +213,61 @@ export function ChatBox() {
       
       {/* Chat Input */}
       <div className="p-3 border-t dark:border-gray-700">
+        {!user && (
+          <div className="bg-blue-50 dark:bg-blue-900/30 rounded-md p-3 mb-3 flex items-center">
+            <AlertCircle className="h-5 w-5 text-blue-500 mr-2" />
+            <div className="text-sm text-blue-700 dark:text-blue-300">
+              Bạn cần đặt tên trước khi có thể gửi tin nhắn. Nhập <code>/ten YOUR_NAME</code> hoặc click vào nút "Đặt tên" ở trên.
+            </div>
+          </div>
+        )}
         <MessageInput 
           onSend={handleSendMessage}
           placeholder={user ? "Nhập tin nhắn..." : "Nhập /ten [tên của bạn] để đặt tên"}
-          disabled={!user}
         />
         <div className="mt-1 text-xs text-muted-foreground px-2">
           Tin nhắn được lưu trong 4 ngày. Gõ @ để tag người dùng.
         </div>
       </div>
+
+      {/* Username Dialog */}
+      <Dialog open={isUsernameDialogOpen} onOpenChange={setIsUsernameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Đặt tên để tham gia trò chuyện</DialogTitle>
+            <DialogDescription>
+              Nhập tên bạn muốn sử dụng trong phòng chat. Tên này sẽ hiển thị khi bạn gửi tin nhắn.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="username" className="text-left">
+              Tên của bạn
+            </Label>
+            <Input
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Nhập tên của bạn"
+              className="mt-1"
+            />
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsUsernameDialogOpen(false)}
+              disabled={isSubmitting}
+            >
+              Hủy
+            </Button>
+            <Button 
+              onClick={() => handleSetUsername(username)}
+              disabled={!username || isSubmitting}
+            >
+              {isSubmitting ? "Đang xử lý..." : "Xác nhận"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
