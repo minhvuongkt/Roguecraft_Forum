@@ -40,8 +40,21 @@ export function useChat() {
     setGroupedMessages(groups);
   }, [messages]);
 
+  // Extract mentions from a message
+  const extractMentions = useCallback((message: string): string[] => {
+    const mentionRegex = /@(\w+)/g;
+    const mentions: string[] = [];
+    let match;
+    
+    while ((match = mentionRegex.exec(message)) !== null) {
+      mentions.push(match[1]);
+    }
+    
+    return mentions;
+  }, []);
+
   // Handle chat commands
-  const handleSendMessage = useCallback((input: string) => {
+  const handleSendMessage = useCallback((input: string, media?: any) => {
     // Check if it's a command
     if (input.startsWith('/')) {
       // Command to set username: /ten [name]
@@ -107,22 +120,12 @@ export function useChat() {
       return;
     }
     
-    // Send the message
-    sendMessage(input);
-  }, [user, sendMessage, setUsername, setTemporaryUser, toast]);
-
-  // Extract mentions from a message
-  const extractMentions = useCallback((message: string): string[] => {
-    const mentionRegex = /@(\w+)/g;
-    const mentions: string[] = [];
-    let match;
+    // Extract @mentions from the message
+    const mentions = extractMentions(input);
     
-    while ((match = mentionRegex.exec(message)) !== null) {
-      mentions.push(match[1]);
-    }
-    
-    return mentions;
-  }, []);
+    // Send the message with any media attachment
+    sendMessage(input, media, mentions.length > 0 ? mentions : undefined);
+  }, [user, sendMessage, setUsername, setTemporaryUser, toast, extractMentions]);
 
   // Parse message content to highlight mentions
   const parseMessageContent = useCallback((content: string) => {

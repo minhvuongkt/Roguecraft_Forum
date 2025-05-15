@@ -41,28 +41,44 @@ function MessageComponent({ message, showUser = true }: MessageProps) {
   const renderMedia = () => {
     if (!message.media) return null;
     
-    // This is a simplified version - in a real app, you'd have different display for different media types
-    return (
-      <div className="mt-2">
-        {message.media.type?.startsWith('image/') ? (
-          <img 
-            src={message.media.url} 
-            alt="Message attachment" 
-            className="max-w-full rounded-md max-h-60 object-contain"
-          />
-        ) : message.media.type?.startsWith('video/') ? (
-          <video 
-            src={message.media.url} 
-            controls 
-            className="max-w-full rounded-md max-h-60"
-          />
-        ) : (
-          <div className="text-xs text-muted-foreground">
-            Attached file: {message.media.name}
-          </div>
-        )}
-      </div>
-    );
+    console.log("Rendering media:", message.media);
+    
+    try {
+      return (
+        <div className="mt-2">
+          {message.media.type?.startsWith('image/') ? (
+            <img 
+              src={message.media.url} 
+              alt={message.media.name || "Image attachment"} 
+              className="max-w-full rounded-md max-h-60 object-contain"
+              onError={(e) => {
+                console.error("Image failed to load:", e);
+                e.currentTarget.src = ""; // Clear the broken URL
+                e.currentTarget.alt = "Image load failed";
+              }}
+            />
+          ) : message.media.type?.startsWith('video/') ? (
+            <video 
+              src={message.media.url} 
+              controls 
+              className="max-w-full rounded-md max-h-60"
+            />
+          ) : (
+            <div className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded">
+              <span className="font-medium">Attached file:</span> {message.media.name} 
+              {message.media.size && <span className="ml-1">({Math.round(message.media.size/1024)} KB)</span>}
+            </div>
+          )}
+        </div>
+      );
+    } catch (err) {
+      console.error("Error rendering media:", err);
+      return (
+        <div className="text-xs text-destructive mt-2">
+          Error displaying media attachment
+        </div>
+      );
+    }
   };
   
   if (isCurrentUser) {

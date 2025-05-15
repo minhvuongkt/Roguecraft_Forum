@@ -100,7 +100,39 @@ export function ChatBox() {
       return;
     }
     
-    sendMessage(message);
+    // Process any attached files
+    let mediaData = undefined;
+    if (files && files.length > 0) {
+      const file = files[0]; // For simplicity, just use the first file
+      
+      // Create a data URL for image files to display inline
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const mediaInfo = {
+            type: file.type,
+            name: file.name,
+            size: file.size,
+            url: e.target?.result as string
+          };
+          
+          // Send message with the attached image
+          sendMessage(message, mediaInfo);
+          setAutoScroll(true);
+        };
+        reader.readAsDataURL(file);
+        return; // Return early as we'll send the message after file loads
+      } else {
+        // For non-image files, just send file metadata
+        mediaData = {
+          type: file.type,
+          name: file.name,
+          size: file.size
+        };
+      }
+    }
+    
+    sendMessage(message, mediaData);
     setAutoScroll(true);
   };
   

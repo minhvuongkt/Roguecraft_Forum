@@ -39,10 +39,13 @@ export class ChatService {
     // Messages already have user data joined from database
     const messages = await storage.getChatMessagesByDateRange(days);
     
-    // Convert date strings to Date objects for frontend
+    // Ensure correct date format for frontend
     return messages.map(message => ({
       ...message,
-      createdAt: message.createdAt
+      // Return ISO string to ensure consistent parsing on frontend
+      createdAt: message.createdAt instanceof Date 
+        ? message.createdAt.toISOString() 
+        : message.createdAt
     }));
   }
 
