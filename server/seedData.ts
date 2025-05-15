@@ -212,51 +212,75 @@ async function createSampleChatMessages(users: any[]) {
   const messages: InsertChatMessage[] = [
     {
       userId: users[0].id,
-      content: 'Xin chào mọi người! Đây là chatbox mới của chúng ta.',
+      content: 'Xin chào mọi người! Đây là chatbox của cộng đồng Minecraft.',
       media: null,
       mentions: []
     },
     {
       userId: users[1].id,
-      content: 'Chào admin, rất vui được tham gia!',
+      content: 'Chào admin, rất vui được tham gia! Đang xây một cái farm zombie trong survival.',
       media: null,
       mentions: []
     },
     {
       userId: users[2].id,
-      content: 'Mọi người đang làm gì vậy?',
+      content: 'Mọi người đang chơi server nào vậy?',
       media: null,
       mentions: []
     },
     {
       userId: users[3].id,
-      content: '@thanhha Tôi đang học lập trình React và NodeJS.',
+      content: '@thanhha Tôi đang chơi trên server Hypixel. Có ai muốn tham gia không?',
       media: null,
       mentions: ['thanhha']
     },
     {
       userId: users[2].id,
-      content: '@minhanh Tuyệt quá! Tôi cũng đang học ReactJS.',
+      content: '@minhanh Tôi thường chơi server riêng với bạn bè. Cần thêm mod để chơi không?',
       media: null,
       mentions: ['minhanh']
     },
     {
       userId: users[0].id,
-      content: 'Nhớ mọi người dùng lệnh /ten [tên của bạn] để đặt tên nhé!',
+      content: 'Hôm nay mình vừa tìm được cả kho diamond trong hang động! 😃',
       media: null,
       mentions: []
     },
     {
       userId: users[1].id,
-      content: 'Ai biết cách tag người dùng khác không?',
+      content: 'Ai biết cách làm farm enderman hiệu quả không? Cần kiếm nhiều ender pearl.',
       media: null,
       mentions: []
     },
     {
       userId: users[0].id,
-      content: '@nguyenvan Bạn chỉ cần gõ @ và tên người dùng, ví dụ @admin',
+      content: '@nguyenvan Phải xây ở End, tạo một platform cao 2 block để enderman không thể tấn công bạn.',
       media: null,
       mentions: ['nguyenvan']
+    },
+    {
+      userId: users[2].id,
+      content: 'Có ai thích chơi UHC không? Tìm đồng đội.',
+      media: null,
+      mentions: []
+    },
+    {
+      userId: users[3].id,
+      content: 'Phiên bản 1.20 có gì hay không mọi người?',
+      media: null,
+      mentions: []
+    },
+    {
+      userId: users[0].id,
+      content: '@minhanh Có rất nhiều biome mới và mob camel, rất thú vị để khám phá!',
+      media: null,
+      mentions: ['minhanh']
+    },
+    {
+      userId: users[1].id,
+      content: 'Vừa bị creeper phá nát căn nhà, buồn quá 😭',
+      media: null,
+      mentions: []
     }
   ];
   
