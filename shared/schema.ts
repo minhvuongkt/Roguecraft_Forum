@@ -69,6 +69,7 @@ export const comments = pgTable("comments", {
   media: jsonb("media"),
   createdAt: timestamp("created_at").defaultNow(),
   isAnonymous: boolean("is_anonymous").default(false),
+  parentCommentId: integer("parent_comment_id").references(() => comments.id),
 });
 
 // Topic likes schema (to prevent multiple likes from the same user)
@@ -89,6 +90,7 @@ export const insertCommentSchema = createInsertSchema(comments).pick({
   content: true,
   media: true,
   isAnonymous: true,
+  parentCommentId: true,
 });
 
 // Create insert schema for topic likes
