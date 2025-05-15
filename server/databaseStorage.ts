@@ -223,15 +223,43 @@ export class DatabaseStorage implements IStorage {
     .from(comments)
     .leftJoin(users, eq(comments.userId, users.id))
     .where(eq(comments.topicId, topicId))
-    .orderBy(desc(comments.createdAt));
+    .orderBy(asc(comments.createdAt)); // Sort by createdAt ascending for chronological order
 
-    return result.map(row => ({
+    // Map to add user info
+    const allComments = result.map(row => ({
       ...row.comments,
       user: row.users ? {
         id: row.users.id,
         username: row.users.username,
         avatar: row.users.avatar
-      } : null
+      } : null,
+      replies: [] // Initialize replies array
     }));
+
+    // Create a map for quick lookup
+    const commentMap = new Map();
+    allComments.forEach(comment => {
+      commentMap.set(comment.id, comment);
+    });
+
+    // Build the hierarchical structure
+    const rootComments: any[] = [];
+    allComments.forEach(comment => {
+      if (comment.parentCommentId) {
+        // This is a reply, add it to its parent's replies
+        const parentComment = commentMap.get(comment.parentCommentId);
+        if (parentComment) {
+          parentComment.replies.push(comment);
+        } else {
+          // If parent doesn't exist (shouldn't happen), treat as root
+          rootComments.push(comment);
+        }
+      } else {
+        // This is a root comment
+        rootComments.push(comment);
+      }
+    });
+
+    return rootComments;
   }
 }
