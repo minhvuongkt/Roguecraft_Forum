@@ -50,7 +50,17 @@ export class ChatService {
   }
 
   async createMessage(message: InsertChatMessage): Promise<any> {
-    const newMessage = await storage.createChatMessage(message);
+    console.log("Creating chat message with media:", JSON.stringify(message.media, null, 2));
+    
+    // Make sure message has the right format
+    const processedMessage: InsertChatMessage = {
+      ...message,
+      // Ensure media is properly formatted 
+      media: message.media
+    };
+    
+    // Create message in database
+    const newMessage = await storage.createChatMessage(processedMessage);
     
     // Get user info
     const user = newMessage.userId 
@@ -60,6 +70,13 @@ export class ChatService {
     if (newMessage.userId) {
       await storage.updateUserLastActive(newMessage.userId);
     }
+    
+    // Log the created message for debugging
+    console.log("New message created in database:", JSON.stringify({
+      id: newMessage.id,
+      content: newMessage.content,
+      media: newMessage.media
+    }, null, 2));
     
     return {
       ...newMessage,

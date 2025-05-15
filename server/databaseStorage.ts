@@ -35,7 +35,23 @@ export class DatabaseStorage implements IStorage {
 
   // Chat operations
   async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
-    const [createdMessage] = await db.insert(chatMessages).values(message).returning();
+    console.log("Creating chat message in database with media:", JSON.stringify(message.media, null, 2));
+    
+    // Đảm bảo định dạng message đúng trước khi lưu
+    const messageToInsert = {
+      ...message,
+      // Đã có Json type ở schema nên không cần chuyển đổi
+      media: message.media
+    };
+    
+    const [createdMessage] = await db.insert(chatMessages).values(messageToInsert).returning();
+    
+    console.log("Chat message created in database:", JSON.stringify({
+      id: createdMessage.id,
+      content: createdMessage.content,
+      media: createdMessage.media
+    }, null, 2));
+    
     return createdMessage;
   }
 
@@ -73,7 +89,23 @@ export class DatabaseStorage implements IStorage {
 
   // Forum operations
   async createTopic(topic: InsertTopic): Promise<Topic> {
-    const [createdTopic] = await db.insert(topics).values(topic).returning();
+    console.log("Creating topic with media:", JSON.stringify(topic.media, null, 2));
+    
+    // Đảm bảo định dạng topic đúng trước khi lưu
+    const topicToInsert = {
+      ...topic,
+      // Đảm bảo media có định dạng đúng
+      media: topic.media
+    };
+    
+    const [createdTopic] = await db.insert(topics).values(topicToInsert).returning();
+    
+    console.log("Topic created in database:", JSON.stringify({
+      id: createdTopic.id,
+      title: createdTopic.title,
+      media: createdTopic.media
+    }, null, 2));
+    
     return createdTopic;
   }
 
