@@ -1,9 +1,10 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { useLocation } from 'wouter';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ChatMessage } from '@/contexts/WebSocketContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { ImageViewerModal } from './ImageViewerModal';
 
 interface MessageProps {
   message: ChatMessage;
@@ -14,6 +15,8 @@ function MessageComponent({ message, showUser = true }: MessageProps) {
   const { user: currentUser } = useAuth();
   const [, navigate] = useLocation();
   const isCurrentUser = message.userId === currentUser?.id;
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [viewingImageUrl, setViewingImageUrl] = useState("");
   
   // Format time
   const formatTime = (date: Date): string => {
@@ -59,7 +62,11 @@ function MessageComponent({ message, showUser = true }: MessageProps) {
             <img 
               src={message.media.url} 
               alt={message.media.name || "Image attachment"} 
-              className="max-w-full rounded-md max-h-60 object-contain"
+              className="max-w-full rounded-md max-h-60 object-contain cursor-pointer"
+              onClick={() => {
+                setViewingImageUrl(message.media.url);
+                setImageViewerOpen(true);
+              }}
               onError={(e) => {
                 console.error("Image failed to load:", e);
                 e.currentTarget.src = ""; // Clear the broken URL
@@ -92,70 +99,90 @@ function MessageComponent({ message, showUser = true }: MessageProps) {
   
   if (isCurrentUser) {
     return (
-      <div className="flex items-start justify-end space-x-2 mb-4">
-        <div className="flex flex-col items-end">
-          {showUser && (
-            <div className="flex items-center space-x-2 mb-1">
-              <span className="text-xs text-muted-foreground">
-                {formatTime(new Date(message.createdAt))}
-              </span>
-              <span className="font-medium text-sm">Tôi</span>
+      <>
+        <div className="flex items-start justify-end space-x-2 mb-4">
+          <div className="flex flex-col items-end">
+            {showUser && (
+              <div className="flex items-center space-x-2 mb-1">
+                <span className="text-xs text-muted-foreground">
+                  {formatTime(new Date(message.createdAt))}
+                </span>
+                <span className="font-medium text-sm">Tôi</span>
+              </div>
+            )}
+            <div className="bg-primary text-primary-foreground p-2 rounded-lg max-w-xs sm:max-w-md break-words">
+              <p className="text-sm">{parseMessageContent(message.content)}</p>
+              {renderMedia()}
             </div>
-          )}
-          <div className="bg-primary text-primary-foreground p-2 rounded-lg max-w-xs sm:max-w-md break-words">
-            <p className="text-sm">{parseMessageContent(message.content)}</p>
-            {renderMedia()}
           </div>
+          <Avatar className="h-8 w-8">
+            {currentUser?.avatar ? (
+              <AvatarImage src={currentUser.avatar} alt={currentUser.username} />
+            ) : (
+              <AvatarFallback className="bg-primary text-primary-foreground">
+                {currentUser?.username.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            )}
+          </Avatar>
         </div>
-        <Avatar className="h-8 w-8">
-          {currentUser?.avatar ? (
-            <AvatarImage src={currentUser.avatar} alt={currentUser.username} />
-          ) : (
-            <AvatarFallback className="bg-primary text-primary-foreground">
-              {currentUser?.username.substring(0, 2).toUpperCase()}
-            </AvatarFallback>
-          )}
-        </Avatar>
-      </div>
+
+        {/* Image viewer modal */}
+        <ImageViewerModal
+          isOpen={imageViewerOpen}
+          onClose={() => setImageViewerOpen(false)}
+          imageUrl={viewingImageUrl}
+          title="Hình ảnh đính kèm"
+        />
+      </>
     );
   }
   
   return (
-    <div className="flex items-start space-x-2 mb-4 max-w-[85%]">
-      <Avatar className="h-8 w-8">
-        {message.user?.avatar ? (
-          <AvatarImage src={message.user.avatar} alt={message.user.username} />
-        ) : (
-          <AvatarFallback className="bg-secondary text-secondary-foreground">
-            {message.user?.username.substring(0, 2).toUpperCase() || 'U'}
-          </AvatarFallback>
-        )}
-      </Avatar>
-      <div>
-        {showUser && (
-          <div className="flex items-center space-x-2 mb-1">
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                if (message.user?.id) {
-                  navigate(`/user/${message.user.id}`);
-                }
-              }}
-              className="font-medium text-sm text-primary hover:underline focus:outline-none"
-            >
-              {message.user?.username || 'Unknown'}
-            </button>
-            <span className="text-xs text-muted-foreground">
-              {formatTime(new Date(message.createdAt))}
-            </span>
+    <>
+      <div className="flex items-start space-x-2 mb-4 max-w-[85%]">
+        <Avatar className="h-8 w-8">
+          {message.user?.avatar ? (
+            <AvatarImage src={message.user.avatar} alt={message.user.username} />
+          ) : (
+            <AvatarFallback className="bg-secondary text-secondary-foreground">
+              {message.user?.username.substring(0, 2).toUpperCase() || 'U'}
+            </AvatarFallback>
+          )}
+        </Avatar>
+        <div>
+          {showUser && (
+            <div className="flex items-center space-x-2 mb-1">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (message.user?.id) {
+                    navigate(`/user/${message.user.id}`);
+                  }
+                }}
+                className="font-medium text-sm text-primary hover:underline focus:outline-none"
+              >
+                {message.user?.username || 'Unknown'}
+              </button>
+              <span className="text-xs text-muted-foreground">
+                {formatTime(new Date(message.createdAt))}
+              </span>
+            </div>
+          )}
+          <div className="bg-muted p-2 rounded-lg">
+            <p className="text-sm">{parseMessageContent(message.content)}</p>
+            {renderMedia()}
           </div>
-        )}
-        <div className="bg-muted p-2 rounded-lg">
-          <p className="text-sm">{parseMessageContent(message.content)}</p>
-          {renderMedia()}
         </div>
       </div>
-    </div>
+
+      {/* Image viewer modal */}
+      <ImageViewerModal
+        isOpen={imageViewerOpen}
+        onClose={() => setImageViewerOpen(false)}
+        imageUrl={viewingImageUrl}
+        title="Hình ảnh đính kèm"
+      />
+    </>
   );
 }
 

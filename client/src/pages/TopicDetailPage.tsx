@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ThumbsUp, Share, Reply, ArrowLeft, MessageSquare } from 'lucide-react';
 import { LoginModal } from '@/components/LoginModal';
+import { ImageViewerModal } from '@/components/ImageViewerModal';
 import { useToast } from '@/hooks/use-toast';
 
 // Comment component for displaying individual comments
