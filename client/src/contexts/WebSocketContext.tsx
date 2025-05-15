@@ -146,8 +146,34 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         type: WebSocketMessageType.SET_USERNAME,
         payload: { username: user.username }
       }));
+      
+      // Request online users status
+      const statusMsg = JSON.stringify({
+        type: WebSocketMessageType.USER_STATUS,
+        payload: {}
+      });
+      console.log('Sending USER_STATUS request:', statusMsg);
+      socket.send(statusMsg);
     }
   }, [user, isConnected]);
+  
+  // Periodically refresh online users
+  useEffect(() => {
+    if (!isConnected || !socket) return;
+    
+    const interval = setInterval(() => {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        const statusMsg = JSON.stringify({
+          type: WebSocketMessageType.USER_STATUS,
+          payload: {}
+        });
+        console.log('Sending periodic USER_STATUS request:', statusMsg);
+        socket.send(statusMsg);
+      }
+    }, 15000); // Every 15 seconds
+    
+    return () => clearInterval(interval);
+  }, [isConnected, socket]);
 
   // Fetch recent messages from API
   const fetchRecentMessages = async () => {
@@ -167,6 +193,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Handle incoming WebSocket messages
   const handleWebSocketMessage = (data: any) => {
+    console.log('Received WebSocket message:', data);
     switch (data.type) {
       case WebSocketMessageType.CHAT_MESSAGE:
         if (data.payload.error) {
