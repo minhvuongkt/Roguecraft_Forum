@@ -195,6 +195,16 @@ export default function TopicDetailPage() {
     
     setReplyingTo(commentId);
     
+    // Get comment user to add @mention
+    const foundComment = comments.find(c => c.id === commentId);
+    if (foundComment && foundComment.user && !foundComment.isAnonymous) {
+      // Add @username to the comment text if it's not already there
+      const mentionText = `@${foundComment.user.username} `;
+      if (!comment || !comment.trim().startsWith(mentionText)) {
+        setComment(mentionText);
+      }
+    }
+    
     // Scroll to comment form
     if (commentFormRef.current) {
       commentFormRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -204,6 +214,9 @@ export default function TopicDetailPage() {
         const textarea = commentFormRef.current?.querySelector('textarea');
         if (textarea) {
           textarea.focus();
+          // Position cursor at the end of the text
+          const length = textarea.value.length;
+          textarea.setSelectionRange(length, length);
         }
       }, 500);
     }

@@ -166,6 +166,7 @@ export function useForum() {
       
       const response = await apiRequest('POST', `/api/forum/topics/${topicId}/like`, {
         action,
+        userId: user.id,
       });
       
       return response.json();
