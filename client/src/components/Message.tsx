@@ -138,7 +138,7 @@ function MessageComponent({ message, showUser = true }: MessageProps) {
               onClick={(e) => {
                 e.stopPropagation();
                 if (message.user?.id) {
-                  window.location.href = `/user/${message.user.id}`;
+                  navigate(`/user/${message.user.id}`);
                 }
               }}
               className="font-medium text-sm text-primary hover:underline focus:outline-none"

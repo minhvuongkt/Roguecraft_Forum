@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useLocation } from 'wouter';
 import { useWebSocket, OnlineUser } from '@/contexts/WebSocketContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -18,6 +19,7 @@ interface OnlineUsersProps {
 
 export function OnlineUsers({ currentUser }: OnlineUsersProps) {
   const { onlineUsers } = useWebSocket();
+  const [, navigate] = useLocation();
   
   // Sort users: current user first, then alphabetically by username
   const sortedUsers = useMemo(() => {
@@ -72,8 +74,9 @@ export function OnlineUsers({ currentUser }: OnlineUsersProps) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div 
-                    className={`flex items-center p-2 rounded-md 
+                    className={`flex items-center p-2 rounded-md cursor-pointer
                       ${user.id === currentUser?.id ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-100 dark:hover:bg-gray-700/50'}`}
+                    onClick={() => navigate(`/user/${user.id}`)}
                   >
                     <div className="relative">
                       <Avatar className="h-8 w-8">
