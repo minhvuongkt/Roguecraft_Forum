@@ -262,6 +262,8 @@ export function ChatBox() {
         <MessageInput 
           onSend={handleSendMessage}
           placeholder={user ? "Nhập tin nhắn..." : "Nhập /ten [tên của bạn] để đặt tên"}
+          type="chat"
+          disabled={!user}
         />
         <div className="mt-1 text-xs text-muted-foreground px-2">
           Tin nhắn được lưu trong 4 ngày. Gõ @ để tag người dùng.

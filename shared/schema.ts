@@ -49,6 +49,7 @@ export const topics = pgTable("topics", {
   createdAt: timestamp("created_at").defaultNow(),
   viewCount: integer("view_count").default(0),
   likeCount: integer("like_count").default(0),
+  commentCount: integer("comment_count").default(0),
 });
 
 export const insertTopicSchema = createInsertSchema(topics).pick({
