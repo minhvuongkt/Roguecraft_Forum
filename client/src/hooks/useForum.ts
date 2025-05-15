@@ -111,11 +111,13 @@ export function useForum() {
       content,
       isAnonymous,
       media,
+      parentCommentId,
     }: {
       topicId: number;
       content: string;
       isAnonymous: boolean;
       media?: any;
+      parentCommentId?: number;
     }) => {
       if (!user) {
         throw new Error('You must be logged in to comment');
@@ -126,16 +128,24 @@ export function useForum() {
         content,
         isAnonymous,
         media,
+        parentCommentId,
       });
       
       return response.json();
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       // Invalidate topic query to refetch the comments
       queryClient.invalidateQueries({ queryKey: [`/api/forum/topics/${variables.topicId}`] });
+      
+      // The response now includes both the new comment and all updated comments
+      // We can update the comments in the cache directly
+      if (data.allComments) {
+        queryClient.setQueryData([`/api/forum/topics/${variables.topicId}/comments`], data.allComments);
+      }
+      
       toast({
         title: 'Thành công',
-        description: 'Đã thêm bình luận',
+        description: parentCommentId ? 'Đã thêm câu trả lời' : 'Đã thêm bình luận',
       });
     },
     onError: (error) => {

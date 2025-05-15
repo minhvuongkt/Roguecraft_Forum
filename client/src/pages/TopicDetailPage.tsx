@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRoute, Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { useForum, Comment as CommentType } from '@/hooks/useForum';
@@ -8,9 +8,99 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { ThumbsUp, Share, Reply, ArrowLeft } from 'lucide-react';
+import { ThumbsUp, Share, Reply, ArrowLeft, MessageSquare } from 'lucide-react';
 import { LoginModal } from '@/components/LoginModal';
 import { useToast } from '@/hooks/use-toast';
+
+// Comment component for displaying individual comments
+const CommentItem = ({ 
+  comment, 
+  formatDate, 
+  onReply,
+  depth = 0 
+}: { 
+  comment: CommentType;
+  formatDate: (date: string) => string;
+  onReply: (commentId: number) => void;
+  depth?: number;
+}) => {
+  const maxDepth = 3; // Limit nesting depth
+  const isReplyable = depth < maxDepth;
+  
+  return (
+    <div className={`${depth > 0 ? 'ml-6 border-l-2 border-gray-200 dark:border-gray-700 pl-4' : ''}`}>
+      <Card className="mb-3">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3 mb-2">
+            {comment.isAnonymous ? (
+              <div className="flex items-center">
+                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                  <span className="text-sm font-bold">?</span>
+                </div>
+                <div className="ml-2">
+                  <div className="text-sm font-medium">Ẩn danh</div>
+                </div>
+              </div>
+            ) : comment.user ? (
+              <div className="flex items-center">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={comment.user.avatar || undefined} />
+                  <AvatarFallback>{(comment.user.username || '?').substring(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="ml-2">
+                  <div className="text-sm font-medium">{comment.user.username}</div>
+                </div>
+              </div>
+            ) : null}
+            
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {formatDate(comment.createdAt)}
+            </span>
+          </div>
+          
+          <div className="text-sm" dangerouslySetInnerHTML={{ __html: comment.content }} />
+          
+          {comment.media && comment.media.type?.startsWith('image/') && (
+            <img 
+              src={comment.media.url}
+              alt="Comment media"
+              className="rounded-lg mt-2 max-h-48"
+            />
+          )}
+          
+          {isReplyable && (
+            <div className="mt-3 flex justify-end">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="flex items-center gap-1"
+                onClick={() => onReply(comment.id)}
+              >
+                <Reply className="h-3 w-3" />
+                <span className="text-xs">Trả lời</span>
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      {/* Render replies if they exist */}
+      {comment.replies && comment.replies.length > 0 && (
+        <div className="space-y-3 mt-2">
+          {comment.replies.map(reply => (
+            <CommentItem 
+              key={reply.id} 
+              comment={reply} 
+              formatDate={formatDate} 
+              onReply={onReply}
+              depth={depth + 1} 
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function TopicDetailPage() {
   const [, params] = useRoute('/forum/:id');
@@ -21,6 +111,8 @@ export default function TopicDetailPage() {
   const [comment, setComment] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  const commentFormRef = useRef<HTMLDivElement>(null);
 
   const {
     data: topic,
