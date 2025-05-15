@@ -237,7 +237,14 @@ export class WebSocketHandler {
   
   // Make this method accessible from outside (for periodic broadcasts)
   public broadcast(message: WebSocketMessage, excludeClient: ExtendedWebSocket | null = null) {
+    // If this is a user status message, fill in the actual online users before sending
+    if (message.type === WebSocketMessageType.USER_STATUS) {
+      message.payload.users = this.getOnlineUsers();
+      console.log(`Broadcasting online users: ${message.payload.users.length}`);
+    }
+    
     console.log(`Broadcasting message of type ${message.type} to ${this.clients.size} clients`);
+    
     this.clients.forEach(client => {
       if (client !== excludeClient && client.readyState === WebSocket.OPEN) {
         try {
@@ -247,11 +254,5 @@ export class WebSocketHandler {
         }
       }
     });
-    
-    // If this is a user status message, fill in the actual online users
-    if (message.type === WebSocketMessageType.USER_STATUS) {
-      message.payload.users = this.getOnlineUsers();
-      console.log(`Online users: ${message.payload.users.length}`);
-    }
   }
 }

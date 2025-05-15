@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -71,12 +71,30 @@ export const comments = pgTable("comments", {
   isAnonymous: boolean("is_anonymous").default(false),
 });
 
+// Topic likes schema (to prevent multiple likes from the same user)
+export const topicLikes = pgTable("topic_likes", {
+  id: serial("id").primaryKey(),
+  topicId: integer("topic_id").references(() => topics.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => {
+  return {
+    uniqueUserTopic: unique("unique_user_topic").on(table.userId, table.topicId),
+  };
+});
+
 export const insertCommentSchema = createInsertSchema(comments).pick({
   topicId: true,
   userId: true,
   content: true,
   media: true,
   isAnonymous: true,
+});
+
+// Create insert schema for topic likes
+export const insertTopicLikeSchema = createInsertSchema(topicLikes).pick({
+  topicId: true,
+  userId: true,
 });
 
 // Types
@@ -91,6 +109,9 @@ export type Topic = typeof topics.$inferSelect;
 
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type Comment = typeof comments.$inferSelect;
+
+export type InsertTopicLike = z.infer<typeof insertTopicLikeSchema>;
+export type TopicLike = typeof topicLikes.$inferSelect;
 
 // Websocket message types
 export enum WebSocketMessageType {
