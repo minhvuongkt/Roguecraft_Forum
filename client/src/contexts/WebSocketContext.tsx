@@ -23,10 +23,19 @@ export interface ChatMessage {
   } | null;
 }
 
+// Define online user type
+export interface OnlineUser {
+  id: number;
+  username: string;
+  avatar: string | null;
+  lastActive: Date;
+}
+
 // Define the WebSocket context type
 interface WebSocketContextType {
   isConnected: boolean;
   messages: ChatMessage[];
+  onlineUsers: OnlineUser[];
   sendMessage: (content: string, media?: any, mentions?: string[]) => void;
   setUsername: (username: string) => void;
 }
@@ -34,6 +43,7 @@ interface WebSocketContextType {
 const WebSocketContext = createContext<WebSocketContextType>({
   isConnected: false,
   messages: [],
+  onlineUsers: [],
   sendMessage: () => {},
   setUsername: () => {},
 });
@@ -44,6 +54,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [socket, setSocket] = useState<ExtendedWebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -190,6 +201,21 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           title: 'Thông báo',
           description: `${data.payload.username} đã tham gia chat`,
         });
+        
+        // Add user to online users if not already present
+        if (data.payload.user) {
+          setOnlineUsers(prevUsers => {
+            // Check if user already exists
+            const userExists = prevUsers.some(u => u.id === data.payload.user.id);
+            if (!userExists) {
+              return [...prevUsers, {
+                ...data.payload.user,
+                lastActive: new Date()
+              }];
+            }
+            return prevUsers;
+          });
+        }
         break;
         
       case WebSocketMessageType.USER_LEFT:
@@ -198,6 +224,23 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           title: 'Thông báo',
           description: `${data.payload.username} đã rời khỏi chat`,
         });
+        
+        // Remove user from online users
+        if (data.payload.userId) {
+          setOnlineUsers(prevUsers => 
+            prevUsers.filter(user => user.id !== data.payload.userId)
+          );
+        }
+        break;
+        
+      case WebSocketMessageType.USER_STATUS:
+        // Update online users list
+        if (data.payload.users && Array.isArray(data.payload.users)) {
+          setOnlineUsers(data.payload.users.map((user: any) => ({
+            ...user,
+            lastActive: new Date(user.lastActive || Date.now())
+          })));
+        }
         break;
         
       case WebSocketMessageType.SET_USERNAME:
@@ -258,6 +301,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       value={{ 
         isConnected,
         messages,
+        onlineUsers,
         sendMessage,
         setUsername
       }}
