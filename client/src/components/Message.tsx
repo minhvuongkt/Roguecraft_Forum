@@ -1,7 +1,7 @@
 import React, { memo, useState } from 'react';
 import { useLocation } from 'wouter';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChatMessage } from '@/contexts/WebSocketContext';
+import { ChatMessage } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { ImageViewerModal } from './ImageViewerModal';

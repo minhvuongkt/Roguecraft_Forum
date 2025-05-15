@@ -3,39 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-
-export interface Topic {
-  id: number;
-  title: string;
-  content: string;
-  media: any;
-  category: string;
-  isAnonymous: boolean;
-  createdAt: string;
-  viewCount: number;
-  likeCount: number;
-  user: {
-    id: number;
-    username: string;
-    avatar: string | null;
-  } | null;
-}
-
-export interface Comment {
-  id: number;
-  topicId: number;
-  content: string;
-  media: any;
-  createdAt: string;
-  isAnonymous: boolean;
-  parentCommentId?: number | null;
-  replies?: Comment[];
-  user: {
-    id: number;
-    username: string;
-    avatar: string | null;
-  } | null;
-}
+import { Topic, Comment } from '@/types';
 
 export function useForum() {
   const [selectedCategory, setSelectedCategory] = useState<string>('Tất cả');

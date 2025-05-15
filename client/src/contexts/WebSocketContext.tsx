@@ -2,33 +2,11 @@ import React, { createContext, useState, useEffect, useContext, useCallback } fr
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { WebSocketMessageType } from '@shared/schema';
+import { ChatMessage, OnlineUser } from '@/types';
 
 // Extended WebSocket type with retries property
 interface ExtendedWebSocket extends WebSocket {
   retries?: number;
-}
-
-// Define the structure of a chat message
-export interface ChatMessage {
-  id: number;
-  userId: number;
-  content: string;
-  media?: any;
-  createdAt: Date;
-  mentions?: string[];
-  user?: {
-    id: number;
-    username: string;
-    avatar: string | null;
-  } | null;
-}
-
-// Define online user type
-export interface OnlineUser {
-  id: number;
-  username: string;
-  avatar: string | null;
-  lastActive: Date;
 }
 
 // Define the WebSocket context type
