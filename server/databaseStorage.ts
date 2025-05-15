@@ -211,8 +211,19 @@ export class DatabaseStorage implements IStorage {
 
   // Comment operations
   async createComment(comment: InsertComment): Promise<Comment> {
-    const [createdComment] = await db.insert(comments).values(comment).returning();
-    return createdComment;
+    // Start a transaction to ensure data consistency
+    return await db.transaction(async (tx) => {
+      // Insert the comment
+      const [createdComment] = await tx.insert(comments).values(comment).returning();
+      
+      // Increment the comment count for the topic
+      await tx.update(topics)
+        .set({ commentCount: sql`${topics.commentCount} + 1` })
+        .where(eq(topics.id, comment.topicId))
+        .execute();
+      
+      return createdComment;
+    });
   }
 
   async getCommentsByTopicId(topicId: number): Promise<Comment[]> {
