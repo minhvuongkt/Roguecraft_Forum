@@ -30,9 +30,17 @@ export async function uploadFile(file: File, type: 'chat' | 'topic'): Promise<an
  * Hàm xử lý upload nhiều file
  * @param files Danh sách file cần upload
  * @param type Loại upload (chat hoặc topic)
- * @returns Danh sách các media object
+ * @returns Object media định dạng {"1":"path_image_1", "2":"path_image_2",...}
  */
-export async function uploadMultipleFiles(files: File[], type: 'chat' | 'topic'): Promise<any[]> {
+export async function uploadMultipleFiles(files: File[], type: 'chat' | 'topic'): Promise<any> {
   const uploadPromises = files.map((file) => uploadFile(file, type));
-  return Promise.all(uploadPromises);
+  const results = await Promise.all(uploadPromises);
+  
+  // Tạo object với format {"1": "path_1", "2": "path_2", ...}
+  const formattedMedia: Record<string, string> = {};
+  results.forEach((result, index) => {
+    formattedMedia[(index + 1).toString()] = result.url;
+  });
+  
+  return formattedMedia;
 }

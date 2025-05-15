@@ -55,15 +55,22 @@ export function CreateTopicModal({ isOpen, onClose }: CreateTopicModalProps) {
       return;
     }
 
-    // Prepare media data if files are present
-    const media = files.length > 0 ? {
-      type: files[0].type,
-      name: files[0].name,
-      // In a real app, you would upload the file to a server and get a URL
-      url: URL.createObjectURL(files[0])
-    } : undefined;
-    
     try {
+      // Prepare media data if files are present
+      let media = undefined;
+      
+      if (files.length > 0) {
+        // Tạo object với định dạng {"1": "/topic-images/path1", "2": "/topic-images/path2", ...}
+        // Ở trường hợp thực sự, cần upload file lên server trước
+        // Sử dụng uploadMultipleFiles ở đây để có định dạng {"1": "path1", "2": "path2", ...}
+        const formattedMedia: Record<string, string> = {};
+        files.forEach((file, index) => {
+          // Tạo URL giả lập, trong ứng dụng thực sẽ gọi API upload
+          formattedMedia[(index + 1).toString()] = `/topic-images/topic-image-${Date.now()}-${index}`;
+        });
+        media = formattedMedia;
+      }
+      
       await createTopic({
         title,
         content,

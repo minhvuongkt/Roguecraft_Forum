@@ -56,6 +56,33 @@ function MessageComponent({ message, showUser = true }: MessageProps) {
     console.log("Rendering media:", message.media);
     
     try {
+      // Kiểm tra nếu media là định dạng mới {"1": "path1", "2": "path2"}
+      if (typeof message.media === 'object' && !message.media.url && Object.keys(message.media).some(key => /^\d+$/.test(key))) {
+        // Đây là định dạng mới - một object với các khóa số
+        return (
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {Object.entries(message.media).map(([key, value]) => (
+              <img 
+                key={key}
+                src={value as string} 
+                alt={`Image ${key}`} 
+                className="max-w-full rounded-md max-h-60 object-contain cursor-pointer"
+                onClick={() => {
+                  setViewingImageUrl(value as string);
+                  setImageViewerOpen(true);
+                }}
+                onError={(e) => {
+                  console.error("Image failed to load:", e);
+                  e.currentTarget.src = ""; 
+                  e.currentTarget.alt = "Image load failed";
+                }}
+              />
+            ))}
+          </div>
+        );
+      }
+      
+      // Định dạng cũ - một object với url, type, v.v.
       return (
         <div className="mt-2">
           {message.media.type?.startsWith('image/') ? (

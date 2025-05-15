@@ -66,8 +66,8 @@ export function MessageInput({
       // Nếu có file, upload trước khi gửi tin nhắn
       if (files.length > 0) {
         setIsUploading(true);
-        const uploadedMedia = await uploadMultipleFiles(files, type);
-        media = uploadedMedia.length === 1 ? uploadedMedia[0] : uploadedMedia;
+        // Đã được định dạng thành {"1":"path1", "2":"path2", ...} trong uploadMultipleFiles
+        media = await uploadMultipleFiles(files, type);
         setIsUploading(false);
       }
       
