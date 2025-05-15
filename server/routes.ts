@@ -172,25 +172,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Topic not found' });
       }
       
-      const validatedData = insertCommentSchema
-        .omit({ topicId: true })
-        .parse(req.body);
-        
-      // If this is a reply, check if the parent comment exists and belongs to this topic
-      if (validatedData.parentCommentId) {
+      // Add a parentCommentId check before schema validation to fix type errors
+      if (req.body.parentCommentId !== undefined && req.body.parentCommentId !== null) {
+        // Check if the parent comment exists
         const [parentComment] = await db.select()
           .from(comments)
           .where(
             and(
-              eq(comments.id, validatedData.parentCommentId),
+              eq(comments.id, parseInt(req.body.parentCommentId)),
               eq(comments.topicId, topicId)
             )
           );
-          
+        
         if (!parentComment) {
           return res.status(404).json({ message: 'Parent comment not found or does not belong to this topic' });
         }
       }
+      
+      // Now validate the data
+      const validatedData = insertCommentSchema
+        .omit({ topicId: true })
+        .parse(req.body);
       
       const comment = await forumService.createComment({
         ...validatedData,

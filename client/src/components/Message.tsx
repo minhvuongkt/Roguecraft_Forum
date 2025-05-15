@@ -29,7 +29,14 @@ function MessageComponent({ message, showUser = true }: MessageProps) {
       <>
         {parts.map((part, index) => {
           if (part.match(/@\w+/)) {
-            return <span key={index} className="text-primary font-medium">{part}</span>;
+            return (
+              <span 
+                key={index} 
+                className="text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-md"
+              >
+                {part}
+              </span>
+            );
           }
           return <span key={index}>{part}</span>;
         })}

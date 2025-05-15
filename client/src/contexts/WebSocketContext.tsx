@@ -182,10 +182,18 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (!response.ok) throw new Error('Failed to fetch messages');
       
       const data = await response.json();
-      setMessages(data.map((msg: any) => ({
-        ...msg,
-        createdAt: new Date(msg.createdAt)
-      })));
+      
+      // Convert timestamps to Date objects and sort by timestamp (oldest first)
+      const processedMessages = data
+        .map((msg: any) => ({
+          ...msg,
+          createdAt: new Date(msg.createdAt)
+        }))
+        .sort((a: ChatMessage, b: ChatMessage) => 
+          a.createdAt.getTime() - b.createdAt.getTime()
+        );
+      
+      setMessages(processedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
