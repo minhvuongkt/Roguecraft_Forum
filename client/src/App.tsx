@@ -8,14 +8,16 @@ import { WebSocketProvider } from "@/contexts/WebSocketContext";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { Header } from "@/components/Header";
 import Home from "@/pages/Home";
+import ForumPage from "@/pages/ForumPage";
+import ChatPage from "@/pages/ChatPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/#forum" component={Home} />
-      <Route path="/#chat" component={Home} />
+      <Route path="/forum" component={ForumPage} />
+      <Route path="/chat" component={ChatPage} />
       <Route component={NotFound} />
     </Switch>
   );

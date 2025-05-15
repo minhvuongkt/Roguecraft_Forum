@@ -22,17 +22,17 @@ export function Header() {
   const [location, setLocation] = useLocation();
 
   useEffect(() => {
-    // Set active tab based on hash in URL
-    if (location === '/' || location.includes('#forum')) {
+    // Set active tab based on URL path
+    if (location === '/' || location.includes('/forum')) {
       setActiveTab('forum');
-    } else if (location.includes('#chat')) {
+    } else if (location.includes('/chat')) {
       setActiveTab('chat');
     }
   }, [location]);
 
   const handleTabChange = (tab: 'forum' | 'chat') => {
     setActiveTab(tab);
-    setLocation(`/#${tab}`);
+    setLocation(`/${tab}`);
   };
 
   const toggleTheme = () => {
