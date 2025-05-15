@@ -314,6 +314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: topics.createdAt,
         viewCount: topics.viewCount,
         likeCount: topics.likeCount,
+        commentCount: topics.commentCount,
       })
       .from(topics)
       .where(eq(topics.userId, userId))
@@ -321,18 +322,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .limit(5);
       
       // Get user's total message count
-      const [messageCount] = await db.select({
-        count: count()
+      const messageCountResult = await db.select({
+        count: sql<number>`count(*)`
       })
       .from(chatMessages)
       .where(eq(chatMessages.userId, userId));
+      
+      // Get user's total topic count (more accurate than just the limited results)
+      const topicCountResult = await db.select({
+        count: sql<number>`count(*)`
+      })
+      .from(topics)
+      .where(eq(topics.userId, userId));
       
       res.json({
         user: userWithoutPassword,
         topics: userTopics,
         stats: {
-          messageCount: messageCount?.count || 0,
-          topicCount: userTopics.length
+          messageCount: messageCountResult[0]?.count || 0,
+          topicCount: topicCountResult[0]?.count || 0
         }
       });
     } catch (error) {
