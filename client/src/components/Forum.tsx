@@ -11,7 +11,15 @@ import { LoginModal } from '@/components/LoginModal';
 export function Forum() {
   const [isCreateTopicModalOpen, setIsCreateTopicModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const { topics, isTopicsLoading, selectedCategory, setSelectedCategory } = useForum();
+  const { 
+    topics, 
+    isTopicsLoading, 
+    selectedCategory, 
+    setSelectedCategory,
+    page,
+    setPage,
+    refetchTopics 
+  } = useForum();
   const [, navigate] = useLocation();
   const { isAuthenticated } = useAuth();
 
@@ -95,12 +103,39 @@ export function Forum() {
         )}
 
         {topics.length > 0 && (
-          <Button
-            variant="outline"
-            className="w-full py-3"
-          >
-            Xem thêm bài viết
-          </Button>
+          <div className="flex justify-between items-center mt-6">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (page > 1) {
+                  setPage(page - 1);
+                  window.scrollTo(0, 0);
+                }
+              }}
+              disabled={page <= 1 || isTopicsLoading}
+            >
+              Trang trước
+            </Button>
+            
+            <span className="text-sm text-muted-foreground">
+              Trang {page}
+            </span>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (topics.length === 10) { // If we have 10 topics, there might be more
+                  setPage(page + 1);
+                  window.scrollTo(0, 0);
+                }
+              }}
+              disabled={topics.length < 10 || isTopicsLoading}
+            >
+              Trang sau
+            </Button>
+          </div>
         )}
       </div>
 
