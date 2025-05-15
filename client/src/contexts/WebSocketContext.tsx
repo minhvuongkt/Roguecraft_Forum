@@ -3,6 +3,11 @@ import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { WebSocketMessageType } from '@shared/schema';
 
+// Extended WebSocket type with retries property
+interface ExtendedWebSocket extends WebSocket {
+  retries?: number;
+}
+
 // Define the structure of a chat message
 export interface ChatMessage {
   id: number;
@@ -36,18 +41,24 @@ const WebSocketContext = createContext<WebSocketContextType>({
 export const useWebSocket = () => useContext(WebSocketContext);
 
 export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [socket, setSocket] = useState<ExtendedWebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Initialize WebSocket connection
-  useEffect(() => {
+  // Function to create and connect WebSocket
+  const connectWebSocket = useCallback(() => {
+    // Close existing socket if it exists
+    if (socket) {
+      socket.close();
+    }
+    
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws`;
     
-    const ws = new WebSocket(wsUrl);
+    console.log('Connecting to WebSocket...', wsUrl);
+    const ws = new WebSocket(wsUrl) as ExtendedWebSocket;
     
     ws.onopen = () => {
       console.log('WebSocket connected');
@@ -62,14 +73,22 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     };
     
-    ws.onclose = () => {
-      console.log('WebSocket disconnected');
+    ws.onclose = (event) => {
+      console.log(`WebSocket disconnected: ${event.code} ${event.reason}`);
       setIsConnected(false);
       
-      // Try to reconnect after a delay
+      // Try to reconnect after a delay - using exponential backoff
+      // Starting with 1s, max 30s
+      const delay = Math.min(30000, 1000 * (2 ** Math.min(5, ws.retries || 0)));
+      console.log(`Attempting to reconnect in ${delay}ms`);
+      
       setTimeout(() => {
-        setSocket(null);
-      }, 5000);
+        if (ws.retries === undefined) {
+          ws.retries = 0;
+        }
+        ws.retries++;
+        connectWebSocket();
+      }, delay);
     };
     
     ws.onerror = (error) => {
@@ -86,14 +105,24 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     };
     
+    // Add custom property to track reconnection attempts
+    ws.retries = 0;
+    
     setSocket(ws);
+    
+    return ws;
+  }, [user]);
+  
+  // Initialize WebSocket connection
+  useEffect(() => {
+    const ws = connectWebSocket();
     
     // Fetch initial messages
     fetchRecentMessages();
     
     // Clean up WebSocket connection on unmount
     return () => {
-      if (ws.readyState === WebSocket.OPEN) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
         ws.close();
       }
     };

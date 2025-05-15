@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ interface TopicProps {
   onClick?: () => void;
 }
 
-export function Topic({ topic, onClick }: TopicProps) {
+function TopicComponent({ topic, onClick }: TopicProps) {
   const { formatDate, toggleLike } = useForum();
   
   const handleLikeClick = (e: React.MouseEvent) => {
@@ -138,3 +138,6 @@ export function Topic({ topic, onClick }: TopicProps) {
     </Card>
   );
 }
+
+// Export memoized component to prevent unnecessary re-renders
+export const Topic = memo(TopicComponent);

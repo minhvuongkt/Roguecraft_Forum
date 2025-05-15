@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ChatMessage } from '@/contexts/WebSocketContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,7 +9,7 @@ interface MessageProps {
   showUser?: boolean;
 }
 
-export function Message({ message, showUser = true }: MessageProps) {
+function MessageComponent({ message, showUser = true }: MessageProps) {
   const { user: currentUser } = useAuth();
   const isCurrentUser = message.userId === currentUser?.id;
   
@@ -125,3 +125,6 @@ export function Message({ message, showUser = true }: MessageProps) {
     </div>
   );
 }
+
+// Export memoized component to prevent unnecessary re-renders
+export const Message = memo(MessageComponent);

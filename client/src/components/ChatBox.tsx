@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useChat } from '@/hooks/useChat';
 import { Message } from '@/components/Message';
 import { MessageInput } from '@/components/ui/message-input';
@@ -6,26 +6,62 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Search, MoreVertical } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { FixedSizeList as VirtualList } from 'react-window';
 
 export function ChatBox() {
   const { groupedMessages, sendMessage } = useChat();
   const { user } = useAuth();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<VirtualList>(null);
   const [autoScroll, setAutoScroll] = useState(true);
+  
+  // Create flattened message list for virtual scrolling
+  const flattenedMessages = useMemo(() => {
+    const flattened: {
+      message: any;
+      showUser: boolean;
+      dateHeader?: string;
+    }[] = [];
+    
+    Object.entries(groupedMessages).forEach(([date, messages]) => {
+      // Add date header
+      const dateString = date === new Date().toLocaleDateString('vi-VN') ? 'Hôm nay' : date;
+      if (messages.length > 0) {
+        flattened.push({
+          message: messages[0],
+          showUser: false,
+          dateHeader: dateString
+        });
+      }
+      
+      // Add messages
+      messages.forEach((message, index) => {
+        flattened.push({
+          message,
+          showUser: index === 0 || messages[index - 1]?.userId !== message.userId,
+          dateHeader: undefined
+        });
+      });
+    });
+    
+    return flattened;
+  }, [groupedMessages]);
   
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (autoScroll && scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (autoScroll && listRef.current) {
+      listRef.current.scrollToItem(flattenedMessages.length - 1, 'end');
     }
-  }, [groupedMessages, autoScroll]);
+  }, [flattenedMessages.length, autoScroll]);
   
   // Handle scroll to detect when user manually scrolls up
-  const handleScroll = () => {
-    if (!scrollRef.current) return;
+  const handleScroll = ({ scrollOffset, scrollUpdateWasRequested }: { scrollOffset: number, scrollUpdateWasRequested: boolean }) => {
+    if (scrollUpdateWasRequested) return;
     
-    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
+    // Assuming the message list container is 400px tall - adjust based on your layout
+    const listHeight = 400;
+    const maxScrollOffset = flattenedMessages.length * 80 - listHeight; // 80px avg height per message
+    const isNearBottom = scrollOffset > maxScrollOffset - 100;
     
     setAutoScroll(isNearBottom);
   };
