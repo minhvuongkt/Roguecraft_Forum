@@ -17,13 +17,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const wsHandler = new WebSocketHandler(httpServer);
   
   // Setup periodic broadcast of online users
-  setInterval(() => {
+  setInterval(async () => {
     console.log("Broadcasting online users");
     const onlineUsersMessage = {
       type: WebSocketMessageType.USER_STATUS,
       payload: { users: [] } // This will be filled by the handler
     };
-    wsHandler.broadcast(onlineUsersMessage);
+    await wsHandler.broadcast(onlineUsersMessage);
   }, 10000);
   
   // User Routes

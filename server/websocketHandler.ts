@@ -3,6 +3,7 @@ import { IncomingMessage } from "http";
 import { chatService } from "./chatService";
 import { WebSocketMessageType, WebSocketMessage } from "@shared/schema";
 import { parse } from "url";
+import { storage } from "./storage";
 
 interface ExtendedWebSocket extends WebSocket {
   userId?: number;
@@ -33,12 +34,15 @@ export class WebSocketHandler {
       });
       
       // Handle messages from clients
-      ws.on('message', async (data: string) => {
+      ws.on('message', (data: string) => {
         try {
           const message: WebSocketMessage = JSON.parse(data);
-          await this.handleMessage(ws, message);
+          // Run message handler asynchronously but don't block the event loop
+          this.handleMessage(ws, message).catch(error => {
+            console.error('Error in async message handling:', error);
+          });
         } catch (error) {
-          console.error('Error handling WebSocket message:', error);
+          console.error('Error parsing WebSocket message:', error);
         }
       });
       
@@ -77,21 +81,25 @@ export class WebSocketHandler {
   }
   
   private async handleMessage(ws: ExtendedWebSocket, message: WebSocketMessage) {
-    switch (message.type) {
-      case WebSocketMessageType.SET_USERNAME:
-        await this.handleSetUsername(ws, message.payload);
-        break;
-        
-      case WebSocketMessageType.CHAT_MESSAGE:
-        await this.handleChatMessage(ws, message.payload);
-        break;
-        
-      case WebSocketMessageType.USER_STATUS:
-        this.handleUserStatus(ws, message.payload);
-        break;
-        
-      default:
-        console.warn(`Unknown message type: ${message.type}`);
+    try {
+      switch (message.type) {
+        case WebSocketMessageType.SET_USERNAME:
+          await this.handleSetUsername(ws, message.payload);
+          break;
+          
+        case WebSocketMessageType.CHAT_MESSAGE:
+          await this.handleChatMessage(ws, message.payload);
+          break;
+          
+        case WebSocketMessageType.USER_STATUS:
+          await this.handleUserStatus(ws, message.payload);
+          break;
+          
+        default:
+          console.warn(`Unknown message type: ${message.type}`);
+      }
+    } catch (error) {
+      console.error(`Error handling message of type ${message.type}:`, error);
     }
   }
   
@@ -186,16 +194,16 @@ export class WebSocketHandler {
     }
   }
   
-  private handleUserStatus(ws: ExtendedWebSocket, payload: any) {
+  private async handleUserStatus(ws: ExtendedWebSocket, payload: any) {
     // Broadcast current online users to all clients
-    this.broadcastOnlineUsers();
+    await this.broadcastOnlineUsers();
   }
   
   // Send list of online users to all connected clients
-  private broadcastOnlineUsers() {
-    const onlineUsers = this.getOnlineUsers();
+  private async broadcastOnlineUsers() {
+    const onlineUsers = await this.getOnlineUsers();
     
-    this.broadcast({
+    this.broadcastMessage({
       type: WebSocketMessageType.USER_STATUS,
       payload: {
         users: onlineUsers
@@ -204,7 +212,7 @@ export class WebSocketHandler {
   }
   
   // Get list of online users with their basic information
-  private getOnlineUsers() {
+  private async getOnlineUsers() {
     const users: {
       id: number;
       username: string;
@@ -212,19 +220,38 @@ export class WebSocketHandler {
       lastActive: Date;
     }[] = [];
     
-    this.clients.forEach(client => {
-      if (client.userId && client.username && client.readyState === WebSocket.OPEN) {
-        // Avoid duplicates (same user may have multiple connections)
-        if (!users.some(u => u.id === client.userId)) {
-          users.push({
-            id: client.userId,
-            username: client.username,
-            avatar: null, // We could fetch this from a database if needed
-            lastActive: new Date()
-          });
+    // Create a Set of unique userIds from connected clients
+    const userIds = new Set<number>();
+    
+    for (const client of this.clients) {
+      if (client.userId && client.readyState === WebSocket.OPEN) {
+        userIds.add(client.userId);
+        
+        // Update the user's last active timestamp in the database
+        try {
+          await storage.updateUserLastActive(client.userId);
+        } catch (error) {
+          console.error(`Error updating last active status for user ${client.userId}:`, error);
         }
       }
-    });
+    }
+    
+    // Fetch user information from the database for each connected user
+    for (const userId of userIds) {
+      try {
+        const user = await storage.getUser(userId);
+        if (user) {
+          users.push({
+            id: user.id,
+            username: user.username,
+            avatar: user.avatar,
+            lastActive: user.lastActive || new Date()
+          });
+        }
+      } catch (error) {
+        console.error(`Error fetching user ${userId}:`, error);
+      }
+    }
     
     return users;
   }
@@ -235,14 +262,8 @@ export class WebSocketHandler {
     }
   }
   
-  // Make this method accessible from outside (for periodic broadcasts)
-  public broadcast(message: WebSocketMessage, excludeClient: ExtendedWebSocket | null = null) {
-    // If this is a user status message, fill in the actual online users before sending
-    if (message.type === WebSocketMessageType.USER_STATUS) {
-      message.payload.users = this.getOnlineUsers();
-      console.log(`Broadcasting online users: ${message.payload.users.length}`);
-    }
-    
+  // Helper method for non-async broadcasts (without user status)
+  private broadcastMessage(message: WebSocketMessage, excludeClient: ExtendedWebSocket | null = null) {
     console.log(`Broadcasting message of type ${message.type} to ${this.clients.size} clients`);
     
     this.clients.forEach(client => {
@@ -254,5 +275,17 @@ export class WebSocketHandler {
         }
       }
     });
+  }
+  
+  // Make this method accessible from outside (for periodic broadcasts)
+  public async broadcast(message: WebSocketMessage, excludeClient: ExtendedWebSocket | null = null) {
+    // If this is a user status message, fetch the actual users from the database
+    if (message.type === WebSocketMessageType.USER_STATUS) {
+      const users = await this.getOnlineUsers();
+      message.payload.users = users;
+      console.log(`Broadcasting online users: ${users.length}`);
+    }
+    
+    this.broadcastMessage(message, excludeClient);
   }
 }
