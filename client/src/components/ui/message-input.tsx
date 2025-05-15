@@ -3,26 +3,32 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { EmojiPicker } from '@/components/ui/emoji-picker';
 import { FileUpload } from '@/components/ui/file-upload';
-import { Image, Send } from 'lucide-react';
+import { Image, Send, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { uploadMultipleFiles } from '@/lib/uploadAPI';
+import { useToast } from '@/hooks/use-toast';
 
 interface MessageInputProps {
-  onSend: (message: string, files?: File[]) => void;
+  onSend: (message: string, media?: any) => void;
   placeholder?: string;
   maxLength?: number;
   disabled?: boolean;
+  type?: 'chat' | 'topic';
 }
 
 export function MessageInput({ 
   onSend, 
   placeholder = 'Nhập tin nhắn...', 
   maxLength = 1000,
-  disabled = false
+  disabled = false,
+  type = 'chat'
 }: MessageInputProps) {
   const [message, setMessage] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [showFileUpload, setShowFileUpload] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { toast } = useToast();
   
   // Auto-resize textarea
   useEffect(() => {
@@ -49,16 +55,39 @@ export function MessageInput({
     setFiles(selectedFiles);
   };
   
-  const handleSend = () => {
+  const handleSend = async () => {
     const trimmedMessage = message.trim();
     
     if (!trimmedMessage && files.length === 0) return;
     
-    onSend(trimmedMessage, files.length > 0 ? files : undefined);
-    setMessage('');
-    setFiles([]);
-    setShowFileUpload(false);
-    textareaRef.current?.focus();
+    try {
+      let media = undefined;
+      
+      // Nếu có file, upload trước khi gửi tin nhắn
+      if (files.length > 0) {
+        setIsUploading(true);
+        const uploadedMedia = await uploadMultipleFiles(files, type);
+        media = uploadedMedia.length === 1 ? uploadedMedia[0] : uploadedMedia;
+        setIsUploading(false);
+      }
+      
+      // Gửi tin nhắn với media đã upload
+      onSend(trimmedMessage, media);
+      
+      // Reset form
+      setMessage('');
+      setFiles([]);
+      setShowFileUpload(false);
+      textareaRef.current?.focus();
+    } catch (error) {
+      console.error('Lỗi upload file:', error);
+      setIsUploading(false);
+      toast({
+        title: 'Lỗi upload file',
+        description: error instanceof Error ? error.message : 'Đã xảy ra lỗi khi tải file',
+        variant: 'destructive',
+      });
+    }
   };
   
   const charCount = message.length;
@@ -105,10 +134,14 @@ export function MessageInput({
         <Button 
           onClick={handleSend} 
           size="icon" 
-          disabled={isOverLimit || (!message.trim() && files.length === 0) || disabled}
+          disabled={isOverLimit || (!message.trim() && files.length === 0) || disabled || isUploading}
           className="h-10 w-10 rounded-full"
         >
-          <Send className="h-5 w-5" />
+          {isUploading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <Send className="h-5 w-5" />
+          )}
         </Button>
       </div>
       
