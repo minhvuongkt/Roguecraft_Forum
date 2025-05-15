@@ -3,39 +3,73 @@ import path from 'path';
 import fs from 'fs';
 import { Request } from 'express';
 
-// Ensure directories exist
-const chatUploadDir = './public/chat-images';
-const topicUploadDir = './public/topic-images';
+// Ensure directories exist with absolute paths
+const chatUploadDir = path.resolve('./public/chat-images');
+const topicUploadDir = path.resolve('./public/topic-images');
+
+console.log('Chat upload directory path:', chatUploadDir);
+console.log('Topic upload directory path:', topicUploadDir);
 
 // Create directories if they don't exist
 if (!fs.existsSync(chatUploadDir)) {
+  console.log('Creating chat images directory');
   fs.mkdirSync(chatUploadDir, { recursive: true });
 }
 
 if (!fs.existsSync(topicUploadDir)) {
+  console.log('Creating topic images directory');
   fs.mkdirSync(topicUploadDir, { recursive: true });
+}
+
+// Verify directories exist and are writable
+try {
+  const chatTestPath = path.join(chatUploadDir, 'test.txt');
+  fs.writeFileSync(chatTestPath, 'Test file for chat uploads');
+  console.log('Chat directory is writable, test file created at:', chatTestPath);
+  fs.unlinkSync(chatTestPath);
+  
+  const topicTestPath = path.join(topicUploadDir, 'test.txt');
+  fs.writeFileSync(topicTestPath, 'Test file for topic uploads');
+  console.log('Topic directory is writable, test file created at:', topicTestPath);
+  fs.unlinkSync(topicTestPath);
+} catch (error) {
+  console.error('Error testing directory write permissions:', error);
 }
 
 // Configure storage for each type
 const chatStorage = multer.diskStorage({
   destination: (req, file, cb) => {
+    // Đảm bảo thư mục tồn tại trước khi lưu file
+    if (!fs.existsSync(chatUploadDir)) {
+      console.log(`Creating chat directory on demand: ${chatUploadDir}`);
+      fs.mkdirSync(chatUploadDir, { recursive: true });
+    }
     cb(null, chatUploadDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
     const ext = path.extname(file.originalname);
-    cb(null, `chat-${uniqueSuffix}${ext}`);
+    const filename = `chat-${uniqueSuffix}${ext}`;
+    console.log(`Creating chat file: ${filename} in ${chatUploadDir}`);
+    cb(null, filename);
   }
 });
 
 const topicStorage = multer.diskStorage({
   destination: (req, file, cb) => {
+    // Đảm bảo thư mục tồn tại trước khi lưu file
+    if (!fs.existsSync(topicUploadDir)) {
+      console.log(`Creating topic directory on demand: ${topicUploadDir}`);
+      fs.mkdirSync(topicUploadDir, { recursive: true });
+    }
     cb(null, topicUploadDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
     const ext = path.extname(file.originalname);
-    cb(null, `topic-${uniqueSuffix}${ext}`);
+    const filename = `topic-${uniqueSuffix}${ext}`;
+    console.log(`Creating topic file: ${filename} in ${topicUploadDir}`);
+    cb(null, filename);
   }
 });
 

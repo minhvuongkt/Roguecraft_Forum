@@ -5,17 +5,31 @@ import fs from 'fs';
 
 const router = Router();
 
-// Đảm bảo thư mục tồn tại
+// Đảm bảo thư mục tồn tại với đường dẫn tuyệt đối
 const ensureDirectoriesExist = () => {
-  const chatUploadDir = './public/chat-images';
-  const topicUploadDir = './public/topic-images';
+  const chatUploadDir = path.resolve('./public/chat-images');
+  const topicUploadDir = path.resolve('./public/topic-images');
+  
+  console.log('Ensuring chat upload directory exists:', chatUploadDir);
+  console.log('Ensuring topic upload directory exists:', topicUploadDir);
   
   if (!fs.existsSync(chatUploadDir)) {
+    console.log('Creating chat upload directory');
     fs.mkdirSync(chatUploadDir, { recursive: true });
   }
   
   if (!fs.existsSync(topicUploadDir)) {
+    console.log('Creating topic upload directory');
     fs.mkdirSync(topicUploadDir, { recursive: true });
+  }
+  
+  // Set permissions to ensure writability
+  try {
+    fs.chmodSync(chatUploadDir, 0o777);
+    fs.chmodSync(topicUploadDir, 0o777);
+    console.log('Set directory permissions to 777');
+  } catch (error) {
+    console.error('Error setting directory permissions:', error);
   }
 };
 
