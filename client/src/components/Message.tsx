@@ -56,66 +56,84 @@ function MessageComponent({ message, showUser = true }: MessageProps) {
     console.log("Rendering media:", message.media);
     
     try {
-      // Kiểm tra nếu media là định dạng mới {"1": "path1", "2": "path2"}
-      if (typeof message.media === 'object' && !message.media.url && Object.keys(message.media).some(key => /^\d+$/.test(key))) {
+      // Kiểm tra nếu media là định dạng JSON {"1": "path1", "2": "path2"}
+      if (typeof message.media === 'object' && Object.keys(message.media).some(key => /^\d+$/.test(key))) {
         // Đây là định dạng mới - một object với các khóa số
         return (
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            {Object.entries(message.media).map(([key, value]) => (
-              <img 
-                key={key}
-                src={value as string} 
-                alt={`Image ${key}`} 
-                className="max-w-full rounded-md max-h-60 object-contain cursor-pointer"
-                onClick={() => {
-                  setViewingImageUrl(value as string);
-                  setImageViewerOpen(true);
-                }}
-                onError={(e) => {
-                  console.error("Image failed to load:", e);
-                  e.currentTarget.src = ""; 
-                  e.currentTarget.alt = "Image load failed";
-                }}
-              />
-            ))}
+          <div className={`mt-2 grid ${Object.keys(message.media).length > 1 ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
+            {Object.entries(message.media).map(([key, path]) => {
+              // Đảm bảo đường dẫn là đầy đủ
+              let imagePath = path as string;
+              if (!imagePath.startsWith('http') && !imagePath.startsWith('/')) {
+                imagePath = '/' + imagePath;
+              }
+              
+              return (
+                <img 
+                  key={key}
+                  src={imagePath} 
+                  alt={`Image ${key}`} 
+                  className="max-w-full rounded-md max-h-60 object-contain cursor-pointer"
+                  onClick={() => {
+                    setViewingImageUrl(imagePath);
+                    setImageViewerOpen(true);
+                  }}
+                  onError={(e) => {
+                    console.error("Image failed to load:", imagePath, e);
+                    e.currentTarget.src = ""; 
+                    e.currentTarget.alt = "Image load failed";
+                  }}
+                />
+              );
+            })}
           </div>
         );
       }
       
       // Định dạng cũ - một object với url, type, v.v.
+      if (message.media.url) {
+        return (
+          <div className="mt-2">
+            {message.media.type?.startsWith('image/') ? (
+              <img 
+                src={message.media.url} 
+                alt={message.media.name || "Image attachment"} 
+                className="max-w-full rounded-md max-h-60 object-contain cursor-pointer"
+                onClick={() => {
+                  setViewingImageUrl(message.media.url);
+                  setImageViewerOpen(true);
+                }}
+                onError={(e) => {
+                  console.error("Image failed to load:", e);
+                  e.currentTarget.src = ""; // Clear the broken URL
+                  e.currentTarget.alt = "Image load failed";
+                }}
+              />
+            ) : message.media.type?.startsWith('video/') ? (
+              <video 
+                src={message.media.url} 
+                controls 
+                className="max-w-full rounded-md max-h-60"
+              />
+            ) : (
+              <div className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded">
+                <span className="font-medium">Attached file:</span> {message.media.name} 
+                {message.media.size && <span className="ml-1">({Math.round(message.media.size/1024)} KB)</span>}
+              </div>
+            )}
+          </div>
+        );
+      }
+      
+      // Nếu định dạng không được nhận dạng
+      console.error("Unknown media format:", message.media);
       return (
-        <div className="mt-2">
-          {message.media.type?.startsWith('image/') ? (
-            <img 
-              src={message.media.url} 
-              alt={message.media.name || "Image attachment"} 
-              className="max-w-full rounded-md max-h-60 object-contain cursor-pointer"
-              onClick={() => {
-                setViewingImageUrl(message.media.url);
-                setImageViewerOpen(true);
-              }}
-              onError={(e) => {
-                console.error("Image failed to load:", e);
-                e.currentTarget.src = ""; // Clear the broken URL
-                e.currentTarget.alt = "Image load failed";
-              }}
-            />
-          ) : message.media.type?.startsWith('video/') ? (
-            <video 
-              src={message.media.url} 
-              controls 
-              className="max-w-full rounded-md max-h-60"
-            />
-          ) : (
-            <div className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded">
-              <span className="font-medium">Attached file:</span> {message.media.name} 
-              {message.media.size && <span className="ml-1">({Math.round(message.media.size/1024)} KB)</span>}
-            </div>
-          )}
+        <div className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded">
+          Media attachment (unknown format)
         </div>
       );
     } catch (err) {
-      console.error("Error rendering media:", err);
+      console.error("Error rendering media:", err, message.media);
       return (
         <div className="text-xs text-destructive mt-2">
           Error displaying media attachment
