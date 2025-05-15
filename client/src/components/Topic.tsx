@@ -114,7 +114,7 @@ function TopicComponent({ topic, onClick }: TopicProps) {
             <div className="flex items-center text-sm text-muted-foreground space-x-4">
               <Button variant="ghost" size="sm" className="space-x-1 h-8">
                 <MessageSquare className="h-4 w-4" />
-                <span>24 bình luận</span>
+                <span>{topic.commentCount || 0} bình luận</span>
               </Button>
               
               <Button 
