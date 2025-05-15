@@ -179,25 +179,27 @@ export class WebSocketHandler {
       if (media) {
         // Đảm bảo đường dẫn ảnh là từ thư mục chat-images
         if (typeof media === 'object' && Object.keys(media).some(key => /^\d+$/.test(key))) {
-          // Kiểm tra xem có đường dẫn nào từ topic-images không và cảnh báo
+          // Kiểm tra xem có đường dẫn nào từ topic-images không
           const hasTopicImage = Object.values(media).some(
             path => typeof path === 'string' && path.toString().includes('/topic-images/')
           );
           
           if (hasTopicImage) {
-            console.warn("Warning: Found topic-images path in chat message, this may cause display issues");
+            console.warn("Warning: Found topic-images path in chat message, fixing paths");
             
-            // Nếu trong môi trường development, có thể uncomment đoạn code này để tự động sửa đường dẫn
-            // const fixedMedia: Record<string, string> = {};
-            // Object.entries(media).forEach(([key, value]) => {
-            //   if (typeof value === 'string' && value.includes('/topic-images/')) {
-            //     const newPath = value.replace('/topic-images/', '/chat-images/');
-            //     fixedMedia[key] = newPath;
-            //   } else {
-            //     fixedMedia[key] = value as string;
-            //   }
-            // });
-            // mediaData = fixedMedia;
+            // Tự động sửa đường dẫn để đảm bảo ảnh lưu đúng thư mục
+            const fixedMedia: Record<string, string> = {};
+            Object.entries(media).forEach(([key, value]) => {
+              if (typeof value === 'string' && value.includes('/topic-images/')) {
+                const originalFileName = value.split('/').pop() || 'unknown.jpg';
+                const newPath = `/chat-images/chat-${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(originalFileName)}`;
+                fixedMedia[key] = newPath;
+                console.log(`Fixed media path from ${value} to ${newPath}`);
+              } else {
+                fixedMedia[key] = value as string;
+              }
+            });
+            mediaData = fixedMedia;
           }
         }
         

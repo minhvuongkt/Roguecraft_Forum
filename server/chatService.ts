@@ -51,13 +51,33 @@ export class ChatService {
 
   async createMessage(message: InsertChatMessage): Promise<any> {
     console.log("Creating chat message with media:", JSON.stringify(message.media, null, 2));
+    console.log("Media type:", typeof message.media);
+    
+    // Đảm bảo media đúng định dạng
+    let mediaData = message.media;
+    
+    if (message.media) {
+      // Nếu media là string, convert về JSON
+      if (typeof message.media === 'string') {
+        try {
+          mediaData = JSON.parse(message.media);
+          console.log("Converted string media to JSON:", mediaData);
+        } catch (e) {
+          console.error("Failed to parse media string:", e);
+          // Keep as is if parsing fails
+        }
+      } else {
+        console.log("Media is already an object:", mediaData);
+      }
+    }
     
     // Make sure message has the right format
     const processedMessage: InsertChatMessage = {
       ...message,
-      // Ensure media is properly formatted 
-      media: message.media
+      media: mediaData
     };
+    
+    console.log("Final processed message media:", JSON.stringify(processedMessage.media, null, 2));
     
     // Create message in database
     const newMessage = await storage.createChatMessage(processedMessage);

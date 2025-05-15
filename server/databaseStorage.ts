@@ -38,21 +38,53 @@ export class DatabaseStorage implements IStorage {
     console.log("Creating chat message in database with media:", JSON.stringify(message.media, null, 2));
     
     // Đảm bảo định dạng message đúng trước khi lưu
+    let finalMedia = message.media;
+    
+    // Kiểm tra và sửa đường dẫn nếu cần
+    if (finalMedia && typeof finalMedia === 'object') {
+      const hasTopicImage = Object.values(finalMedia).some(
+        path => typeof path === 'string' && path.toString().includes('/topic-images/')
+      );
+      
+      if (hasTopicImage) {
+        console.warn("Warning: Found topic-images path in chat message, fixing this");
+        
+        const fixedMedia: Record<string, string> = {};
+        Object.entries(finalMedia).forEach(([key, value]) => {
+          if (typeof value === 'string' && value.includes('/topic-images/')) {
+            // Tạo tên file mới trong chat-images
+            const originalFileName = value.split('/').pop() || 'unknown.jpg';
+            const newPath = `/chat-images/chat-${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(originalFileName)}`;
+            fixedMedia[key] = newPath;
+            console.log(`Fixed media path from ${value} to ${newPath}`);
+          } else {
+            fixedMedia[key] = value as string;
+          }
+        });
+        finalMedia = fixedMedia;
+      }
+    }
+    
     const messageToInsert = {
       ...message,
-      // Đã có Json type ở schema nên không cần chuyển đổi
-      media: message.media
+      // Đảm bảo media có định dạng đúng trước khi lưu
+      media: finalMedia
     };
     
-    const [createdMessage] = await db.insert(chatMessages).values(messageToInsert).returning();
-    
-    console.log("Chat message created in database:", JSON.stringify({
-      id: createdMessage.id,
-      content: createdMessage.content,
-      media: createdMessage.media
-    }, null, 2));
-    
-    return createdMessage;
+    try {
+      const [createdMessage] = await db.insert(chatMessages).values(messageToInsert).returning();
+      
+      console.log("Chat message created in database:", JSON.stringify({
+        id: createdMessage.id,
+        content: createdMessage.content,
+        media: createdMessage.media
+      }, null, 2));
+      
+      return createdMessage;
+    } catch (error) {
+      console.error("Error creating chat message:", error);
+      throw error;
+    }
   }
 
   async getChatMessagesByDateRange(days: number): Promise<ChatMessage[]> {
