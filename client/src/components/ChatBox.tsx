@@ -85,7 +85,7 @@ export function ChatBox() {
   };
   
   // Handle sending a message
-  const handleSendMessage = (message: string, files?: File[]) => {
+  const handleSendMessage = (message: string, media?: any) => {
     // Check if message starts with /ten command
     if (message.startsWith('/ten ')) {
       const newUsername = message.substring(5).trim();
@@ -100,39 +100,12 @@ export function ChatBox() {
       return;
     }
     
-    // Process any attached files
-    let mediaData = undefined;
-    if (files && files.length > 0) {
-      const file = files[0]; // For simplicity, just use the first file
-      
-      // Create a data URL for image files to display inline
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const mediaInfo = {
-            type: file.type,
-            name: file.name,
-            size: file.size,
-            url: e.target?.result as string
-          };
-          
-          // Send message with the attached image
-          sendMessage(message, mediaInfo);
-          setAutoScroll(true);
-        };
-        reader.readAsDataURL(file);
-        return; // Return early as we'll send the message after file loads
-      } else {
-        // For non-image files, just send file metadata
-        mediaData = {
-          type: file.type,
-          name: file.name,
-          size: file.size
-        };
-      }
-    }
+    // MessageInput component đã xử lý upload file và trả về media object
+    // với định dạng {"1": "/chat-images/..."}
+    console.log("Sending message with media:", media);
     
-    sendMessage(message, mediaData);
+    // Gửi tin nhắn với media đã được upload
+    sendMessage(message, media);
     setAutoScroll(true);
   };
   

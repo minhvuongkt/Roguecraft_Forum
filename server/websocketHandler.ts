@@ -177,6 +177,30 @@ export class WebSocketHandler {
       // Kiểm tra nếu media có dữ liệu
       let mediaData = media;
       if (media) {
+        // Đảm bảo đường dẫn ảnh là từ thư mục chat-images
+        if (typeof media === 'object' && Object.keys(media).some(key => /^\d+$/.test(key))) {
+          // Kiểm tra xem có đường dẫn nào từ topic-images không và cảnh báo
+          const hasTopicImage = Object.values(media).some(
+            path => typeof path === 'string' && path.toString().includes('/topic-images/')
+          );
+          
+          if (hasTopicImage) {
+            console.warn("Warning: Found topic-images path in chat message, this may cause display issues");
+            
+            // Nếu trong môi trường development, có thể uncomment đoạn code này để tự động sửa đường dẫn
+            // const fixedMedia: Record<string, string> = {};
+            // Object.entries(media).forEach(([key, value]) => {
+            //   if (typeof value === 'string' && value.includes('/topic-images/')) {
+            //     const newPath = value.replace('/topic-images/', '/chat-images/');
+            //     fixedMedia[key] = newPath;
+            //   } else {
+            //     fixedMedia[key] = value as string;
+            //   }
+            // });
+            // mediaData = fixedMedia;
+          }
+        }
+        
         console.log("Creating chat message with media:", JSON.stringify(mediaData, null, 2));
       } else {
         console.log("Creating chat message with media: null");
