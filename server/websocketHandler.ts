@@ -4,6 +4,7 @@ import { chatService } from "./chatService";
 import { WebSocketMessageType, WebSocketMessage } from "@shared/schema";
 import { parse } from "url";
 import { storage } from "./storage";
+import path from "path";
 
 interface ExtendedWebSocket extends WebSocket {
   userId?: number;
@@ -266,11 +267,11 @@ export class WebSocketHandler {
       const userIds = new Set<number>();
       
       // First collect all user IDs
-      for (const client of this.clients) {
+      Array.from(this.clients).forEach(client => {
         if (client.userId && client.readyState === WebSocket.OPEN) {
           userIds.add(client.userId);
         }
-      }
+      });
       
       // Now batch update last active status for all online users
       const updatePromises: Promise<void>[] = [];
