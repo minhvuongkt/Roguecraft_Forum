@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useForum } from '@/hooks/useForum';
 import { useAuth } from '@/contexts/AuthContext';
+import { uploadMultipleFiles } from '@/lib/uploadAPI';
 
 interface CreateTopicModalProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ export function CreateTopicModal({ isOpen, onClose }: CreateTopicModalProps) {
   const [category, setCategory] = useState('Survival');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   
   const { createTopic, isCreatingTopic } = useForum();
   const { user } = useAuth();
@@ -56,7 +58,7 @@ export function CreateTopicModal({ isOpen, onClose }: CreateTopicModalProps) {
     }
 
     try {
-      setIsCreatingTopic(true);
+      setIsUploading(true);
       // Prepare media data if files are present
       let media = undefined;
       
@@ -78,7 +80,7 @@ export function CreateTopicModal({ isOpen, onClose }: CreateTopicModalProps) {
             description: uploadError instanceof Error ? uploadError.message : 'Đã xảy ra lỗi khi tải file',
             variant: 'destructive',
           });
-          setIsCreatingTopic(false);
+          setIsUploading(false);
           return;
         }
       }
@@ -108,9 +110,9 @@ export function CreateTopicModal({ isOpen, onClose }: CreateTopicModalProps) {
         });
       }
       
-      setIsCreatingTopic(false);
+      setIsUploading(false);
     } catch (error) {
-      setIsCreatingTopic(false);
+      setIsUploading(false);
       console.error('Error in handleSubmit:', error);
       toast({
         title: 'Lỗi',
@@ -196,7 +198,7 @@ export function CreateTopicModal({ isOpen, onClose }: CreateTopicModalProps) {
                 id="anonymous"
                 checked={isAnonymous}
                 onCheckedChange={(checked) => setIsAnonymous(!!checked)}
-                disabled={isCreatingTopic}
+                disabled={isUploading || isCreatingTopic}
               />
               <Label htmlFor="anonymous" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 Đăng ẩn danh
@@ -206,16 +208,16 @@ export function CreateTopicModal({ isOpen, onClose }: CreateTopicModalProps) {
             <FileUpload
               onFileSelect={handleFileSelect}
               value={files}
-              disabled={isCreatingTopic}
+              disabled={isUploading || isCreatingTopic}
             />
           </div>
           
           <DialogFooter className="mt-4">
-            <Button type="button" variant="outline" onClick={handleClose} disabled={isCreatingTopic}>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isUploading || isCreatingTopic}>
               Hủy
             </Button>
-            <Button type="submit" disabled={isCreatingTopic}>
-              {isCreatingTopic ? 'Đang đăng...' : 'Đăng bài'}
+            <Button type="submit" disabled={isUploading || isCreatingTopic}>
+              {isUploading ? 'Đang tải lên...' : isCreatingTopic ? 'Đang đăng...' : 'Đăng bài'}
             </Button>
           </DialogFooter>
         </form>

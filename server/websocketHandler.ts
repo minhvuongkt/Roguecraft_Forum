@@ -174,11 +174,20 @@ export class WebSocketHandler {
       // Log thông tin media để kiểm tra
       console.log("Chat message media received:", JSON.stringify(media, null, 2));
       
+      // Kiểm tra nếu media có dữ liệu
+      let mediaData = media;
+      if (media) {
+        console.log("Creating chat message with media:", JSON.stringify(mediaData, null, 2));
+      } else {
+        console.log("Creating chat message with media: null");
+        mediaData = null;
+      }
+      
       // Create chat message
       const message = await chatService.createMessage({
         userId: ws.userId,
         content,
-        media: media || null,
+        media: mediaData,
         mentions: mentions || []
       });
       
