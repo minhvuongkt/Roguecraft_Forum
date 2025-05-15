@@ -54,8 +54,16 @@ async function createSampleUsers() {
   
   for (const user of users) {
     try {
-      const createdUser = await storage.createUser(user);
-      createdUsers.push(createdUser);
+      // Check if user already exists
+      const existingUser = await storage.getUserByUsername(user.username);
+      
+      if (existingUser) {
+        console.log(`User ${user.username} already exists, skipping creation.`);
+        createdUsers.push(existingUser);
+      } else {
+        const createdUser = await storage.createUser(user);
+        createdUsers.push(createdUser);
+      }
     } catch (error) {
       console.error(`Failed to create user ${user.username}:`, error);
     }
@@ -66,6 +74,13 @@ async function createSampleUsers() {
 
 async function createSampleTopics(users: any[]) {
   if (users.length === 0) return [];
+  
+  // Check if topics already exist
+  const existingTopics = await storage.getTopics(100);
+  if (existingTopics.length > 0) {
+    console.log(`${existingTopics.length} topics already exist, skipping topic creation.`);
+    return existingTopics;
+  }
   
   const categories = ['Survival', 'Creative', 'Mods', 'Redstone', 'PvP', 'Servers'];
   
@@ -140,58 +155,85 @@ async function createSampleTopics(users: any[]) {
 async function createSampleComments(users: any[], topics: any[]) {
   if (users.length === 0 || topics.length === 0) return;
   
-  const comments: InsertComment[] = [
-    {
-      topicId: topics[0].id,
-      userId: users[1].id,
-      content: 'Cảm ơn admin vì đã tạo diễn đàn Minecraft này! Rất vui được là một phần của cộng đồng.',
-      media: null,
-      isAnonymous: false
-    },
-    {
-      topicId: topics[1].id,
-      userId: users[2].id,
-      content: 'Bạn nên thử farm nguyên liệu bằng villagers, hiệu quả nhất là farm lúa mì và khoai tây.',
-      media: null,
-      isAnonymous: false
-    },
-    {
-      topicId: topics[1].id,
-      userId: users[0].id,
-      content: 'Iron golem farm cũng rất quan trọng để có nhiều sắt, nhất là khi chơi ở chế độ survival lâu dài.',
-      media: null,
-      isAnonymous: false
-    },
-    {
-      topicId: topics[2].id,
-      userId: users[3].id,
-      content: 'Tôi rất thích mod Applied Energistics 2, giúp quản lý kho đồ dễ dàng hơn nhiều.',
-      media: null,
-      isAnonymous: false
-    },
-    {
-      topicId: topics[3].id,
-      userId: users[2].id,
-      content: 'Bạn có thể dùng comparator, hopper và chest để tạo hệ thống sorting tự động rất hiệu quả.',
-      media: null,
-      isAnonymous: false
-    },
-    {
-      topicId: topics[4].id,
-      userId: users[0].id,
-      content: 'Bạn có thể thử server Hypixel, rất nhiều người chơi và có nhiều mini-game PvP hay.',
-      media: null,
-      isAnonymous: false
+  // Check if comments for each topic already exist
+  for (const topic of topics) {
+    const existingComments = await storage.getCommentsByTopicId(topic.id);
+    if (existingComments.length > 0) {
+      console.log(`Comments for topic ${topic.id} already exist, skipping comment creation.`);
+      continue;
     }
-  ];
-  
-  for (const comment of comments) {
-    try {
-      await storage.createComment(comment);
-    } catch (error) {
-      console.error(`Failed to create comment for topic ${comment.topicId}:`, error);
+    
+    // Only create comments for topics that don't have comments
+    const commentsForTopic = getCommentsForTopic(topic.id, users);
+    
+    for (const comment of commentsForTopic) {
+      try {
+        await storage.createComment(comment);
+      } catch (error) {
+        console.error(`Failed to create comment for topic ${comment.topicId}:`, error);
+      }
     }
   }
+}
+
+function getCommentsForTopic(topicId: number, users: any[]): InsertComment[] {
+  // This will return specific comments for specific topics
+  const allComments: {[key: number]: InsertComment[]} = {
+    1: [
+      {
+        topicId: topicId,
+        userId: users[1].id,
+        content: 'Cảm ơn admin vì đã tạo diễn đàn Minecraft này! Rất vui được là một phần của cộng đồng.',
+        media: null,
+        isAnonymous: false
+      }
+    ],
+    2: [
+      {
+        topicId: topicId,
+        userId: users[2].id,
+        content: 'Bạn nên thử farm nguyên liệu bằng villagers, hiệu quả nhất là farm lúa mì và khoai tây.',
+        media: null,
+        isAnonymous: false
+      },
+      {
+        topicId: topicId,
+        userId: users[0].id,
+        content: 'Iron golem farm cũng rất quan trọng để có nhiều sắt, nhất là khi chơi ở chế độ survival lâu dài.',
+        media: null,
+        isAnonymous: false
+      }
+    ],
+    3: [
+      {
+        topicId: topicId,
+        userId: users[3].id,
+        content: 'Tôi rất thích mod Applied Energistics 2, giúp quản lý kho đồ dễ dàng hơn nhiều.',
+        media: null,
+        isAnonymous: false
+      }
+    ],
+    4: [
+      {
+        topicId: topicId,
+        userId: users[2].id,
+        content: 'Bạn có thể dùng comparator, hopper và chest để tạo hệ thống sorting tự động rất hiệu quả.',
+        media: null,
+        isAnonymous: false
+      }
+    ],
+    5: [
+      {
+        topicId: topicId,
+        userId: users[0].id,
+        content: 'Bạn có thể thử server Hypixel, rất nhiều người chơi và có nhiều mini-game PvP hay.',
+        media: null,
+        isAnonymous: false
+      }
+    ]
+  };
+  
+  return allComments[topicId] || [];
 }
 
 async function createSampleChatMessages(users: any[]) {
