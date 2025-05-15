@@ -80,7 +80,11 @@ export function Forum() {
           </div>
         ) : topics.length > 0 ? (
           topics.map((topic) => (
-            <Topic key={topic.id} topic={topic} />
+            <Topic 
+              key={topic.id} 
+              topic={topic} 
+              onClick={() => handleTopicClick(topic.id)}
+            />
           ))
         ) : (
           <div className="text-center py-8">

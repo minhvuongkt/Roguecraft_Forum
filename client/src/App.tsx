@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/hooks/use-theme";
 import { Header } from "@/components/Header";
 import Home from "@/pages/Home";
 import ForumPage from "@/pages/ForumPage";
+import TopicDetailPage from "@/pages/TopicDetailPage";
 import ChatPage from "@/pages/ChatPage";
 import NotFound from "@/pages/not-found";
 
@@ -17,6 +18,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/forum" component={ForumPage} />
+      <Route path="/forum/:id" component={TopicDetailPage} />
       <Route path="/chat" component={ChatPage} />
       <Route component={NotFound} />
     </Switch>
