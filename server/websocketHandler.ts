@@ -187,7 +187,46 @@ export class WebSocketHandler {
   }
   
   private handleUserStatus(ws: ExtendedWebSocket, payload: any) {
-    // Update user status logic here
+    // Broadcast current online users to all clients
+    this.broadcastOnlineUsers();
+  }
+  
+  // Send list of online users to all connected clients
+  private broadcastOnlineUsers() {
+    const onlineUsers = this.getOnlineUsers();
+    
+    this.broadcast({
+      type: WebSocketMessageType.USER_STATUS,
+      payload: {
+        users: onlineUsers
+      }
+    });
+  }
+  
+  // Get list of online users with their basic information
+  private getOnlineUsers() {
+    const users: {
+      id: number;
+      username: string;
+      avatar: string | null;
+      lastActive: Date;
+    }[] = [];
+    
+    this.clients.forEach(client => {
+      if (client.userId && client.username && client.readyState === WebSocket.OPEN) {
+        // Avoid duplicates (same user may have multiple connections)
+        if (!users.some(u => u.id === client.userId)) {
+          users.push({
+            id: client.userId,
+            username: client.username,
+            avatar: null, // We could fetch this from a database if needed
+            lastActive: new Date()
+          });
+        }
+      }
+    });
+    
+    return users;
   }
   
   private sendToClient(client: ExtendedWebSocket, message: WebSocketMessage) {
