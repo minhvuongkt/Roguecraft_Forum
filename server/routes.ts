@@ -1,4 +1,4 @@
-import type { Express, Request, Response, NextFunction } from "express";
+import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
@@ -16,6 +16,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Initialize WebSocket server
   const wsHandler = new WebSocketHandler(httpServer);
+  
+  // Register upload routes
+  app.use('/api/uploads', uploadRoutes);
+  
+  // Serve static files from public directory
+  app.use('/chat-images', (req, res, next) => {
+    // Add cache control headers for images
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    next();
+  }, express.static('public/chat-images'));
+  
+  app.use('/topic-images', (req, res, next) => {
+    // Add cache control headers for images
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    next();
+  }, express.static('public/topic-images'));
   
   // Setup periodic broadcast of online users
   setInterval(async () => {
