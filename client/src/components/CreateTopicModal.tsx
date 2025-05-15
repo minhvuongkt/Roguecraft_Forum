@@ -56,33 +56,67 @@ export function CreateTopicModal({ isOpen, onClose }: CreateTopicModalProps) {
     }
 
     try {
+      setIsCreatingTopic(true);
       // Prepare media data if files are present
       let media = undefined;
       
       if (files.length > 0) {
-        // Tạo object với định dạng {"1": "/topic-images/path1", "2": "/topic-images/path2", ...}
-        // Ở trường hợp thực sự, cần upload file lên server trước
-        // Sử dụng uploadMultipleFiles ở đây để có định dạng {"1": "path1", "2": "path2", ...}
-        const formattedMedia: Record<string, string> = {};
-        files.forEach((file, index) => {
-          // Tạo URL giả lập, trong ứng dụng thực sẽ gọi API upload
-          formattedMedia[(index + 1).toString()] = `/topic-images/topic-image-${Date.now()}-${index}`;
-        });
-        media = formattedMedia;
+        try {
+          toast({
+            title: 'Đang tải lên hình ảnh',
+            description: 'Vui lòng đợi trong giây lát...'
+          });
+          
+          // Upload file lên server và nhận về định dạng JSON {"1": "/topic-images/path1", ...}
+          media = await uploadMultipleFiles(files, 'topic');
+          
+          console.log("Uploaded topic media:", media);
+        } catch (uploadError) {
+          console.error('Error uploading files:', uploadError);
+          toast({
+            title: 'Lỗi upload file',
+            description: uploadError instanceof Error ? uploadError.message : 'Đã xảy ra lỗi khi tải file',
+            variant: 'destructive',
+          });
+          setIsCreatingTopic(false);
+          return;
+        }
       }
       
-      await createTopic({
-        title,
-        content,
-        category,
-        isAnonymous,
-        media
-      });
+      try {
+        await createTopic({
+          title,
+          content,
+          category,
+          isAnonymous,
+          media
+        });
+        
+        toast({
+          title: 'Thành công',
+          description: 'Bài viết đã được tạo thành công',
+        });
+        
+        // Reset form and close modal
+        handleClose();
+      } catch (createError) {
+        console.error('Error creating topic:', createError);
+        toast({
+          title: 'Lỗi tạo bài viết',
+          description: createError instanceof Error ? createError.message : 'Đã xảy ra lỗi khi tạo bài viết',
+          variant: 'destructive',
+        });
+      }
       
-      // Reset form and close modal
-      handleClose();
+      setIsCreatingTopic(false);
     } catch (error) {
-      console.error('Error creating topic:', error);
+      setIsCreatingTopic(false);
+      console.error('Error in handleSubmit:', error);
+      toast({
+        title: 'Lỗi',
+        description: 'Đã xảy ra lỗi không xác định',
+        variant: 'destructive',
+      });
     }
   };
 
