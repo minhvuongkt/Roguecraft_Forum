@@ -197,6 +197,13 @@ async function createSampleComments(users: any[], topics: any[]) {
 async function createSampleChatMessages(users: any[]) {
   if (users.length === 0) return;
   
+  // Kiểm tra xem đã có tin nhắn chưa để tránh tạo trùng lặp
+  const existingMessages = await storage.getChatMessagesByDateRange(3);
+  if (existingMessages.length > 0) {
+    console.log('Chat messages already exist, skipping chat message creation.');
+    return;
+  }
+  
   // Create messages from the past few days to show the 3-day history feature
   const now = new Date();
   const threeDaysAgo = new Date(now);
@@ -253,19 +260,11 @@ async function createSampleChatMessages(users: any[]) {
     }
   ];
   
-  for (let i = 0; i < messages.length; i++) {
+  // Trong PostgreSQL, chúng ta không thể trực tiếp sửa createdAt sau khi tạo
+  // Thay vào đó, chúng ta sẽ tạo tin nhắn với thời gian hiện tại
+  for (const message of messages) {
     try {
-      // Set message time to be spread out over the past few days
-      const messageDate = new Date(threeDaysAgo);
-      messageDate.setHours(messageDate.getHours() + i * 2); // Space messages out by 2 hours
-      
-      const message = await storage.createChatMessage(messages[i]);
-      
-      // Manually update the createdAt time to simulate older messages
-      // Note: In a real database, you would use a query to set the date
-      // This is just for our in-memory storage
-      message.createdAt = messageDate;
-      
+      await storage.createChatMessage(message);
     } catch (error) {
       console.error(`Failed to create chat message:`, error);
     }
