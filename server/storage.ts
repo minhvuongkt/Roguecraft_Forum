@@ -25,6 +25,11 @@ export interface IStorage {
   incrementTopicViews(id: number): Promise<void>;
   toggleTopicLike(id: number, increment: boolean): Promise<void>;
   
+  // Topic Likes operations
+  addTopicLike(topicId: number, userId: number): Promise<boolean>;
+  removeTopicLike(topicId: number, userId: number): Promise<boolean>;
+  getTopicLike(topicId: number, userId: number): Promise<boolean>;
+  
   // Comment operations
   createComment(comment: InsertComment): Promise<Comment>;
   getCommentsByTopicId(topicId: number): Promise<Comment[]>;

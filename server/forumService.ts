@@ -153,8 +153,21 @@ export class ForumService {
     };
   }
   
-  async toggleTopicLike(topicId: number, increment: boolean): Promise<void> {
-    await storage.toggleTopicLike(topicId, increment);
+  async toggleTopicLike(topicId: number, userId: number, increment: boolean): Promise<boolean> {
+    try {
+      if (increment) {
+        return await storage.addTopicLike(topicId, userId);
+      } else {
+        return await storage.removeTopicLike(topicId, userId);
+      }
+    } catch (error) {
+      console.error('Error toggling topic like:', error);
+      return false;
+    }
+  }
+  
+  async checkTopicLike(topicId: number, userId: number): Promise<boolean> {
+    return await storage.getTopicLike(topicId, userId);
   }
 }
 

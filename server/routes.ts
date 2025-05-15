@@ -191,7 +191,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/forum/topics/:id/like', async (req: Request, res: Response) => {
     try {
       const topicId = parseInt(req.params.id);
-      const { action } = req.body;
+      const { action, userId } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ message: 'User ID is required' });
+      }
       
       // Check if topic exists
       const topic = await storage.getTopicById(topicId);
@@ -203,10 +207,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid action. Use "like" or "unlike"' });
       }
       
-      await forumService.toggleTopicLike(topicId, action === 'like');
-      res.status(200).json({ success: true });
+      let success;
+      if (action === 'like') {
+        success = await storage.addTopicLike(topicId, userId);
+      } else {
+        success = await storage.removeTopicLike(topicId, userId);
+      }
+      
+      const userHasLiked = await storage.getTopicLike(topicId, userId);
+      
+      res.status(200).json({ 
+        success,
+        userHasLiked 
+      });
     } catch (error) {
+      console.error('Error handling topic like:', error);
       res.status(400).json({ message: 'Failed to update like status' });
+    }
+  });
+  
+  // Check if user has liked a topic
+  app.get('/api/forum/topics/:id/like/:userId', async (req: Request, res: Response) => {
+    try {
+      const topicId = parseInt(req.params.id);
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(topicId) || isNaN(userId)) {
+        return res.status(400).json({ message: 'Invalid topic ID or user ID' });
+      }
+      
+      const userHasLiked = await storage.getTopicLike(topicId, userId);
+      
+      res.status(200).json({ userHasLiked });
+    } catch (error) {
+      console.error('Error checking topic like:', error);
+      res.status(400).json({ message: 'Failed to check like status' });
     }
   });
 

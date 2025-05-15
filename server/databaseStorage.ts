@@ -1,7 +1,13 @@
 import { IStorage } from './storage';
 import { db } from './db';
-import { users, topics, comments, chatMessages } from '@shared/schema';
-import { InsertUser, User, InsertTopic, Topic, InsertComment, Comment, InsertChatMessage, ChatMessage } from '@shared/schema';
+import { users, topics, comments, chatMessages, topicLikes } from '@shared/schema';
+import { 
+  InsertUser, User, 
+  InsertTopic, Topic, 
+  InsertComment, Comment, 
+  InsertChatMessage, ChatMessage,
+  InsertTopicLike, TopicLike 
+} from '@shared/schema';
 import { eq, and, gte, lt, desc, sql } from 'drizzle-orm';
 
 export class DatabaseStorage implements IStorage {
@@ -136,6 +142,71 @@ export class DatabaseStorage implements IStorage {
         sql`UPDATE ${topics} SET like_count = like_count - 1 WHERE id = ${id}`
       );
     }
+  }
+
+  // Topic Likes operations
+  async addTopicLike(topicId: number, userId: number): Promise<boolean> {
+    try {
+      // Check if the like already exists
+      const existingLike = await this.getTopicLike(topicId, userId);
+      if (existingLike) {
+        return false; // User already liked this topic
+      }
+      
+      // Add the like
+      await db.insert(topicLikes).values({
+        topicId,
+        userId
+      });
+      
+      // Increment like count
+      await this.toggleTopicLike(topicId, true);
+      
+      return true;
+    } catch (error) {
+      console.error('Error adding topic like:', error);
+      return false;
+    }
+  }
+  
+  async removeTopicLike(topicId: number, userId: number): Promise<boolean> {
+    try {
+      // Check if the like exists
+      const existingLike = await this.getTopicLike(topicId, userId);
+      if (!existingLike) {
+        return false; // User hasn't liked this topic
+      }
+      
+      // Remove the like
+      await db.delete(topicLikes)
+        .where(
+          and(
+            eq(topicLikes.topicId, topicId),
+            eq(topicLikes.userId, userId)
+          )
+        );
+      
+      // Decrement like count
+      await this.toggleTopicLike(topicId, false);
+      
+      return true;
+    } catch (error) {
+      console.error('Error removing topic like:', error);
+      return false;
+    }
+  }
+  
+  async getTopicLike(topicId: number, userId: number): Promise<boolean> {
+    const [like] = await db.select()
+      .from(topicLikes)
+      .where(
+        and(
+          eq(topicLikes.topicId, topicId),
+          eq(topicLikes.userId, userId)
+        )
+      );
+    
+    return !!like;
   }
 
   // Comment operations
