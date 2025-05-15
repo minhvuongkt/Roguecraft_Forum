@@ -331,16 +331,39 @@ export default function TopicDetailPage() {
         
         <div className="prose prose-lg dark:prose-invert max-w-none mb-6" dangerouslySetInnerHTML={{ __html: topic.content }} />
         
-        {topic.media && topic.media.type?.startsWith('image/') && (
-          <img 
-            src={topic.media.url}
-            alt="Topic media"
-            className="rounded-lg mb-6 max-h-96 max-w-full cursor-pointer"
-            onClick={() => {
-              setViewingImageUrl(topic.media.url);
-              setImageViewerOpen(true);
-            }}
-          />
+        {topic.media && (
+          <>
+            {/* Kiểm tra định dạng media mới {"1":"path1", "2":"path2"} */}
+            {typeof topic.media === 'object' && !topic.media.url && Object.keys(topic.media).some(key => /^\d+$/.test(key)) ? (
+              <div className={`mb-6 ${Object.keys(topic.media).length > 1 ? 'grid grid-cols-2 gap-3' : ''}`}>
+                {Object.entries(topic.media).map(([key, path]) => (
+                  <img 
+                    key={key}
+                    src={path as string}
+                    alt={`Topic image ${key}`}
+                    className="rounded-lg max-h-96 max-w-full cursor-pointer object-cover"
+                    onClick={() => {
+                      setViewingImageUrl(path as string);
+                      setImageViewerOpen(true);
+                    }}
+                  />
+                ))}
+              </div>
+            ) : (
+              /* Định dạng cũ */
+              topic.media.type?.startsWith('image/') && (
+                <img 
+                  src={topic.media.url}
+                  alt="Topic media"
+                  className="rounded-lg mb-6 max-h-96 max-w-full cursor-pointer"
+                  onClick={() => {
+                    setViewingImageUrl(topic.media.url);
+                    setImageViewerOpen(true);
+                  }}
+                />
+              )
+            )}
+          </>
         )}
         
         <div className="flex items-center gap-4 pb-6 border-b border-gray-200 dark:border-gray-800">

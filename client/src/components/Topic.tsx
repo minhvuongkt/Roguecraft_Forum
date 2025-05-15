@@ -32,25 +32,59 @@ function TopicComponent({ topic, onClick }: TopicProps) {
   const renderMedia = () => {
     if (!topic.media) return null;
     
-    // Simplified media renderer
-    if (topic.media.type?.startsWith('image/')) {
-      return (
-        <img
-          src={topic.media.url}
-          alt="Topic attachment"
-          className="rounded-lg mb-3 w-full max-h-80 object-cover"
-        />
-      );
-    }
-    
-    if (topic.media.type?.startsWith('video/')) {
-      return (
-        <video
-          src={topic.media.url}
-          controls
-          className="rounded-lg mb-3 w-full max-h-80"
-        />
-      );
+    try {
+      // Kiểm tra định dạng mới: {"1": "path1", "2": "path2", ...}
+      if (typeof topic.media === 'object' && !topic.media.url && Object.keys(topic.media).some(key => /^\d+$/.test(key))) {
+        // Định dạng mới - object với khóa số
+        if (Object.keys(topic.media).length === 1) {
+          // Chỉ một hình ảnh - hiển thị lớn hơn
+          const path = topic.media['1'];
+          return (
+            <img
+              src={path as string}
+              alt="Topic attachment"
+              className="rounded-lg mb-3 w-full max-h-80 object-cover"
+            />
+          );
+        } else {
+          // Nhiều hình ảnh - hiển thị dạng lưới
+          return (
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              {Object.entries(topic.media).map(([key, value]) => (
+                <img
+                  key={key}
+                  src={value as string}
+                  alt={`Image ${key}`}
+                  className="rounded-lg w-full max-h-60 object-cover"
+                />
+              ))}
+            </div>
+          );
+        }
+      }
+      
+      // Định dạng cũ
+      if (topic.media.type?.startsWith('image/')) {
+        return (
+          <img
+            src={topic.media.url}
+            alt="Topic attachment"
+            className="rounded-lg mb-3 w-full max-h-80 object-cover"
+          />
+        );
+      }
+      
+      if (topic.media.type?.startsWith('video/')) {
+        return (
+          <video
+            src={topic.media.url}
+            controls
+            className="rounded-lg mb-3 w-full max-h-80"
+          />
+        );
+      }
+    } catch (err) {
+      console.error("Error rendering topic media:", err);
     }
     
     return null;
