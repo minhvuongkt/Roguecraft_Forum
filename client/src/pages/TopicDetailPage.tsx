@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRoute, Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
-import { useForum, Comment as CommentType } from '@/hooks/useForum';
+import { useForum } from '@/hooks/useForum';
 import { useAuth } from '@/contexts/AuthContext';
+import { Comment as CommentType } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';

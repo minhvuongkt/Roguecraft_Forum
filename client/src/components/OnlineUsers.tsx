@@ -1,20 +1,14 @@
 import React, { useMemo } from 'react';
 import { useLocation } from 'wouter';
-import { useWebSocket, OnlineUser } from '@/contexts/WebSocketContext';
+import { useWebSocket } from '@/contexts/WebSocketContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
-
-// Định nghĩa kiểu User cho component
-interface UserType {
-  id: number;
-  username: string;
-  avatar: string | null;
-}
+import { OnlineUser, User } from '@/types';
 
 interface OnlineUsersProps {
-  currentUser: UserType | null;
+  currentUser: User | null;
 }
 
 export function OnlineUsers({ currentUser }: OnlineUsersProps) {
