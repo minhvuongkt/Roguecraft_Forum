@@ -36,27 +36,14 @@ export class ChatService {
   }
 
   async getRecentMessages(days: number = 3): Promise<any[]> {
+    // Messages already have user data joined from database
     const messages = await storage.getChatMessagesByDateRange(days);
     
-    // Fetch user information for each message
-    const enhancedMessages = await Promise.all(
-      messages.map(async (message) => {
-        const user = message.userId 
-          ? await storage.getUser(message.userId)
-          : undefined;
-        
-        return {
-          ...message,
-          user: user ? {
-            id: user.id,
-            username: user.username,
-            avatar: user.avatar
-          } : null
-        };
-      })
-    );
-    
-    return enhancedMessages;
+    // Convert date strings to Date objects for frontend
+    return messages.map(message => ({
+      ...message,
+      createdAt: message.createdAt
+    }));
   }
 
   async createMessage(message: InsertChatMessage): Promise<any> {
