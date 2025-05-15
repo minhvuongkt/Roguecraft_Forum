@@ -154,35 +154,35 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
   if (isCurrentUser) {
     return (
       <>
-        <div className="flex items-start justify-end space-x-2 mb-4">
-          <div className="flex flex-col items-end">
+        <div className="flex items-start justify-end gap-2 mb-2 group relative">
+          <div className="flex flex-col items-end max-w-[80%]">
             {showUser && (
-              <div className="flex items-center space-x-2 mb-1">
-                <span className="text-xs text-muted-foreground">
+              <div className="flex items-center gap-1 mb-0.5">
+                <span className="text-xs text-muted-foreground/80">
                   {formatTime(new Date(message.createdAt))}
                 </span>
-                <span className="font-medium text-sm">Tôi</span>
+                <span className="font-medium text-xs">Tôi</span>
               </div>
             )}
-            <div className="bg-primary text-primary-foreground p-2 rounded-lg max-w-xs sm:max-w-md break-words relative group">
-              <p className="text-sm">{parseMessageContent(message.content)}</p>
+            <div className="bg-blue-600 text-white p-2 px-3 rounded-2xl rounded-tr-sm max-w-full break-words relative group">
+              <p className="text-sm leading-relaxed">{parseMessageContent(message.content)}</p>
               {renderMedia()}
               
               {/* Reply button (visible on hover) */}
               <button 
                 onClick={handleReply}
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-primary-foreground/10 p-1 rounded-full hover:bg-primary-foreground/20"
+                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 p-1 rounded-full hover:bg-black/20"
                 title="Trả lời tin nhắn này"
               >
-                <CornerUpLeft className="h-4 w-4 text-primary-foreground" />
+                <CornerUpLeft className="h-3.5 w-3.5 text-white" />
               </button>
             </div>
           </div>
-          <Avatar className="h-8 w-8">
+          <Avatar className="h-7 w-7 mt-4">
             {currentUser?.avatar ? (
               <AvatarImage src={currentUser.avatar} alt={currentUser.username} />
             ) : (
-              <AvatarFallback className="bg-primary text-primary-foreground">
+              <AvatarFallback className="bg-blue-500 text-white text-xs">
                 {currentUser?.username.substring(0, 2).toUpperCase()}
               </AvatarFallback>
             )}
@@ -202,19 +202,19 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
   
   return (
     <>
-      <div className="flex items-start space-x-2 mb-4 max-w-[85%]">
-        <Avatar className="h-8 w-8">
+      <div className="flex items-start gap-2 mb-2 max-w-[90%] group relative">
+        <Avatar className="h-7 w-7 mt-4">
           {message.user?.avatar ? (
             <AvatarImage src={message.user.avatar} alt={message.user.username} />
           ) : (
-            <AvatarFallback className="bg-secondary text-secondary-foreground">
+            <AvatarFallback className="bg-gray-500 text-white text-xs">
               {message.user?.username.substring(0, 2).toUpperCase() || 'U'}
             </AvatarFallback>
           )}
         </Avatar>
-        <div>
+        <div className="max-w-[90%]">
           {showUser && (
-            <div className="flex items-center space-x-2 mb-1">
+            <div className="flex items-center gap-1 mb-0.5">
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
@@ -222,26 +222,26 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                     navigate(`/user/${message.user.id}`);
                   }
                 }}
-                className="font-medium text-sm text-primary hover:underline focus:outline-none"
+                className="font-medium text-xs text-gray-800 dark:text-gray-200 hover:underline focus:outline-none"
               >
                 {message.user?.username || 'Unknown'}
               </button>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-muted-foreground/80">
                 {formatTime(new Date(message.createdAt))}
               </span>
             </div>
           )}
-          <div className="bg-muted p-2 rounded-lg relative group">
-            <p className="text-sm">{parseMessageContent(message.content)}</p>
+          <div className="bg-gray-200 dark:bg-gray-800 p-2 px-3 rounded-2xl rounded-tl-sm dark:text-gray-100 relative group">
+            <p className="text-sm leading-relaxed">{parseMessageContent(message.content)}</p>
             {renderMedia()}
             
             {/* Reply button (visible on hover) */}
             <button 
               onClick={handleReply}
-              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 p-1 rounded-full hover:bg-background"
+              className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-300/50 dark:bg-gray-700/50 p-1 rounded-full hover:bg-gray-300 dark:hover:bg-gray-700"
               title="Trả lời tin nhắn này"
             >
-              <CornerUpLeft className="h-4 w-4 text-primary" />
+              <CornerUpLeft className="h-3.5 w-3.5 text-gray-700 dark:text-gray-300" />
             </button>
           </div>
         </div>

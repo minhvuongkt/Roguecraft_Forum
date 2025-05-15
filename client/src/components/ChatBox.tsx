@@ -4,7 +4,7 @@ import { Message } from '@/components/Message';
 import { MessageInput } from '@/components/ui/message-input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Search, MoreVertical, Send, User, AlertCircle, X } from 'lucide-react';
+import { Search, MoreVertical, Send, User, AlertCircle, X, CornerUpLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWebSocket } from '@/contexts/WebSocketContext';
 import { FixedSizeList as VirtualList } from 'react-window';
@@ -163,31 +163,36 @@ export function ChatBox() {
   };
   
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow h-[calc(100vh-150px)] md:h-[calc(100vh-120px)] flex flex-col">
+    <div className="bg-white dark:bg-gray-900 rounded-lg shadow h-[calc(100vh-150px)] md:h-[calc(100vh-120px)] flex flex-col border border-gray-200 dark:border-gray-800">
       {/* Chat Header */}
-      <div className="p-4 border-b dark:border-gray-700 flex justify-between items-center">
-        <h2 className="font-bold text-lg">
-          Chat cộng đồng
-          {isConnected && <span className="ml-2 inline-flex h-2 w-2 rounded-full bg-green-500"></span>}
-          {!isConnected && <span className="ml-2 inline-flex h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600"></span>}
-        </h2>
+      <div className="p-3 border-b dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900 rounded-t-lg">
+        <div className="flex items-center">
+          <h2 className="font-semibold text-base">
+            Chat trong cộng đồng
+            {isConnected && <span className="ml-2 inline-flex h-2 w-2 rounded-full bg-green-500"></span>}
+            {!isConnected && <span className="ml-2 inline-flex h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600"></span>}
+          </h2>
+          <div className="ml-3 bg-gray-200/70 dark:bg-gray-800/70 rounded-full px-2 py-0.5 text-xs text-gray-700 dark:text-gray-300 flex items-center">
+            <span>{onlineUsers.length} online</span>
+          </div>
+        </div>
         <div className="flex space-x-2">
-          <Button variant="ghost" size="icon">
-            <Search className="h-5 w-5 text-muted-foreground" />
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" title="Tìm kiếm">
+            <Search className="h-4 w-4 text-muted-foreground" />
           </Button>
           {!user && (
             <Button 
-              variant="ghost" 
+              variant="outline" 
               size="sm" 
               onClick={() => setIsUsernameDialogOpen(true)}
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 text-xs h-8 rounded-full"
             >
-              <User className="h-4 w-4" />
+              <User className="h-3.5 w-3.5" />
               <span>Đặt tên</span>
             </Button>
           )}
-          <Button variant="ghost" size="icon">
-            <MoreVertical className="h-5 w-5 text-muted-foreground" />
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" title="Tùy chọn khác">
+            <MoreVertical className="h-4 w-4 text-muted-foreground" />
           </Button>
         </div>
       </div>
@@ -258,22 +263,29 @@ export function ChatBox() {
         
         {/* Reply info bar */}
         {replyingTo && (
-          <div className="bg-muted/60 rounded-md p-2 mb-3 flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="text-sm mr-2">
-                Đang trả lời <span className="font-semibold">{replyingTo.user?.username || 'Unknown'}</span>:
+          <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 dark:border-blue-700 rounded-md p-2 mb-3 flex items-center justify-between">
+            <div className="flex items-center overflow-hidden">
+              <div className="flex-shrink-0 mr-2">
+                <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center">
+                  <CornerUpLeft className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                </div>
               </div>
-              <div className="text-xs text-muted-foreground truncate max-w-[200px]">
-                {replyingTo.content}
+              <div className="overflow-hidden">
+                <div className="text-xs text-blue-700 dark:text-blue-300 font-medium flex items-center">
+                  Đang trả lời <span className="font-semibold ml-1">{replyingTo.user?.username || 'Unknown'}</span>
+                </div>
+                <div className="text-xs text-blue-600/70 dark:text-blue-400/70 truncate max-w-[200px]">
+                  {replyingTo.content}
+                </div>
               </div>
             </div>
             <Button 
               size="icon" 
               variant="ghost" 
               onClick={handleCancelReply}
-              className="h-6 w-6"
+              className="h-6 w-6 rounded-full hover:bg-blue-200/50 dark:hover:bg-blue-800/50"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3 w-3 text-blue-700 dark:text-blue-300" />
             </Button>
           </div>
         )}

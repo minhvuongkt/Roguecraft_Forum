@@ -3,9 +3,11 @@ import { useLocation } from 'wouter';
 import { useWebSocket } from '@/contexts/WebSocketContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
 import { OnlineUser, User } from '@/types';
+import { Users } from 'lucide-react';
 
 interface OnlineUsersProps {
   currentUser: User | null;
@@ -53,66 +55,94 @@ export function OnlineUsers({ currentUser }: OnlineUsersProps) {
     return `${days} ngày trước`;
   };
   
+  if (sortedUsers.length === 0) {
+    return (
+      <div className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Users className="h-4 w-4 text-gray-500" />
+          <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">Người dùng đang online (0)</h3>
+        </div>
+        <div className="rounded-xl bg-gray-50 dark:bg-gray-800/50 p-6 text-center border border-gray-100 dark:border-gray-800">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+            <Users className="h-6 w-6 text-gray-400 dark:text-gray-500" />
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Không có người dùng trực tuyến
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-sm">
-          Người dùng online ({onlineUsers.length})
-        </h3>
+    <div className="p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Users className="h-4 w-4 text-gray-500" />
+        <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">Người dùng đang online ({sortedUsers.length})</h3>
+        <Badge variant="outline" className="text-[10px] ml-auto py-0 h-5 bg-green-50 text-green-600 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
+          Live
+        </Badge>
       </div>
       
-      <ScrollArea className="h-[280px] pr-3" type="auto">
-        <div className="space-y-2">
-          {sortedUsers.map((user) => (
-            <TooltipProvider key={user.id}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div 
-                    className={`flex items-center p-2 rounded-md cursor-pointer
-                      ${user.id === currentUser?.id ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-100 dark:hover:bg-gray-700/50'}`}
-                    onClick={() => navigate(`/user/${user.id}`)}
-                  >
-                    <div className="relative">
-                      <Avatar className="h-8 w-8">
-                        {user.avatar ? (
-                          <AvatarImage src={user.avatar} alt={user.username} />
-                        ) : (
-                          <AvatarFallback>
-                            {getInitials(user.username)}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-1 ring-white dark:ring-gray-800"></span>
-                    </div>
-                    <div className="ml-3 overflow-hidden">
-                      <p className="text-sm font-medium truncate">
-                        {user.username}
-                        {user.id === currentUser?.id && " (bạn)"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Hoạt động {getTimeAgo(user.lastActive)}
-                      </p>
-                    </div>
+      <ScrollArea className="h-[calc(100vh-350px)] pr-3">
+        {sortedUsers.map(user => (
+          <TooltipProvider key={user.id}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div 
+                  className={`flex items-center py-2.5 border-b border-gray-100 dark:border-gray-800 last:border-0 group 
+                    hover:bg-gray-50 dark:hover:bg-gray-800/50 -mx-1 px-2 rounded-lg transition-colors cursor-pointer
+                    ${user.id === currentUser?.id ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
+                  onClick={() => navigate(`/user/${user.id}`)}
+                >
+                  <div className="relative mr-3 flex-shrink-0">
+                    <Avatar className="h-10 w-10 border-2 border-white dark:border-gray-900 shadow-sm">
+                      {user.avatar ? (
+                        <AvatarImage src={user.avatar} alt={user.username} />
+                      ) : (
+                        <AvatarFallback className={`${
+                          user.id === currentUser?.id 
+                            ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-200' 
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+                        } text-sm`}>
+                          {getInitials(user.username)}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-white dark:border-gray-900"></span>
                   </div>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <div className="text-xs">
-                    <p className="font-bold">{user.username}</p>
-                    <p className="text-muted-foreground">
-                      Hoạt động {getTimeAgo(user.lastActive)}
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center">
+                      <p className="font-medium text-sm truncate text-gray-800 dark:text-gray-200">
+                        {user.username}
+                        {user.id === currentUser?.id && 
+                          <span className="ml-1 text-xs text-blue-600 dark:text-blue-400">(bạn)</span>
+                        }
+                      </p>
+                      <span className="text-[10px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-full group-hover:bg-gray-200 dark:group-hover:bg-gray-700 transition-colors">
+                        {getTimeAgo(new Date(user.lastActive))}
+                      </span>
+                    </div>
+                    <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block"></span>
+                      Đang hoạt động
                     </p>
                   </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ))}
-          
-          {onlineUsers.length === 0 && (
-            <div className="text-center p-4 text-muted-foreground text-sm">
-              Chưa có người dùng nào online
-            </div>
-          )}
-        </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="p-2 text-xs">
+                <div className="flex flex-col">
+                  <p className="font-semibold">{user.username}</p>
+                  <p className="text-green-600 dark:text-green-400 flex items-center gap-1 mt-1">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block"></span>
+                    Online từ {getTimeAgo(new Date(user.lastActive))}
+                  </p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ))}
       </ScrollArea>
     </div>
   );

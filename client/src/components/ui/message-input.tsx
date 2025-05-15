@@ -149,33 +149,37 @@ export function MessageInput({
   
   return (
     <div className="relative">
-      <div className="flex items-start space-x-2">
+      <div className="flex items-center space-x-2">
         <div className="flex-1 min-h-[40px]">
-          <div className="relative">
+          <div className="relative bg-gray-100 dark:bg-gray-800/60 rounded-full pr-10">
             <Textarea
               ref={textareaRef}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
-              className="resize-none min-h-[40px] py-2 pr-12"
+              className="resize-none min-h-[40px] py-2 px-4 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-full bg-transparent"
               disabled={disabled}
+              style={{
+                maxHeight: '120px',
+                overflowY: 'auto'
+              }}
             />
             
             {isMentioning && (
               <MentionList users={filteredUsers} onSelect={handleSelectUser} />
             )}
             
-            <div className="absolute bottom-2 right-2 flex items-center space-x-1">
+            <div className="absolute bottom-1.5 right-3 flex items-center gap-1">
               <Popover open={showFileUpload} onOpenChange={setShowFileUpload}>
                 <PopoverTrigger asChild>
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    className="h-7 w-7 rounded-full text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700"
                     disabled={disabled}
                   >
-                    <Image className="h-5 w-5" />
+                    <Image className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80" align="end">
@@ -195,22 +199,24 @@ export function MessageInput({
           onClick={handleSend} 
           size="icon" 
           disabled={isOverLimit || (!message.trim() && files.length === 0) || disabled || isUploading}
-          className="h-10 w-10 rounded-full"
+          className="h-10 w-10 rounded-full bg-blue-600 hover:bg-blue-700 text-white"
         >
           {isUploading ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <Loader2 className="h-4.5 w-4.5 animate-spin" />
           ) : (
-            <Send className="h-5 w-5" />
+            <Send className="h-4.5 w-4.5" />
           )}
         </Button>
       </div>
       
       {/* Character counter */}
-      <div className="flex justify-end mt-1">
-        <span className={`text-xs ${isOverLimit ? 'text-destructive' : 'text-muted-foreground'}`}>
-          {charCount}/{maxLength}
-        </span>
-      </div>
+      {charCount > 0 && (
+        <div className="flex justify-end mt-1">
+          <span className={`text-xs px-2 py-0.5 rounded-full ${isOverLimit ? 'text-red-500 bg-red-100 dark:bg-red-900/30' : 'text-gray-500 dark:text-gray-400'}`}>
+            {charCount}/{maxLength}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
