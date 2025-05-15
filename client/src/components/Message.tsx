@@ -5,18 +5,27 @@ import { ChatMessage } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { ImageViewerModal } from './ImageViewerModal';
+import { Reply, CornerUpLeft } from 'lucide-react';
 
 interface MessageProps {
   message: ChatMessage;
   showUser?: boolean;
+  onReply?: (message: ChatMessage) => void;
 }
 
-function MessageComponent({ message, showUser = true }: MessageProps) {
+function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
   const { user: currentUser } = useAuth();
   const [, navigate] = useLocation();
   const isCurrentUser = message.userId === currentUser?.id;
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState("");
+  
+  // Handle reply to message
+  const handleReply = () => {
+    if (onReply) {
+      onReply(message);
+    }
+  };
   
   // Format time
   const formatTime = (date: Date): string => {
@@ -155,9 +164,18 @@ function MessageComponent({ message, showUser = true }: MessageProps) {
                 <span className="font-medium text-sm">Tôi</span>
               </div>
             )}
-            <div className="bg-primary text-primary-foreground p-2 rounded-lg max-w-xs sm:max-w-md break-words">
+            <div className="bg-primary text-primary-foreground p-2 rounded-lg max-w-xs sm:max-w-md break-words relative group">
               <p className="text-sm">{parseMessageContent(message.content)}</p>
               {renderMedia()}
+              
+              {/* Reply button (visible on hover) */}
+              <button 
+                onClick={handleReply}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-primary-foreground/10 p-1 rounded-full hover:bg-primary-foreground/20"
+                title="Trả lời tin nhắn này"
+              >
+                <CornerUpLeft className="h-4 w-4 text-primary-foreground" />
+              </button>
             </div>
           </div>
           <Avatar className="h-8 w-8">
@@ -213,9 +231,18 @@ function MessageComponent({ message, showUser = true }: MessageProps) {
               </span>
             </div>
           )}
-          <div className="bg-muted p-2 rounded-lg">
+          <div className="bg-muted p-2 rounded-lg relative group">
             <p className="text-sm">{parseMessageContent(message.content)}</p>
             {renderMedia()}
+            
+            {/* Reply button (visible on hover) */}
+            <button 
+              onClick={handleReply}
+              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 p-1 rounded-full hover:bg-background"
+              title="Trả lời tin nhắn này"
+            >
+              <CornerUpLeft className="h-4 w-4 text-primary" />
+            </button>
           </div>
         </div>
       </div>
