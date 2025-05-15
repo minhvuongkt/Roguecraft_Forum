@@ -29,7 +29,7 @@ const CommentItem = ({
   
   return (
     <div className={`${depth > 0 ? 'ml-6 border-l-2 border-gray-200 dark:border-gray-700 pl-4' : ''}`}>
-      <Card className="mb-3">
+      <Card className={`mb-3 ${depth > 0 ? 'bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700' : ''}`}>
         <CardContent className="p-4">
           <div className="flex items-center gap-3 mb-2">
             {comment.isAnonymous ? (
@@ -413,7 +413,9 @@ export default function TopicDetailPage() {
       {/* Comments list */}
       <div>
         <h3 className="text-lg font-semibold mb-4">
-          {comments.length} bình luận
+          {comments.length} bình luận {comments.length > 0 && `(${
+            comments.filter(c => !c.parentCommentId).length} bình luận gốc, ${
+            comments.filter(c => c.parentCommentId).length} phản hồi)`}
         </h3>
         
         {isCommentsLoading ? (

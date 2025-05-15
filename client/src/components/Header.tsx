@@ -125,7 +125,16 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem className="cursor-pointer">
+                  <DropdownMenuItem 
+                    className="cursor-pointer" 
+                    onClick={() => {
+                      if (user?.isTemporary) {
+                        setIsLoginModalOpen(true);
+                      } else {
+                        setLocation(`/user/${user?.id}`);
+                      }
+                    }}
+                  >
                     <User className="mr-2 h-4 w-4" />
                     <span>Trang cá nhân</span>
                   </DropdownMenuItem>
