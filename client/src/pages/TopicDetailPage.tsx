@@ -114,6 +114,10 @@ export default function TopicDetailPage() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const commentFormRef = useRef<HTMLDivElement>(null);
+  
+  // Image viewer state
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [viewingImageUrl, setViewingImageUrl] = useState("");
 
   const {
     data: topic,
@@ -331,7 +335,11 @@ export default function TopicDetailPage() {
           <img 
             src={topic.media.url}
             alt="Topic media"
-            className="rounded-lg mb-6 max-h-96 max-w-full"
+            className="rounded-lg mb-6 max-h-96 max-w-full cursor-pointer"
+            onClick={() => {
+              setViewingImageUrl(topic.media.url);
+              setImageViewerOpen(true);
+            }}
           />
         )}
         
@@ -456,6 +464,14 @@ export default function TopicDetailPage() {
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
+      />
+
+      {/* Image viewer modal */}
+      <ImageViewerModal
+        isOpen={imageViewerOpen}
+        onClose={() => setImageViewerOpen(false)}
+        imageUrl={viewingImageUrl}
+        title="Hình ảnh đính kèm"
       />
     </div>
   );
