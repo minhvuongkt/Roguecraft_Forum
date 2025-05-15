@@ -221,11 +221,19 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           ]);
           
           // Show notification if message is from someone else
-          if (data.payload.userId !== user?.id && Notification.permission === 'granted') {
-            const username = data.payload.user?.username || 'Người dùng';
-            new Notification('Tin nhắn mới', {
-              body: `${username}: ${data.payload.content.substring(0, 50)}${data.payload.content.length > 50 ? '...' : ''}`,
-            });
+          if (data.payload.userId !== user?.id) {
+            // Import hook không hoạt động ở đây, nên chúng ta vẫn phải dùng Notification API trực tiếp
+            if (Notification.permission === 'granted') {
+              const username = data.payload.user?.username || 'Người dùng';
+              try {
+                new Notification('Tin nhắn mới', {
+                  body: `${username}: ${data.payload.content.substring(0, 50)}${data.payload.content.length > 50 ? '...' : ''}`,
+                  icon: '/favicon.ico',
+                });
+              } catch (error) {
+                console.error('Lỗi hiển thị thông báo:', error);
+              }
+            }
           }
         }
         break;

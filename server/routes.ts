@@ -6,9 +6,9 @@ import { WebSocketHandler } from "./websocketHandler";
 import { chatService } from "./chatService";
 import { forumService } from "./forumService";
 import { z } from "zod";
-import { insertChatMessageSchema, insertUserSchema, insertTopicSchema, insertCommentSchema, WebSocketMessageType, comments, topics, chatMessages } from "@shared/schema";
+import { insertChatMessageSchema, insertUserSchema, insertTopicSchema, insertCommentSchema, WebSocketMessageType, comments, topics, chatMessages, users, topicLikes } from "@shared/schema";
 import { db } from "./db";
-import { and, eq, desc, count } from "drizzle-orm";
+import { and, eq, desc, count, sql } from "drizzle-orm";
 import uploadRoutes from "./routes/uploads";
 
 export async function registerRoutes(app: Express): Promise<Server> {
