@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Search, MoreVertical, Send, User, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWebSocket } from '@/contexts/WebSocketContext';
 import { FixedSizeList as VirtualList } from 'react-window';
 import { 
   Dialog,
@@ -22,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export function ChatBox() {
   const { groupedMessages, sendMessage } = useChat();
+  const { isConnected, onlineUsers } = useWebSocket();
   const { user, setTemporaryUser } = useAuth();
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -137,7 +139,11 @@ export function ChatBox() {
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow h-[calc(100vh-150px)] md:h-[calc(100vh-120px)] flex flex-col">
       {/* Chat Header */}
       <div className="p-4 border-b dark:border-gray-700 flex justify-between items-center">
-        <h2 className="font-bold text-lg">Chat box</h2>
+        <h2 className="font-bold text-lg">
+          Chat cộng đồng
+          {isConnected && <span className="ml-2 inline-flex h-2 w-2 rounded-full bg-green-500"></span>}
+          {!isConnected && <span className="ml-2 inline-flex h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600"></span>}
+        </h2>
         <div className="flex space-x-2">
           <Button variant="ghost" size="icon">
             <Search className="h-5 w-5 text-muted-foreground" />
