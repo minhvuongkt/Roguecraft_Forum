@@ -187,6 +187,28 @@ export default function TopicDetailPage() {
     });
   };
 
+  const handleReplyToComment = (commentId: number) => {
+    if (!isAuthenticated) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+    
+    setReplyingTo(commentId);
+    
+    // Scroll to comment form
+    if (commentFormRef.current) {
+      commentFormRef.current.scrollIntoView({ behavior: 'smooth' });
+      
+      // Focus on textarea after scrolling
+      setTimeout(() => {
+        const textarea = commentFormRef.current?.querySelector('textarea');
+        if (textarea) {
+          textarea.focus();
+        }
+      }, 500);
+    }
+  };
+
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -209,10 +231,12 @@ export default function TopicDetailPage() {
       content: comment,
       isAnonymous,
       media: null,
+      parentCommentId: replyingTo,
     });
     
     setComment('');
     setIsAnonymous(false);
+    setReplyingTo(null);
   };
 
   if (isLoading) {
@@ -321,12 +345,32 @@ export default function TopicDetailPage() {
       </div>
       
       {/* Comment form */}
-      <div className="mb-8">
-        <h2 className="text-xl font-bold mb-4">Bình luận</h2>
+      <div className="mb-8" ref={commentFormRef}>
+        <h2 className="text-xl font-bold mb-4">
+          {replyingTo ? 'Trả lời bình luận' : 'Bình luận'}
+        </h2>
+        
+        {replyingTo && (
+          <div className="mb-3 p-3 border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-blue-600 dark:text-blue-400">
+                Đang trả lời bình luận của {comments.find(c => c.id === replyingTo)?.user?.username || 'người dùng'}
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setReplyingTo(null)}
+                className="h-6 text-xs"
+              >
+                Hủy
+              </Button>
+            </div>
+          </div>
+        )}
         
         <form onSubmit={handleSubmitComment} className="mb-6">
           <Textarea
-            placeholder="Viết bình luận của bạn..."
+            placeholder={replyingTo ? "Viết câu trả lời của bạn..." : "Viết bình luận của bạn..."}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             className="mb-3 min-h-[100px]"
@@ -347,7 +391,7 @@ export default function TopicDetailPage() {
             </div>
             
             <Button type="submit" disabled={isCreatingComment}>
-              {isCreatingComment ? 'Đang gửi...' : 'Gửi bình luận'}
+              {isCreatingComment ? 'Đang gửi...' : replyingTo ? 'Gửi trả lời' : 'Gửi bình luận'}
             </Button>
           </div>
         </form>
@@ -376,49 +420,19 @@ export default function TopicDetailPage() {
             <p className="text-muted-foreground">Chưa có bình luận nào. Hãy là người đầu tiên bình luận!</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {comments.map(comment => (
-              <Card key={comment.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    {comment.isAnonymous ? (
-                      <div className="flex items-center">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                          <span className="text-sm font-bold">?</span>
-                        </div>
-                        <div className="ml-2">
-                          <div className="text-sm font-medium">Ẩn danh</div>
-                        </div>
-                      </div>
-                    ) : comment.user ? (
-                      <div className="flex items-center">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={comment.user.avatar || undefined} />
-                          <AvatarFallback>{(comment.user.username || '?').substring(0, 2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div className="ml-2">
-                          <div className="text-sm font-medium">{comment.user.username}</div>
-                        </div>
-                      </div>
-                    ) : null}
-                    
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {formatDate(comment.createdAt)}
-                    </span>
-                  </div>
-                  
-                  <div className="text-sm" dangerouslySetInnerHTML={{ __html: comment.content }} />
-                  
-                  {comment.media && comment.media.type?.startsWith('image/') && (
-                    <img 
-                      src={comment.media.url}
-                      alt="Comment media"
-                      className="rounded-lg mt-2 max-h-48"
-                    />
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+          <div className="space-y-6">
+            {/* Only render root comments (no parentCommentId) */}
+            {comments
+              .filter(comment => !comment.parentCommentId)
+              .map(comment => (
+                <CommentItem 
+                  key={comment.id} 
+                  comment={comment} 
+                  formatDate={formatDate}
+                  onReply={handleReplyToComment}
+                />
+              ))
+            }
           </div>
         )}
       </div>
