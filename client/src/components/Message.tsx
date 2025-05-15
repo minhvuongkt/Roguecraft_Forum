@@ -132,9 +132,17 @@ function MessageComponent({ message, showUser = true }: MessageProps) {
       <div>
         {showUser && (
           <div className="flex items-center space-x-2 mb-1">
-            <span className="font-medium text-sm text-primary">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                if (message.user?.id) {
+                  window.location.href = `/user/${message.user.id}`;
+                }
+              }}
+              className="font-medium text-sm text-primary hover:underline focus:outline-none"
+            >
               {message.user?.username || 'Unknown'}
-            </span>
+            </button>
             <span className="text-xs text-muted-foreground">
               {formatTime(new Date(message.createdAt))}
             </span>

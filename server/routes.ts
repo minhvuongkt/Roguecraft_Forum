@@ -6,9 +6,9 @@ import { WebSocketHandler } from "./websocketHandler";
 import { chatService } from "./chatService";
 import { forumService } from "./forumService";
 import { z } from "zod";
-import { insertChatMessageSchema, insertUserSchema, insertTopicSchema, insertCommentSchema, WebSocketMessageType, comments } from "@shared/schema";
+import { insertChatMessageSchema, insertUserSchema, insertTopicSchema, insertCommentSchema, WebSocketMessageType, comments, topics, chatMessages } from "@shared/schema";
 import { db } from "./db";
-import { and, eq } from "drizzle-orm";
+import { and, eq, desc, count } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -268,6 +268,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error checking topic like:', error);
       res.status(400).json({ message: 'Failed to check like status' });
+    }
+  });
+  
+  // User profile endpoint
+  app.get('/api/users/:id', async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: 'Invalid user ID' });
+      }
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Return user without password
+      const { password, ...userWithoutPassword } = user;
+      
+      // Get user's topics
+      const userTopics = await db.select({
+        id: topics.id,
+        title: topics.title,
+        category: topics.category,
+        createdAt: topics.createdAt,
+        viewCount: topics.viewCount,
+        likeCount: topics.likeCount,
+      })
+      .from(topics)
+      .where(eq(topics.userId, userId))
+      .orderBy(desc(topics.createdAt))
+      .limit(5);
+      
+      // Get user's total message count
+      const [messageCount] = await db.select({
+        count: count()
+      })
+      .from(chatMessages)
+      .where(eq(chatMessages.userId, userId));
+      
+      res.json({
+        user: userWithoutPassword,
+        topics: userTopics,
+        stats: {
+          messageCount: messageCount?.count || 0,
+          topicCount: userTopics.length
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      res.status(500).json({ message: 'Internal server error' });
     }
   });
 

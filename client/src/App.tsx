@@ -11,6 +11,7 @@ import Home from "@/pages/Home";
 import ForumPage from "@/pages/ForumPage";
 import TopicDetailPage from "@/pages/TopicDetailPage";
 import ChatPage from "@/pages/ChatPage";
+import UserProfilePage from "@/pages/UserProfilePage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/forum" component={ForumPage} />
       <Route path="/forum/:id" component={TopicDetailPage} />
       <Route path="/chat" component={ChatPage} />
+      <Route path="/user/:id" component={UserProfilePage} />
       <Route component={NotFound} />
     </Switch>
   );
