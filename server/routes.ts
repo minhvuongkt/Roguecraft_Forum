@@ -335,12 +335,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .from(topics)
       .where(eq(topics.userId, userId));
       
+      // Đảm bảo rằng messageCount và topicCount là số
+      const messageCount = messageCountResult[0]?.count ? Number(messageCountResult[0].count) : 0;
+      const topicCount = topicCountResult[0]?.count ? Number(topicCountResult[0].count) : 0;
+      
       res.json({
         user: userWithoutPassword,
         topics: userTopics,
         stats: {
-          messageCount: messageCountResult[0]?.count || 0,
-          topicCount: topicCountResult[0]?.count || 0
+          messageCount,
+          topicCount
         }
       });
     } catch (error) {

@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, ThumbsUp, Share } from 'lucide-react';
-import { Topic as TopicType } from '@/hooks/useForum';
+import { Topic as TopicType } from '@/types';
 import { useForum } from '@/hooks/useForum';
 
 interface TopicProps {
