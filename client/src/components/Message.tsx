@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { useLocation } from 'wouter';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ChatMessage } from '@/contexts/WebSocketContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +12,7 @@ interface MessageProps {
 
 function MessageComponent({ message, showUser = true }: MessageProps) {
   const { user: currentUser } = useAuth();
+  const [, navigate] = useLocation();
   const isCurrentUser = message.userId === currentUser?.id;
   
   // Format time
