@@ -171,6 +171,9 @@ export class WebSocketHandler {
         });
       }
       
+      // Log thông tin media để kiểm tra
+      console.log("Chat message media received:", JSON.stringify(media, null, 2));
+      
       // Create chat message
       const message = await chatService.createMessage({
         userId: ws.userId,
@@ -178,6 +181,9 @@ export class WebSocketHandler {
         media: media || null,
         mentions: mentions || []
       });
+      
+      // Log thông tin message sau khi tạo
+      console.log("Chat message created:", JSON.stringify(message, null, 2));
       
       // Broadcast message to all clients
       this.broadcast({
