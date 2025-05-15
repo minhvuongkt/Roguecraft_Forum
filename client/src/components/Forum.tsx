@@ -1,0 +1,106 @@
+import React, { useState } from 'react';
+import { Topic } from '@/components/Topic';
+import { CreateTopicModal } from '@/components/CreateTopicModal';
+import { Button } from '@/components/ui/button';
+import { useForum } from '@/hooks/useForum';
+import { useAuth } from '@/contexts/AuthContext';
+import { PlusIcon } from 'lucide-react';
+import { LoginModal } from '@/components/LoginModal';
+
+export function Forum() {
+  const [isCreateTopicModalOpen, setIsCreateTopicModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const { topics, isTopicsLoading, selectedCategory, setSelectedCategory } = useForum();
+  const { isAuthenticated } = useAuth();
+
+  const categories = [
+    { id: 'all', name: 'Tất cả' },
+    { id: 'tech', name: 'Công nghệ' },
+    { id: 'entertainment', name: 'Giải trí' },
+    { id: 'qa', name: 'Hỏi đáp' },
+    { id: 'share', name: 'Chia sẻ' }
+  ];
+
+  const handleCreateTopicClick = () => {
+    if (isAuthenticated) {
+      setIsCreateTopicModalOpen(true);
+    } else {
+      setIsLoginModalOpen(true);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Forum Thảo Luận</h1>
+        <Button
+          onClick={handleCreateTopicClick}
+          className="bg-primary hover:bg-primary/90 text-white"
+        >
+          <PlusIcon className="mr-2 h-4 w-4" />
+          Tạo Topic Mới
+        </Button>
+      </div>
+
+      {/* Categories */}
+      <div className="flex flex-wrap gap-2">
+        {categories.map((category) => (
+          <Button
+            key={category.id}
+            variant={selectedCategory === category.name ? "default" : "outline"}
+            size="sm"
+            className={`rounded-full ${
+              selectedCategory === category.name
+                ? "bg-primary hover:bg-primary/90 text-white"
+                : "bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700"
+            }`}
+            onClick={() => setSelectedCategory(category.name)}
+          >
+            {category.name}
+          </Button>
+        ))}
+      </div>
+
+      {/* Topics */}
+      <div className="space-y-4">
+        {isTopicsLoading ? (
+          <div className="text-center py-8">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Đang tải bài viết...
+            </p>
+          </div>
+        ) : topics.length > 0 ? (
+          topics.map((topic) => (
+            <Topic key={topic.id} topic={topic} />
+          ))
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">
+              Không có bài viết nào trong danh mục này
+            </p>
+          </div>
+        )}
+
+        {topics.length > 0 && (
+          <Button
+            variant="outline"
+            className="w-full py-3"
+          >
+            Xem thêm bài viết
+          </Button>
+        )}
+      </div>
+
+      <CreateTopicModal
+        isOpen={isCreateTopicModalOpen}
+        onClose={() => setIsCreateTopicModalOpen(false)}
+      />
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+      />
+    </div>
+  );
+}

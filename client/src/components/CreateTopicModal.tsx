@@ -1,0 +1,182 @@
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { FileUpload } from '@/components/ui/file-upload';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { useForum } from '@/hooks/useForum';
+import { useAuth } from '@/contexts/AuthContext';
+
+interface CreateTopicModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function CreateTopicModal({ isOpen, onClose }: CreateTopicModalProps) {
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [category, setCategory] = useState('Công nghệ');
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  
+  const { createTopic, isCreatingTopic } = useForum();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: 'Lỗi',
+        description: 'Bạn cần đăng nhập để tạo bài viết',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (!title.trim() || !content.trim()) {
+      toast({
+        title: 'Lỗi',
+        description: 'Vui lòng nhập đầy đủ tiêu đề và nội dung',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Prepare media data if files are present
+    const media = files.length > 0 ? {
+      type: files[0].type,
+      name: files[0].name,
+      // In a real app, you would upload the file to a server and get a URL
+      url: URL.createObjectURL(files[0])
+    } : undefined;
+    
+    try {
+      await createTopic({
+        title,
+        content,
+        category,
+        isAnonymous,
+        media
+      });
+      
+      // Reset form and close modal
+      handleClose();
+    } catch (error) {
+      console.error('Error creating topic:', error);
+    }
+  };
+
+  const handleClose = () => {
+    setTitle('');
+    setContent('');
+    setCategory('Công nghệ');
+    setIsAnonymous(false);
+    setFiles([]);
+    onClose();
+  };
+
+  const handleFileSelect = (selectedFiles: File[]) => {
+    setFiles(selectedFiles);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Tạo Topic Mới</DialogTitle>
+          <DialogDescription>
+            Chia sẻ câu hỏi, thảo luận hoặc bài viết của bạn với cộng đồng
+          </DialogDescription>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="title">Tiêu đề</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Nhập tiêu đề bài viết"
+                required
+                disabled={isCreatingTopic}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="content">Nội dung</Label>
+              <Textarea
+                id="content"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Nhập nội dung bài viết"
+                className="min-h-[120px]"
+                required
+                disabled={isCreatingTopic}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="category">Danh mục</Label>
+              <Select 
+                value={category} 
+                onValueChange={setCategory}
+                disabled={isCreatingTopic}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn danh mục" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Công nghệ">Công nghệ</SelectItem>
+                  <SelectItem value="Giải trí">Giải trí</SelectItem>
+                  <SelectItem value="Hỏi đáp">Hỏi đáp</SelectItem>
+                  <SelectItem value="Chia sẻ">Chia sẻ</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="anonymous"
+                checked={isAnonymous}
+                onCheckedChange={(checked) => setIsAnonymous(!!checked)}
+                disabled={isCreatingTopic}
+              />
+              <Label htmlFor="anonymous" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Đăng ẩn danh
+              </Label>
+            </div>
+            
+            <FileUpload
+              onFileSelect={handleFileSelect}
+              value={files}
+              disabled={isCreatingTopic}
+            />
+          </div>
+          
+          <DialogFooter className="mt-4">
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isCreatingTopic}>
+              Hủy
+            </Button>
+            <Button type="submit" disabled={isCreatingTopic}>
+              {isCreatingTopic ? 'Đang đăng...' : 'Đăng bài'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
