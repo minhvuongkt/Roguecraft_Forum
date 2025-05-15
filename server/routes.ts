@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
@@ -9,6 +9,7 @@ import { z } from "zod";
 import { insertChatMessageSchema, insertUserSchema, insertTopicSchema, insertCommentSchema, WebSocketMessageType, comments, topics, chatMessages } from "@shared/schema";
 import { db } from "./db";
 import { and, eq, desc, count } from "drizzle-orm";
+import uploadRoutes from "./routes/uploads";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
