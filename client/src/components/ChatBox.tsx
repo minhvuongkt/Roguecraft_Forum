@@ -200,10 +200,13 @@ export function ChatBox() {
       {/* Chat Messages */}
       <div className="flex-1 relative">
         {/* System Message */}
-        <div className="flex justify-center pt-4">
-          <span className="bg-muted text-muted-foreground text-xs py-1 px-3 rounded-full">
+        <div className="flex items-center justify-center pt-3 pb-1 relative">
+          <div className="absolute inset-0 flex items-center px-4">
+            <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
+          </div>
+          <div className="relative px-3 py-0.5 bg-white dark:bg-gray-900 text-xs text-gray-500 dark:text-gray-400 rounded-full border border-gray-200 dark:border-gray-700">
             Hiển thị tin nhắn từ 3 ngày gần đây
-          </span>
+          </div>
         </div>
         
         {flattenedMessages.length > 0 ? (
@@ -213,7 +216,7 @@ export function ChatBox() {
               height={400}
               width="100%"
               itemCount={flattenedMessages.length}
-              itemSize={80}
+              itemSize={70} // Giảm kích thước mặc định để tin nhắn gần nhau hơn
               onScroll={handleScroll}
               className="px-4"
             >
@@ -222,10 +225,13 @@ export function ChatBox() {
                 return (
                   <div style={{ ...style, height: 'auto' }}>
                     {item.dateHeader && (
-                      <div className="flex justify-center my-4">
-                        <span className="bg-muted text-muted-foreground text-xs py-1 px-3 rounded-full">
+                      <div className="flex items-center justify-center my-2 relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
+                        </div>
+                        <div className="relative px-3 py-0.5 bg-white dark:bg-gray-900 text-xs text-gray-500 dark:text-gray-400 rounded-full border border-gray-200 dark:border-gray-700">
                           {item.dateHeader}
-                        </span>
+                        </div>
                       </div>
                     )}
                     {!item.dateHeader && (
@@ -242,21 +248,24 @@ export function ChatBox() {
             </VirtualList>
           </div>
         ) : (
-          <div className="flex justify-center items-center h-32">
-            <p className="text-muted-foreground text-sm">
-              Không có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!
+          <div className="flex flex-col justify-center items-center h-48 px-4">
+            <div className="h-16 w-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+              <Send className="h-6 w-6 text-gray-400 dark:text-gray-500" />
+            </div>
+            <p className="text-gray-500 dark:text-gray-400 text-sm text-center">
+              Chưa có tin nhắn nào trong khoảng thời gian này.<br/>Hãy bắt đầu cuộc trò chuyện!
             </p>
           </div>
         )}
       </div>
       
       {/* Chat Input */}
-      <div className="p-3 border-t dark:border-gray-700">
+      <div className="p-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
         {!user && (
-          <div className="bg-blue-50 dark:bg-blue-900/30 rounded-md p-3 mb-3 flex items-center">
-            <AlertCircle className="h-5 w-5 text-blue-500 mr-2" />
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 mb-3 flex items-center border border-blue-100 dark:border-blue-800/70">
+            <AlertCircle className="h-4.5 w-4.5 text-blue-500 dark:text-blue-400 mr-2 flex-shrink-0" />
             <div className="text-sm text-blue-700 dark:text-blue-300">
-              Bạn cần đặt tên trước khi có thể gửi tin nhắn. Nhập <code>/ten YOUR_NAME</code> hoặc click vào nút "Đặt tên" ở trên.
+              Bạn cần <button onClick={() => setIsUsernameDialogOpen(true)} className="font-semibold text-blue-600 dark:text-blue-300 hover:underline">đặt tên hiển thị</button> trước khi có thể gửi tin nhắn
             </div>
           </div>
         )}
