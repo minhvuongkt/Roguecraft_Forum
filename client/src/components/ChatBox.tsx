@@ -88,48 +88,56 @@ export function ChatBox() {
       </div>
       
       {/* Chat Messages */}
-      <ScrollArea 
-        className="flex-1 p-4" 
-        ref={scrollRef} 
-        onScroll={handleScroll}
-      >
-        <div className="space-y-4">
-          {/* System Message */}
-          <div className="flex justify-center">
-            <span className="bg-muted text-muted-foreground text-xs py-1 px-3 rounded-full">
-              Hiển thị tin nhắn từ 3 ngày gần đây
-            </span>
-          </div>
-          
-          {/* Messages grouped by date */}
-          {Object.entries(groupedMessages).map(([date, messages]) => (
-            <div key={date}>
-              <div className="flex justify-center my-4">
-                <span className="bg-muted text-muted-foreground text-xs py-1 px-3 rounded-full">
-                  {date === new Date().toLocaleDateString('vi-VN') ? 'Hôm nay' : date}
-                </span>
-              </div>
-              
-              {messages.map((message, index) => (
-                <Message 
-                  key={message.id} 
-                  message={message} 
-                  showUser={index === 0 || messages[index - 1]?.userId !== message.userId}
-                />
-              ))}
-            </div>
-          ))}
-          
-          {/* Show when there are no messages */}
-          {Object.keys(groupedMessages).length === 0 && (
-            <div className="flex justify-center items-center h-32">
-              <p className="text-muted-foreground text-sm">
-                Không có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!
-              </p>
-            </div>
-          )}
+      <div className="flex-1 relative">
+        {/* System Message */}
+        <div className="flex justify-center pt-4">
+          <span className="bg-muted text-muted-foreground text-xs py-1 px-3 rounded-full">
+            Hiển thị tin nhắn từ 3 ngày gần đây
+          </span>
         </div>
-      </ScrollArea>
+        
+        {flattenedMessages.length > 0 ? (
+          <div className="h-[calc(100%-40px)] pt-2">
+            <VirtualList
+              ref={listRef}
+              height={400}
+              width="100%"
+              itemCount={flattenedMessages.length}
+              itemSize={80}
+              onScroll={handleScroll}
+              className="px-4"
+            >
+              {({ index, style }) => {
+                const item = flattenedMessages[index];
+                return (
+                  <div style={{ ...style, height: 'auto' }}>
+                    {item.dateHeader && (
+                      <div className="flex justify-center my-4">
+                        <span className="bg-muted text-muted-foreground text-xs py-1 px-3 rounded-full">
+                          {item.dateHeader}
+                        </span>
+                      </div>
+                    )}
+                    {!item.dateHeader && (
+                      <Message
+                        key={item.message.id}
+                        message={item.message}
+                        showUser={item.showUser}
+                      />
+                    )}
+                  </div>
+                );
+              }}
+            </VirtualList>
+          </div>
+        ) : (
+          <div className="flex justify-center items-center h-32">
+            <p className="text-muted-foreground text-sm">
+              Không có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!
+            </p>
+          </div>
+        )}
+      </div>
       
       {/* Chat Input */}
       <div className="p-3 border-t dark:border-gray-700">

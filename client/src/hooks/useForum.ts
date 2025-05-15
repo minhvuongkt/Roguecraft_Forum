@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -145,7 +145,7 @@ export function useForum() {
     },
   });
 
-  // Toggle topic like mutation
+  // Toggle topic like mutation with optimistic updates
   const toggleLikeMutation = useMutation({
     mutationFn: async ({ topicId, action }: { topicId: number; action: 'like' | 'unlike' }) => {
       if (!user) {
@@ -158,17 +158,62 @@ export function useForum() {
       
       return response.json();
     },
-    onSuccess: (_, variables) => {
-      // Invalidate topic queries to update like count
-      queryClient.invalidateQueries({ queryKey: ['/api/forum/topics'] });
-      queryClient.invalidateQueries({ queryKey: [`/api/forum/topics/${variables.topicId}`] });
+    onMutate: async (variables) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['/api/forum/topics'] });
+      await queryClient.cancelQueries({ queryKey: [`/api/forum/topics/${variables.topicId}`] });
+      
+      // Snapshot the previous value
+      const previousTopics = queryClient.getQueryData<Topic[]>(['/api/forum/topics']);
+      const previousTopic = queryClient.getQueryData<Topic>([`/api/forum/topics/${variables.topicId}`]);
+      
+      // Optimistically update to the new value
+      if (previousTopics) {
+        queryClient.setQueryData<Topic[]>(['/api/forum/topics'], old => 
+          (old || []).map(topic => {
+            if (topic.id === variables.topicId) {
+              return {
+                ...topic,
+                likeCount: variables.action === 'like' ? topic.likeCount + 1 : Math.max(0, topic.likeCount - 1)
+              };
+            }
+            return topic;
+          })
+        );
+      }
+      
+      if (previousTopic) {
+        queryClient.setQueryData<Topic>([`/api/forum/topics/${variables.topicId}`], old => {
+          if (!old) return old;
+          return {
+            ...old,
+            likeCount: variables.action === 'like' ? old.likeCount + 1 : Math.max(0, old.likeCount - 1)
+          };
+        });
+      }
+      
+      // Return a context object with the snapshotted value
+      return { previousTopics, previousTopic };
     },
-    onError: (error) => {
+    onError: (error, variables, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousTopics) {
+        queryClient.setQueryData(['/api/forum/topics'], context.previousTopics);
+      }
+      if (context?.previousTopic) {
+        queryClient.setQueryData([`/api/forum/topics/${variables.topicId}`], context.previousTopic);
+      }
+      
       toast({
         title: 'Lỗi',
         description: (error as Error).message || 'Không thể thực hiện. Vui lòng thử lại sau.',
         variant: 'destructive',
       });
+    },
+    onSettled: (_, __, variables) => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries({ queryKey: ['/api/forum/topics'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/forum/topics/${variables.topicId}`] });
     },
   });
 
@@ -183,8 +228,8 @@ export function useForum() {
     return response.json();
   };
 
-  // Helper function to format date for display
-  const formatDate = (dateString: string) => {
+  // Helper function to format date for display (memoized)
+  const formatDate = useCallback((dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -220,10 +265,23 @@ export function useForum() {
       hour: 'numeric',
       minute: 'numeric',
     });
-  };
+  }, []);
+  
+  // Memoized selectors for filtered topics
+  const popularTopics = useMemo(() => {
+    return [...topics].sort((a, b) => b.likeCount - a.likeCount).slice(0, 5);
+  }, [topics]);
+  
+  // Memoized selector for topics by category
+  const topicsByCategory = useMemo(() => {
+    if (selectedCategory === 'Tất cả') return topics;
+    return topics.filter(topic => topic.category === selectedCategory);
+  }, [topics, selectedCategory]);
 
   return {
     topics,
+    topicsByCategory,
+    popularTopics,
     isTopicsLoading,
     topicsError,
     selectedCategory,
