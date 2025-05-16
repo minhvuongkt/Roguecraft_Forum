@@ -1,11 +1,11 @@
-import React, { memo, useState } from 'react';
-import { useLocation } from 'wouter';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChatMessage } from '@/types';
-import { useAuth } from '@/contexts/AuthContext';
-import { cn } from '@/lib/utils';
-import { ImageViewerModal } from './ImageViewerModal';
-import { Reply, CornerUpLeft } from 'lucide-react';
+import React, { memo, useState, useRef } from "react";
+import { useLocation } from "wouter";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ChatMessage } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
+import { ImageViewerModal } from "./ImageViewerModal";
+import { CornerUpLeft } from "lucide-react";
 
 interface MessageProps {
   message: ChatMessage;
@@ -19,33 +19,34 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
   const isCurrentUser = message.userId === currentUser?.id;
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState("");
-  
+  const [isHovered, setIsHovered] = useState(false);
+
   // Handle reply to message
   const handleReply = () => {
     if (onReply) {
       onReply(message);
     }
   };
-  
+
   // Format time
   const formatTime = (date: Date): string => {
-    return date.toLocaleTimeString('vi-VN', {
-      hour: '2-digit',
-      minute: '2-digit',
+    return date.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
-  
+
   // Parse message content to highlight mentions
   const parseMessageContent = (content: string): JSX.Element => {
     const parts = content.split(/(@\w+)/g);
-    
+
     return (
       <>
         {parts.map((part, index) => {
           if (part.match(/@\w+/)) {
             return (
-              <span 
-                key={index} 
+              <span
+                key={index}
                 className="text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-md"
               >
                 {part}
@@ -57,75 +58,106 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
       </>
     );
   };
-  
-  // Render media if present
+
+  // Render media completely isolated from text content
   const renderMedia = () => {
     if (!message.media) return null;
-    
-    console.log("Rendering media:", message.media);
-    
+
     try {
       // Kiểm tra nếu media là định dạng JSON {"1": "path1", "2": "path2"}
-      if (typeof message.media === 'object' && Object.keys(message.media).some(key => /^\d+$/.test(key))) {
-        // Đây là định dạng mới - một object với các khóa số
+      if (
+        typeof message.media === "object" &&
+        Object.keys(message.media).some((key) => /^\d+$/.test(key))
+      ) {
+        // Container style for multiple images
+        const mediaCount = Object.keys(message.media).length;
+        const gridCols = mediaCount > 1 ? "grid-cols-2" : "";
+
         return (
-          <div className="flex flex-wrap gap-1 mt-1 max-w-full">
+          <div
+            className={`mt-2 ${mediaCount > 1 ? "grid gap-2 " + gridCols : "block"} w-full max-w-[240px] isolate`}
+            data-message-id={`media-container-${message.id}`}
+          >
             {Object.entries(message.media).map(([key, path]) => {
               // Đảm bảo đường dẫn là đầy đủ
               let imagePath = path as string;
-              if (!imagePath.startsWith('http') && !imagePath.startsWith('/')) {
-                imagePath = '/' + imagePath;
+              if (!imagePath.startsWith("http") && !imagePath.startsWith("/")) {
+                imagePath = "/" + imagePath;
               }
-              
+
               // Kiểm tra loại file dựa trên phần mở rộng
-              const isImage = imagePath.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
+              const isImage = imagePath.match(
+                /\.(jpg|jpeg|png|gif|webp|svg)$/i,
+              );
               const isVideo = imagePath.match(/\.(mp4|webm|mov|avi|mkv)$/i);
-              
+
               if (isImage) {
                 return (
-                  <div key={key} className="overflow-hidden rounded-lg cursor-pointer">
-                    <img 
-                      src={imagePath} 
-                      alt={`Image ${key}`} 
-                      className="object-cover h-auto max-h-[180px] max-w-[180px]"
-                      onLoad={(e) => {
-                        // Log the image dimensions
-                        console.log("Image dimensions:", e.currentTarget.naturalWidth, e.currentTarget.naturalHeight);
-                      }}
-                      onClick={() => {
-                        setViewingImageUrl(imagePath);
-                        setImageViewerOpen(true);
-                      }}
-                      onError={(e) => {
-                        console.error("Image failed to load:", imagePath, e);
-                        e.currentTarget.src = ""; 
-                        e.currentTarget.alt = "Image load failed";
-                      }}
-                    />
+                  <div
+                    key={`media-${message.id}-${key}`}
+                    className="overflow-hidden rounded-lg cursor-pointer isolate bg-gray-100 dark:bg-gray-800"
+                    style={{ isolation: "isolate" }} // Double ensure isolation
+                  >
+                    <div
+                      className="relative w-full h-full"
+                      style={{ zIndex: 1 }}
+                    >
+                      <img
+                        src={imagePath}
+                        alt={`Image ${key}`}
+                        className="object-cover w-full max-h-[240px]"
+                        loading="lazy"
+                        onClick={() => {
+                          setViewingImageUrl(imagePath);
+                          setImageViewerOpen(true);
+                        }}
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          target.src = "";
+                          target.alt = "Image load failed";
+                          target.style.height = "24px";
+                          target.style.opacity = "0.5";
+                        }}
+                      />
+                    </div>
                   </div>
                 );
               } else if (isVideo) {
                 return (
-                  <div key={key} className="overflow-hidden rounded-lg">
-                    <video 
-                      src={imagePath} 
-                      controls 
-                      className="max-w-[200px] max-h-32"
-                    />
+                  <div
+                    key={`media-${message.id}-${key}`}
+                    className="overflow-hidden rounded-lg isolate bg-gray-100 dark:bg-gray-800"
+                    style={{ isolation: "isolate" }}
+                  >
+                    <div
+                      className="relative w-full h-full"
+                      style={{ zIndex: 1 }}
+                    >
+                      <video
+                        src={imagePath}
+                        controls
+                        className="max-w-full max-h-[240px]"
+                        preload="metadata"
+                      />
+                    </div>
                   </div>
                 );
               } else {
-                // Nếu không phải ảnh hoặc video, hiển thị link để tải xuống
+                // File đính kèm
                 return (
-                  <div key={key} className="py-1.5 px-2.5 bg-gray-100 dark:bg-gray-700 rounded-md text-xs flex items-center">
+                  <div
+                    key={`file-${message.id}-${key}`}
+                    className="py-1.5 px-2.5 bg-gray-100 dark:bg-gray-700 rounded-md text-xs flex items-center my-1 isolate"
+                    style={{ isolation: "isolate" }}
+                  >
                     <span className="font-medium mr-1.5">Tệp đính kèm:</span>
-                    <a 
-                      href={imagePath} 
-                      target="_blank" 
+                    <a
+                      href={imagePath}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 dark:text-blue-400 underline"
                     >
-                      {imagePath.split('/').pop()}
+                      {imagePath.split("/").pop()}
                     </a>
                   </div>
                 );
@@ -134,186 +166,197 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
           </div>
         );
       }
-      
+
       // Định dạng cũ - một object với url, type, v.v.
       if (message.media.url) {
         return (
-          <div className="flex flex-wrap gap-1 mt-1">
-            {message.media.type?.startsWith('image/') ? (
-              <div className="overflow-hidden rounded-lg cursor-pointer">
-                <img 
-                  src={message.media.url} 
-                  alt={message.media.name || "Image attachment"} 
-                  className="object-cover h-auto max-h-32 max-w-32"
+          <div
+            className="mt-2 w-full max-w-[240px] isolate"
+            style={{ isolation: "isolate" }}
+          >
+            {message.media.type?.startsWith("image/") ? (
+              <div className="overflow-hidden rounded-lg cursor-pointer bg-gray-100 dark:bg-gray-800">
+                <img
+                  src={message.media.url}
+                  alt={message.media.name || "Image attachment"}
+                  className="object-cover w-full max-h-[240px]"
+                  loading="lazy"
                   onClick={() => {
-                    setViewingImageUrl(message.media.url);
+                    setViewingImageUrl(String(message?.media?.url));
                     setImageViewerOpen(true);
-                  }}
-                  onError={(e) => {
-                    console.error("Image failed to load:", e);
-                    e.currentTarget.src = ""; // Clear the broken URL
-                    e.currentTarget.alt = "Image load failed";
                   }}
                 />
               </div>
-            ) : message.media.type?.startsWith('video/') ? (
-              <div className="overflow-hidden rounded-lg">
-                <video 
-                  src={message.media.url} 
-                  controls 
-                  className="max-w-[200px] max-h-32"
+            ) : message.media.type?.startsWith("video/") ? (
+              <div className="overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
+                <video
+                  src={message.media.url}
+                  controls
+                  className="max-w-full max-h-[240px]"
+                  preload="metadata"
                 />
               </div>
             ) : (
-              <div className="py-1.5 px-2.5 bg-gray-100 dark:bg-gray-700 rounded-md text-xs flex items-center">
+              <div className="py-1.5 px-2.5 bg-gray-100 dark:bg-gray-700 rounded-md text-xs flex items-center my-1">
                 <span className="font-medium mr-1.5">Tệp đính kèm:</span>
-                <a 
-                  href={message.media.url} 
-                  target="_blank" 
+                <a
+                  href={message.media.url}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 dark:text-blue-400 underline"
                 >
-                  {message.media.name || "File"} 
-                  {message.media.size && <span className="ml-1">({Math.round(message.media.size/1024)} KB)</span>}
+                  {message.media.name || "File"}
+                  {message.media.size && (
+                    <span className="ml-1">
+                      ({Math.round(Number(message.media.size) / 1024)} KB)
+                    </span>
+                  )}
                 </a>
               </div>
             )}
           </div>
         );
       }
-      
-      // Nếu định dạng không được nhận dạng
-      console.error("Unknown media format:", message.media);
-      return (
-        <div className="py-1.5 px-2.5 mt-1 bg-gray-100 dark:bg-gray-700 rounded-md text-xs">
-          Media attachment (unknown format)
-        </div>
-      );
+
+      return null;
     } catch (err) {
       console.error("Error rendering media:", err, message.media);
       return (
-        <div className="text-xs text-destructive mt-1 py-1.5 px-2.5 bg-red-50 dark:bg-red-900/30 rounded-md">
-          Error displaying media attachment
+        <div className="text-xs text-red-500 dark:text-red-400 mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-md">
+          Không thể hiển thị file đính kèm
         </div>
       );
     }
   };
-  
-  if (isCurrentUser) {
-    return (
-      <>
-        <div className="flex justify-end mb-2 group relative">
-          <div className="max-w-[75%] pr-2">
-            {showUser && (
-              <div className="flex items-center justify-end gap-1 mb-0.5">
-                <span className="text-xs text-muted-foreground/80">
-                  {formatTime(new Date(message.createdAt))}
-                </span>
-                <span className="font-medium text-xs">Tôi</span>
-              </div>
-            )}
-            
-            {/* Tin nhắn văn bản */}
-            <div className="flex justify-end">
-              <div className="bg-blue-600 text-white p-2 px-3 rounded-2xl rounded-tr-sm break-words relative group">
-                <p className="text-sm leading-relaxed">{parseMessageContent(message.content)}</p>
-                
-                {/* Reply button (visible on hover) */}
-                <button 
-                  onClick={handleReply}
-                  className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 p-1 rounded-full hover:bg-black/20"
-                  title="Trả lời tin nhắn này"
-                >
-                  <CornerUpLeft className="h-3.5 w-3.5 text-white" />
-                </button>
-              </div>
-            </div>
-            
-            {/* Media Content sau tin nhắn văn bản */}
-            {message.media && (
-              <div className="flex justify-end mt-1 mb-12">
-                {renderMedia()}
-              </div>
-            )}
-          </div>
-          
-          <Avatar className="h-7 w-7 flex-shrink-0 self-start">
-            {currentUser?.avatar ? (
-              <AvatarImage src={currentUser.avatar} alt={currentUser.username} />
+
+  // ===== COMPONENT LAYOUT WITH FULL ISOLATION =====
+  return (
+    <div
+      className={cn("w-full py-1 clear-both", "my-0.5 relative isolate")}
+      style={{ isolation: "isolate" }}
+      data-message-id={message.id}
+    >
+      <div
+        className={cn(
+          "flex items-start gap-2 relative",
+          isCurrentUser ? "flex-row-reverse" : "flex-row",
+        )}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {/* Avatar */}
+        <div
+          className={cn(
+            "w-7 h-7 flex-shrink-0 self-start",
+            isCurrentUser ? "ml-2" : "mr-2",
+          )}
+        >
+          <Avatar className="w-full h-full">
+            {(isCurrentUser ? currentUser?.avatar : message.user?.avatar) ? (
+              <AvatarImage
+                src={isCurrentUser ? currentUser?.avatar : message.user?.avatar}
+                alt={
+                  isCurrentUser
+                    ? currentUser?.username
+                    : message.user?.username || "User"
+                }
+              />
             ) : (
-              <AvatarFallback className="bg-blue-500 text-white text-xs">
-                {currentUser?.username.substring(0, 2).toUpperCase()}
+              <AvatarFallback
+                className={cn(
+                  "text-xs bg-opacity-90",
+                  isCurrentUser
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-500 text-white",
+                )}
+              >
+                {isCurrentUser
+                  ? currentUser?.username.substring(0, 2).toUpperCase()
+                  : message.user?.username?.substring(0, 2).toUpperCase() ||
+                    "U"}
               </AvatarFallback>
             )}
           </Avatar>
         </div>
 
-        {/* Image viewer modal */}
-        <ImageViewerModal
-          isOpen={imageViewerOpen}
-          onClose={() => setImageViewerOpen(false)}
-          imageUrl={viewingImageUrl}
-          title="Hình ảnh đính kèm"
-        />
-      </>
-    );
-  }
-  
-  return (
-    <>
-      <div className="flex mb-2 group relative">
-        <Avatar className="h-7 w-7 flex-shrink-0 self-start">
-          {message.user?.avatar ? (
-            <AvatarImage src={message.user.avatar} alt={message.user.username} />
-          ) : (
-            <AvatarFallback className="bg-gray-500 text-white text-xs">
-              {message.user?.username.substring(0, 2).toUpperCase() || 'U'}
-            </AvatarFallback>
+        {/* Message Body */}
+        <div
+          className={cn(
+            "flex flex-col max-w-[75%] md:max-w-[70%]",
+            isCurrentUser ? "items-end" : "items-start",
           )}
-        </Avatar>
-        <div className="max-w-[75%] pl-2">
+        >
+          {/* Username & Time */}
           {showUser && (
-            <div className="flex items-center gap-1 mb-0.5">
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (message.user?.id) {
-                    navigate(`/user/${message.user.id}`);
-                  }
-                }}
-                className="font-medium text-xs text-gray-800 dark:text-gray-200 hover:underline focus:outline-none"
+            <div
+              className={cn(
+                "flex items-center text-xs mb-1",
+                isCurrentUser ? "flex-row-reverse" : "flex-row",
+              )}
+            >
+              <span
+                className={cn(
+                  "font-medium text-gray-800 dark:text-gray-200",
+                  isCurrentUser ? "mr-1" : "ml-1",
+                )}
               >
-                {message.user?.username || 'Unknown'}
-              </button>
-              <span className="text-xs text-muted-foreground/80">
+                {isCurrentUser ? (
+                  "Tôi"
+                ) : (
+                  <button
+                    onClick={() => {
+                      if (message.user?.id) {
+                        navigate(`/user/${message.user.id}`);
+                      }
+                    }}
+                    className="hover:underline"
+                  >
+                    {message.user?.username || "Unknown"}
+                  </button>
+                )}
+              </span>
+              <span className="text-gray-500 dark:text-gray-400">
                 {formatTime(new Date(message.createdAt))}
               </span>
             </div>
           )}
-          
-          {/* Tin nhắn văn bản */}
-          <div className="flex">
-            <div className="bg-gray-200 dark:bg-gray-800 p-2 px-3 rounded-2xl rounded-tl-sm dark:text-gray-100 relative group">
-              <p className="text-sm leading-relaxed">{parseMessageContent(message.content)}</p>
-              
-              {/* Reply button (visible on hover) */}
-              <button 
-                onClick={handleReply}
-                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-300/50 dark:bg-gray-700/50 p-1 rounded-full hover:bg-gray-300 dark:hover:bg-gray-700"
-                title="Trả lời tin nhắn này"
-              >
-                <CornerUpLeft className="h-3.5 w-3.5 text-gray-700 dark:text-gray-300" />
-              </button>
-            </div>
-          </div>
-          
-          {/* Media Content sau tin nhắn văn bản */}
-          {message.media && (
-            <div className="flex mt-1 mb-12">
-              {renderMedia()}
+
+          {/* Text Bubble - TEXT ONLY */}
+          {message.content && (
+            <div
+              className={cn(
+                "p-2 px-3 rounded-2xl mb-1 break-words max-w-full",
+                isCurrentUser
+                  ? "bg-blue-500 text-white rounded-tr-sm"
+                  : "bg-gray-200 dark:bg-gray-700 dark:text-white rounded-tl-sm",
+              )}
+            >
+              <p className="text-sm leading-relaxed break-words whitespace-pre-line">
+                {parseMessageContent(message.content)}
+              </p>
             </div>
           )}
+
+          {/* Media Content - COMPLETELY SEPARATE */}
+          <div
+            className={cn("w-full", isCurrentUser ? "flex justify-end" : "")}
+          >
+            {renderMedia()}
+          </div>
         </div>
+
+        {/* Always visible Reply Button */}
+        <button
+          onClick={handleReply}
+          className={cn(
+            "absolute top-1/2 -translate-y-1/2 p-1.5 bg-white dark:bg-gray-800 rounded-full shadow-sm",
+            isCurrentUser ? "-left-8" : "-right-8",
+            "opacity-70 hover:opacity-100 transition-opacity duration-150",
+          )}
+          title="Trả lời tin nhắn này"
+        >
+          <CornerUpLeft className="h-3.5 w-3.5 text-gray-600 dark:text-gray-300" />
+        </button>
       </div>
 
       {/* Image viewer modal */}
@@ -323,7 +366,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
         imageUrl={viewingImageUrl}
         title="Hình ảnh đính kèm"
       />
-    </>
+    </div>
   );
 }
 
