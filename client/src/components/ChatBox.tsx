@@ -43,6 +43,29 @@ export function ChatBox() {
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Filter messages based on search term
+  const filteredGroupedMessages = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return groupedMessages;
+    }
+    
+    const searchTermLower = searchTerm.toLowerCase();
+    const filtered: Record<string, ChatMessage[]> = {};
+    
+    Object.entries(groupedMessages).forEach(([date, messages]) => {
+      const filteredMessages = messages.filter(message => 
+        message.content.toLowerCase().includes(searchTermLower) ||
+        message.user?.username.toLowerCase().includes(searchTermLower)
+      );
+      
+      if (filteredMessages.length > 0) {
+        filtered[date] = filteredMessages;
+      }
+    });
+    
+    return filtered;
+  }, [groupedMessages, searchTerm]);
+  
   // Create flattened message list for virtual scrolling
   const flattenedMessages = useMemo(() => {
     const flattened: {
@@ -51,7 +74,7 @@ export function ChatBox() {
       dateHeader?: string;
     }[] = [];
     
-    Object.entries(groupedMessages).forEach(([date, messages]) => {
+    Object.entries(filteredGroupedMessages).forEach(([date, messages]) => {
       // Add date header
       const dateString = date === new Date().toLocaleDateString('vi-VN') ? 'Hôm nay' : date;
       if (messages.length > 0) {
@@ -73,7 +96,7 @@ export function ChatBox() {
     });
     
     return flattened;
-  }, [groupedMessages]);
+  }, [filteredGroupedMessages]);
   
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -184,10 +207,12 @@ export function ChatBox() {
             <span>{onlineUsers.length} online</span>
           </div>
         </div>
-        <div className="flex space-x-2">
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" title="Tìm kiếm">
-            <Search className="h-4 w-4 text-muted-foreground" />
-          </Button>
+        <div className="flex space-x-2 items-center">
+          <ChatSearch 
+            onSearch={(term) => setSearchTerm(term)} 
+            className="mr-1"
+          />
+          
           {!user && (
             <Button 
               variant="outline" 
@@ -199,6 +224,7 @@ export function ChatBox() {
               <span>Đặt tên</span>
             </Button>
           )}
+          
           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" title="Tùy chọn khác">
             <MoreVertical className="h-4 w-4 text-muted-foreground" />
           </Button>
