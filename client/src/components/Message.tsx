@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChatMessage } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWebSocket } from "@/contexts/WebSocketContext";
 import { cn } from "@/lib/utils";
 import { ImageViewerModal } from "./ImageViewerModal";
 import { CornerUpLeft } from "lucide-react";
@@ -15,11 +16,13 @@ interface MessageProps {
 
 function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
   const { user: currentUser } = useAuth();
+  const { findMessagesByUsername, messages } = useWebSocket();
   const [, navigate] = useLocation();
   const isCurrentUser = message.userId === currentUser?.id;
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState("");
   const [isHovered, setIsHovered] = useState(false);
+  const messageRef = useRef<HTMLDivElement>(null);
   
   // Xác định xem tin nhắn có phải là phản hồi không dựa trên nội dung
   const isReplyMessage = message.content.trim().startsWith('@');
@@ -71,8 +74,31 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
           title={`Nhấn để xem tin nhắn của ${username}`}
           onClick={() => {
             // Tìm tin nhắn của người dùng này trong hệ thống
-            console.log(`Tìm tin nhắn của người dùng: ${username}`);
-            // Có thể thêm logic để cuộn đến tin nhắn của người dùng này
+            const userMessages = findMessagesByUsername(username);
+            console.log(`Tìm tin nhắn của người dùng: ${username}`, userMessages);
+            
+            // Nếu tìm thấy tin nhắn, cuộn đến tin nhắn gần nhất
+            if (userMessages.length > 0) {
+              // Tìm tin nhắn gần nhất (sắp xếp theo thời gian giảm dần và lấy tin nhắn đầu tiên)
+              const sortedMessages = [...userMessages].sort((a, b) => 
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              );
+              
+              // Cuộn đến tin nhắn đầu tiên (mới nhất) của người dùng
+              const targetMessageId = sortedMessages[0].id;
+              const targetElement = document.getElementById(`msg-${targetMessageId}`);
+              
+              if (targetElement) {
+                // Cuộn đến tin nhắn đích và tạo hiệu ứng highlight tạm thời
+                targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
+                targetElement.classList.add("bg-yellow-100", "dark:bg-yellow-900/20");
+                
+                // Sau 2 giây, xóa hiệu ứng highlight
+                setTimeout(() => {
+                  targetElement.classList.remove("bg-yellow-100", "dark:bg-yellow-900/20");
+                }, 2000);
+              }
+            }
           }}
         >
           {mentionText}
