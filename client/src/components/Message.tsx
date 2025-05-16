@@ -430,28 +430,33 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                   <div 
                     className="absolute -top-3 left-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-600 px-2 py-0.5 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
                     onClick={() => {
-                      // Trích xuất tên người dùng từ tin nhắn trả lời
-                      const match = message.content.match(/@(\S+)/);
-                      if (match && match[1]) {
-                        const username = match[1];
-                        
-                        // Tìm tin nhắn của người dùng được tag
-                        const userMessages = findMessagesByUsername(username);
-                        if (userMessages.length > 0) {
-                          // Tìm tin nhắn gần nhất trước tin nhắn hiện tại
-                          const earlierMessages = userMessages.filter(msg => 
-                            new Date(msg.createdAt).getTime() < new Date(message.createdAt).getTime()
-                          );
+                      // Ưu tiên sử dụng replyToMessageId nếu có
+                      if (message.replyToMessageId) {
+                        // Sử dụng hàm cuộn đến tin nhắn theo ID
+                        scrollToMessageById(message.replyToMessageId);
+                      } else {
+                        // Phương án dự phòng: Trích xuất tên người dùng từ tin nhắn trả lời
+                        const match = message.content.match(/@(\S+)/);
+                        if (match && match[1]) {
+                          const username = match[1];
                           
-                          if (earlierMessages.length > 0) {
-                            // Sắp xếp để lấy tin nhắn đúng với tin nhắn đang trả lời
-                            // (tin nhắn gần nhất trước tin nhắn hiện tại)
-                            const sortedMessages = earlierMessages.sort((a, b) => 
-                              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                          // Tìm tin nhắn của người dùng được tag
+                          const userMessages = findMessagesByUsername(username);
+                          if (userMessages.length > 0) {
+                            // Tìm tin nhắn gần nhất trước tin nhắn hiện tại
+                            const earlierMessages = userMessages.filter(msg => 
+                              new Date(msg.createdAt).getTime() < new Date(message.createdAt).getTime()
                             );
                             
-                            // Sử dụng hàm cuộn đến tin nhắn thay vì code trực tiếp tại đây
-                            scrollToMessageById(sortedMessages[0].id);
+                            if (earlierMessages.length > 0) {
+                              // Sắp xếp để lấy tin nhắn gần nhất trước tin nhắn hiện tại
+                              const sortedMessages = earlierMessages.sort((a, b) => 
+                                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                              );
+                              
+                              // Cuộn đến tin nhắn gần nhất
+                              scrollToMessageById(sortedMessages[0].id);
+                            }
                           }
                         }
                       }
@@ -462,7 +467,18 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                         <polyline points="9 14 4 9 9 4"></polyline>
                         <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
                       </svg>
-                      Trả lời cho @{message.content.match(/@(\S+)/)?.[1]}
+                      {message.replyToMessageId && originalMessage ? (
+                        <span>
+                          Trả lời cho <strong>{originalMessage.user?.username || "người dùng"}</strong>: 
+                          <span className="italic opacity-75 ml-1">
+                            {originalMessage.content.length > 15 
+                              ? originalMessage.content.substring(0, 15) + "..." 
+                              : originalMessage.content}
+                          </span>
+                        </span>
+                      ) : (
+                        <span>Trả lời cho @{message.content.match(/@(\S+)/)?.[1]}</span>
+                      )}
                     </div>
                   </div>
                 )}
