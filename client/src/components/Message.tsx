@@ -69,7 +69,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
       if (typeof message.media === 'object' && Object.keys(message.media).some(key => /^\d+$/.test(key))) {
         // Đây là định dạng mới - một object với các khóa số
         return (
-          <div className={`mt-2 grid ${Object.keys(message.media).length > 1 ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
+          <div className="mt-4 w-full">
             {Object.entries(message.media).map(([key, path]) => {
               // Đảm bảo đường dẫn là đầy đủ
               let imagePath = path as string;
@@ -77,23 +77,57 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                 imagePath = '/' + imagePath;
               }
               
-              return (
-                <img 
-                  key={key}
-                  src={imagePath} 
-                  alt={`Image ${key}`} 
-                  className="max-w-full rounded-md max-h-60 object-contain cursor-pointer"
-                  onClick={() => {
-                    setViewingImageUrl(imagePath);
-                    setImageViewerOpen(true);
-                  }}
-                  onError={(e) => {
-                    console.error("Image failed to load:", imagePath, e);
-                    e.currentTarget.src = ""; 
-                    e.currentTarget.alt = "Image load failed";
-                  }}
-                />
-              );
+              // Kiểm tra loại file dựa trên phần mở rộng
+              const isImage = imagePath.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+              const isVideo = imagePath.match(/\.(mp4|webm|mov|avi|mkv)$/i);
+              
+              if (isImage) {
+                return (
+                  <div key={key} className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 mb-2">
+                    <img 
+                      src={imagePath} 
+                      alt={`Image ${key}`} 
+                      className="w-full object-contain cursor-pointer"
+                      style={{ maxHeight: '220px' }}
+                      onClick={() => {
+                        setViewingImageUrl(imagePath);
+                        setImageViewerOpen(true);
+                      }}
+                      onError={(e) => {
+                        console.error("Image failed to load:", imagePath, e);
+                        e.currentTarget.src = ""; 
+                        e.currentTarget.alt = "Image load failed";
+                      }}
+                    />
+                  </div>
+                );
+              } else if (isVideo) {
+                return (
+                  <div key={key} className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 mb-2">
+                    <video 
+                      src={imagePath} 
+                      controls 
+                      className="w-full"
+                      style={{ maxHeight: '220px' }}
+                    />
+                  </div>
+                );
+              } else {
+                // Nếu không phải ảnh hoặc video, hiển thị link để tải xuống
+                return (
+                  <div key={key} className="py-1.5 px-2.5 bg-gray-100 dark:bg-gray-700 rounded-md mb-2 text-xs flex items-center">
+                    <span className="font-medium mr-1.5">Tệp đính kèm:</span>
+                    <a 
+                      href={imagePath} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-400 underline"
+                    >
+                      {imagePath.split('/').pop()}
+                    </a>
+                  </div>
+                );
+              }
             })}
           </div>
         );
@@ -102,32 +136,46 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
       // Định dạng cũ - một object với url, type, v.v.
       if (message.media.url) {
         return (
-          <div className="mt-2">
+          <div className="mt-4 w-full">
             {message.media.type?.startsWith('image/') ? (
-              <img 
-                src={message.media.url} 
-                alt={message.media.name || "Image attachment"} 
-                className="max-w-full rounded-md max-h-60 object-contain cursor-pointer"
-                onClick={() => {
-                  setViewingImageUrl(message.media.url);
-                  setImageViewerOpen(true);
-                }}
-                onError={(e) => {
-                  console.error("Image failed to load:", e);
-                  e.currentTarget.src = ""; // Clear the broken URL
-                  e.currentTarget.alt = "Image load failed";
-                }}
-              />
+              <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                <img 
+                  src={message.media.url} 
+                  alt={message.media.name || "Image attachment"} 
+                  className="w-full object-contain cursor-pointer"
+                  style={{ maxHeight: '220px' }}
+                  onClick={() => {
+                    setViewingImageUrl(message.media.url);
+                    setImageViewerOpen(true);
+                  }}
+                  onError={(e) => {
+                    console.error("Image failed to load:", e);
+                    e.currentTarget.src = ""; // Clear the broken URL
+                    e.currentTarget.alt = "Image load failed";
+                  }}
+                />
+              </div>
             ) : message.media.type?.startsWith('video/') ? (
-              <video 
-                src={message.media.url} 
-                controls 
-                className="max-w-full rounded-md max-h-60"
-              />
+              <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                <video 
+                  src={message.media.url} 
+                  controls 
+                  className="w-full"
+                  style={{ maxHeight: '220px' }}
+                />
+              </div>
             ) : (
-              <div className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded">
-                <span className="font-medium">Attached file:</span> {message.media.name} 
-                {message.media.size && <span className="ml-1">({Math.round(message.media.size/1024)} KB)</span>}
+              <div className="py-1.5 px-2.5 bg-gray-100 dark:bg-gray-700 rounded-md text-xs flex items-center">
+                <span className="font-medium mr-1.5">Tệp đính kèm:</span>
+                <a 
+                  href={message.media.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 dark:text-blue-400 underline"
+                >
+                  {message.media.name || "File"} 
+                  {message.media.size && <span className="ml-1">({Math.round(message.media.size/1024)} KB)</span>}
+                </a>
               </div>
             )}
           </div>
@@ -137,14 +185,14 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
       // Nếu định dạng không được nhận dạng
       console.error("Unknown media format:", message.media);
       return (
-        <div className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded">
+        <div className="py-1.5 px-2.5 mt-4 bg-gray-100 dark:bg-gray-700 rounded-md text-xs">
           Media attachment (unknown format)
         </div>
       );
     } catch (err) {
       console.error("Error rendering media:", err, message.media);
       return (
-        <div className="text-xs text-destructive mt-2">
+        <div className="text-xs text-destructive mt-4 py-1.5 px-2.5 bg-red-50 dark:bg-red-900/30 rounded-md">
           Error displaying media attachment
         </div>
       );
