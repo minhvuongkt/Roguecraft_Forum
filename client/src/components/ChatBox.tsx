@@ -659,17 +659,22 @@ export function ChatBox() {
         }
       }
 
-      // Nếu đang trả lời, thêm mention
+      // Nếu đang trả lời, thêm mention và replyToMessageId
       let finalMessage = message;
+      let replyToMessageId = undefined;
+
       if (state.replyingTo && state.replyingTo.user) {
         const username = state.replyingTo.user.username;
+        // Thêm @ để người được tag biết họ được tag
         if (!finalMessage.includes(`@${username}`)) {
           finalMessage = `@${username} ${finalMessage}`;
         }
+        // Thêm ID tin nhắn đang trả lời
+        replyToMessageId = state.replyingTo.id;
       }
 
-      // Gửi tin nhắn
-      sendMessage(finalMessage, media);
+      // Gửi tin nhắn với replyToMessageId
+      sendMessage(finalMessage, media, undefined, replyToMessageId);
 
       // Reset state and enable auto-scroll
       setState((prev) => ({

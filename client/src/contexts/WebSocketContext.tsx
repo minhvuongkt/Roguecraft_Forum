@@ -14,7 +14,7 @@ interface WebSocketContextType {
   isConnected: boolean;
   messages: ChatMessage[];
   onlineUsers: OnlineUser[];
-  sendMessage: (content: string, media?: any, mentions?: string[]) => void;
+  sendMessage: (content: string, media?: any, mentions?: string[], replyToMessageId?: number) => void;
   setUsername: (username: string) => void;
   findMessagesByUsername: (username: string) => ChatMessage[];
   findMessageById: (messageId: number) => ChatMessage | undefined;
@@ -284,7 +284,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Send a chat message
-  const sendMessage = useCallback((content: string, media?: any, mentions?: string[]) => {
+  const sendMessage = useCallback((content: string, media?: any, mentions?: string[], replyToMessageId?: number) => {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
       toast({
         title: 'Lỗi kết nối',
@@ -300,6 +300,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         content,
         media,
         mentions,
+        replyToMessageId
       }
     }));
   }, [socket, toast]);
