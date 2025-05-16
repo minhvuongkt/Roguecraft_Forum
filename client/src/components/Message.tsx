@@ -62,11 +62,18 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
 
       // Phần mention (@username)
       const mentionText = match[0]; // Lấy toàn bộ chuỗi @username
+      const username = mentionText.substring(1); // Bỏ ký tự @ ở đầu
+      
       parts.push(
         <span
           key={`mention-${match.index}`}
-          className="text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5"
-          title="Người dùng được nhắc đến"
+          className="text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800/50"
+          title={`Nhấn để xem tin nhắn của ${username}`}
+          onClick={() => {
+            // Tìm tin nhắn của người dùng này trong hệ thống
+            console.log(`Tìm tin nhắn của người dùng: ${username}`);
+            // Có thể thêm logic để cuộn đến tin nhắn của người dùng này
+          }}
         >
           {mentionText}
         </span>,

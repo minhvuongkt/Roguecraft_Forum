@@ -16,6 +16,7 @@ interface WebSocketContextType {
   onlineUsers: OnlineUser[];
   sendMessage: (content: string, media?: any, mentions?: string[]) => void;
   setUsername: (username: string) => void;
+  findMessagesByUsername: (username: string) => ChatMessage[];
 }
 
 const WebSocketContext = createContext<WebSocketContextType>({
@@ -24,6 +25,7 @@ const WebSocketContext = createContext<WebSocketContextType>({
   onlineUsers: [],
   sendMessage: () => {},
   setUsername: () => {},
+  findMessagesByUsername: () => [],
 });
 
 export const useWebSocket = () => useContext(WebSocketContext);
@@ -317,6 +319,13 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }));
   }, [socket, toast]);
 
+  // Hàm tìm tin nhắn dựa trên tên người dùng
+  const findMessagesByUsername = useCallback((username: string) => {
+    return messages.filter(message => 
+      message.user?.username?.toLowerCase() === username.toLowerCase()
+    );
+  }, [messages]);
+
   return (
     <WebSocketContext.Provider 
       value={{ 
@@ -324,7 +333,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         messages,
         onlineUsers,
         sendMessage,
-        setUsername
+        setUsername,
+        findMessagesByUsername
       }}
     >
       {children}
