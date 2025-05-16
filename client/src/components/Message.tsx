@@ -87,7 +87,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                     <img 
                       src={imagePath} 
                       alt={`Image ${key}`} 
-                      className="object-cover h-auto max-h-[180px] max-w-[180px]"
+                      className="object-cover h-auto max-h-[220px] max-w-[220px]"
                       onLoad={(e) => {
                         // Log the image dimensions
                         console.log("Image dimensions:", e.currentTarget.naturalWidth, e.currentTarget.naturalHeight);
@@ -215,7 +215,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
             
             {/* Tin nhắn văn bản */}
             <div className="flex justify-end">
-              <div className="bg-blue-600 text-white p-2 px-3 rounded-2xl rounded-tr-sm break-words relative group">
+              <div className="bg-gray-700 text-white p-2.5 px-4 rounded-full break-words relative group">
                 <p className="text-sm leading-relaxed">{parseMessageContent(message.content)}</p>
                 
                 {/* Reply button (visible on hover) */}
@@ -231,7 +231,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
             
             {/* Media Content sau tin nhắn văn bản */}
             {message.media && (
-              <div className="flex justify-end mt-1 mb-12">
+              <div className="flex justify-end mt-1 mb-8 rounded-lg overflow-hidden">
                 {renderMedia()}
               </div>
             )}
@@ -293,13 +293,13 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
           
           {/* Tin nhắn văn bản */}
           <div className="flex">
-            <div className="bg-gray-200 dark:bg-gray-800 p-2 px-3 rounded-2xl rounded-tl-sm dark:text-gray-100 relative group">
+            <div className="bg-gray-200 dark:bg-gray-600 p-2.5 px-4 rounded-full dark:text-white relative group">
               <p className="text-sm leading-relaxed">{parseMessageContent(message.content)}</p>
               
               {/* Reply button (visible on hover) */}
               <button 
                 onClick={handleReply}
-                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-300/50 dark:bg-gray-700/50 p-1 rounded-full hover:bg-gray-300 dark:hover:bg-gray-700"
+                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-300/50 dark:bg-gray-500/50 p-1 rounded-full hover:bg-gray-300 dark:hover:bg-gray-500"
                 title="Trả lời tin nhắn này"
               >
                 <CornerUpLeft className="h-3.5 w-3.5 text-gray-700 dark:text-gray-300" />
@@ -309,7 +309,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
           
           {/* Media Content sau tin nhắn văn bản */}
           {message.media && (
-            <div className="flex mt-1 mb-12">
+            <div className="flex mt-1 mb-8 rounded-lg overflow-hidden">
               {renderMedia()}
             </div>
           )}
