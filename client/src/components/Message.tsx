@@ -404,8 +404,54 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                   isCurrentUser
                     ? "bg-blue-500 text-white rounded-tr-sm"
                     : "bg-gray-200 dark:bg-gray-700 dark:text-white rounded-tl-sm",
+                  isReplyMessage ? "relative pt-5" : "",
                 )}
               >
+                {/* Phần tham chiếu đến tin nhắn gốc nếu đây là tin nhắn trả lời */}
+                {isReplyMessage && (
+                  <div 
+                    className="absolute -top-3 left-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-600 px-2 py-0.5 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
+                    onClick={() => {
+                      // Trích xuất tên người dùng từ tin nhắn trả lời
+                      const match = message.content.match(/@(\S+)/);
+                      if (match && match[1]) {
+                        const username = match[1];
+                        
+                        // Tìm tin nhắn của người dùng được tag
+                        const userMessages = findMessagesByUsername(username);
+                        if (userMessages.length > 0) {
+                          // Tìm tin nhắn gần nhất trước tin nhắn hiện tại
+                          const earlierMessages = userMessages.filter(msg => 
+                            new Date(msg.createdAt).getTime() < new Date(message.createdAt).getTime()
+                          );
+                          
+                          if (earlierMessages.length > 0) {
+                            // Sắp xếp để lấy tin nhắn gần nhất trước tin nhắn hiện tại
+                            const sortedMessages = earlierMessages.sort((a, b) => 
+                              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                            );
+                            
+                            const targetMessageId = sortedMessages[0].id;
+                            const targetElement = document.getElementById(`msg-${targetMessageId}`);
+                            
+                            if (targetElement) {
+                              // Cuộn đến tin nhắn và highlight
+                              targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
+                              targetElement.classList.add("bg-yellow-100", "dark:bg-yellow-900/20");
+                              
+                              setTimeout(() => {
+                                targetElement.classList.remove("bg-yellow-100", "dark:bg-yellow-900/20");
+                              }, 2000);
+                            }
+                          }
+                        }
+                      }
+                    }}
+                  >
+                    Trả lời cho @{message.content.match(/@(\S+)/)?.[1]}
+                  </div>
+                )}
+
                 <p className="text-sm leading-relaxed break-words whitespace-pre-line">
                   {parseMessageContent(message.content)}
                 </p>
