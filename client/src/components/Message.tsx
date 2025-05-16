@@ -69,7 +69,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
       if (typeof message.media === 'object' && Object.keys(message.media).some(key => /^\d+$/.test(key))) {
         // Đây là định dạng mới - một object với các khóa số
         return (
-          <div className="mt-4 w-full">
+          <div className="flex flex-wrap gap-1 mt-1 max-w-full">
             {Object.entries(message.media).map(([key, path]) => {
               // Đảm bảo đường dẫn là đầy đủ
               let imagePath = path as string;
@@ -83,12 +83,11 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
               
               if (isImage) {
                 return (
-                  <div key={key} className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 mb-2">
+                  <div key={key} className="overflow-hidden rounded-lg cursor-pointer">
                     <img 
                       src={imagePath} 
                       alt={`Image ${key}`} 
-                      className="w-full object-contain cursor-pointer"
-                      style={{ maxHeight: '220px' }}
+                      className="object-cover h-auto max-h-32 max-w-32"
                       onClick={() => {
                         setViewingImageUrl(imagePath);
                         setImageViewerOpen(true);
@@ -103,19 +102,18 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                 );
               } else if (isVideo) {
                 return (
-                  <div key={key} className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 mb-2">
+                  <div key={key} className="overflow-hidden rounded-lg">
                     <video 
                       src={imagePath} 
                       controls 
-                      className="w-full"
-                      style={{ maxHeight: '220px' }}
+                      className="max-w-[200px] max-h-32"
                     />
                   </div>
                 );
               } else {
                 // Nếu không phải ảnh hoặc video, hiển thị link để tải xuống
                 return (
-                  <div key={key} className="py-1.5 px-2.5 bg-gray-100 dark:bg-gray-700 rounded-md mb-2 text-xs flex items-center">
+                  <div key={key} className="py-1.5 px-2.5 bg-gray-100 dark:bg-gray-700 rounded-md text-xs flex items-center">
                     <span className="font-medium mr-1.5">Tệp đính kèm:</span>
                     <a 
                       href={imagePath} 
@@ -136,14 +134,13 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
       // Định dạng cũ - một object với url, type, v.v.
       if (message.media.url) {
         return (
-          <div className="mt-4 w-full">
+          <div className="flex flex-wrap gap-1 mt-1">
             {message.media.type?.startsWith('image/') ? (
-              <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <div className="overflow-hidden rounded-lg cursor-pointer">
                 <img 
                   src={message.media.url} 
                   alt={message.media.name || "Image attachment"} 
-                  className="w-full object-contain cursor-pointer"
-                  style={{ maxHeight: '220px' }}
+                  className="object-cover h-auto max-h-32 max-w-32"
                   onClick={() => {
                     setViewingImageUrl(message.media.url);
                     setImageViewerOpen(true);
@@ -156,12 +153,11 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                 />
               </div>
             ) : message.media.type?.startsWith('video/') ? (
-              <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="overflow-hidden rounded-lg">
                 <video 
                   src={message.media.url} 
                   controls 
-                  className="w-full"
-                  style={{ maxHeight: '220px' }}
+                  className="max-w-[200px] max-h-32"
                 />
               </div>
             ) : (
@@ -185,14 +181,14 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
       // Nếu định dạng không được nhận dạng
       console.error("Unknown media format:", message.media);
       return (
-        <div className="py-1.5 px-2.5 mt-4 bg-gray-100 dark:bg-gray-700 rounded-md text-xs">
+        <div className="py-1.5 px-2.5 mt-1 bg-gray-100 dark:bg-gray-700 rounded-md text-xs">
           Media attachment (unknown format)
         </div>
       );
     } catch (err) {
       console.error("Error rendering media:", err, message.media);
       return (
-        <div className="text-xs text-destructive mt-4 py-1.5 px-2.5 bg-red-50 dark:bg-red-900/30 rounded-md">
+        <div className="text-xs text-destructive mt-1 py-1.5 px-2.5 bg-red-50 dark:bg-red-900/30 rounded-md">
           Error displaying media attachment
         </div>
       );
