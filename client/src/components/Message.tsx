@@ -350,7 +350,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
           onClick={handleReply}
           className={cn(
             "absolute top-1/2 -translate-y-1/2 p-1.5 bg-white dark:bg-gray-800 rounded-full shadow-sm",
-            isCurrentUser ? "-left-1" : "-right-1",
+            isCurrentUser ? "-left-0" : "-right-0",
             "opacity-70 hover:opacity-100 transition-opacity duration-150",
           )}
           title="Trả lời tin nhắn này"
