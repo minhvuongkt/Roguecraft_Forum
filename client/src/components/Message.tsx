@@ -24,8 +24,11 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
   const [isHovered, setIsHovered] = useState(false);
   const messageRef = useRef<HTMLDivElement>(null);
   
-  // Xác định xem tin nhắn có phải là phản hồi không dựa trên nội dung
-  const isReplyMessage = message.content.trim().startsWith('@');
+  // Xác định xem tin nhắn có phải là phản hồi không dựa trên replyToMessageId hoặc nội dung
+  const isReplyMessage = message.replyToMessageId !== null && message.replyToMessageId !== undefined || message.content.trim().startsWith('@');
+  
+  // Lấy tin nhắn gốc nếu có replyToMessageId
+  const originalMessage = message.replyToMessageId ? findMessageById(message.replyToMessageId) : undefined;
   
   // Hàm cuộn đến tin nhắn cụ thể theo ID
   const scrollToMessageById = (messageId: number) => {
