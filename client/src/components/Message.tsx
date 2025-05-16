@@ -20,6 +20,9 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState("");
   const [isHovered, setIsHovered] = useState(false);
+  
+  // Xác định xem tin nhắn có phải là phản hồi không dựa trên nội dung
+  const isReplyMessage = message.content.trim().startsWith('@');
 
   // Handle reply to message
   const handleReply = () => {
@@ -38,9 +41,9 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
 
   // Parse message content to highlight mentions - FIX MENTION HIGHLIGHTING
   const parseMessageContent = (content: string): JSX.Element => {
-    // Thay đổi regex để nhận dạng mention đầy đủ
-    // Tìm các chuỗi bắt đầu bằng @ và theo sau là các chữ cái, số, dấu gạch dưới, dấu cách
-    const mentionRegex = /@(\w+)/g;
+    // Regex mới để bắt toàn bộ tên người dùng sau @
+    // Tìm @ kèm theo chuỗi ký tự cho đến khi gặp khoảng trắng hoặc kết thúc chuỗi
+    const mentionRegex = /@(\S+)/g;
     const parts = [];
 
     let lastIndex = 0;
@@ -62,7 +65,8 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
       parts.push(
         <span
           key={`mention-${match.index}`}
-          className="text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-md"
+          className="text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5"
+          title="Người dùng được nhắc đến"
         >
           {mentionText}
         </span>,
