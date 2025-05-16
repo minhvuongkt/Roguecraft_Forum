@@ -87,7 +87,11 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                     <img 
                       src={imagePath} 
                       alt={`Image ${key}`} 
-                      className="object-cover h-auto max-h-48 max-w-48"
+                      className="object-cover h-auto max-h-[180px] max-w-[180px]"
+                      onLoad={(e) => {
+                        // Log the image dimensions
+                        console.log("Image dimensions:", e.currentTarget.naturalWidth, e.currentTarget.naturalHeight);
+                      }}
                       onClick={() => {
                         setViewingImageUrl(imagePath);
                         setImageViewerOpen(true);
@@ -227,7 +231,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
             
             {/* Media Content sau tin nhắn văn bản */}
             {message.media && (
-              <div className="flex justify-end mt-1 mb-4">
+              <div className="flex justify-end mt-1 mb-12">
                 {renderMedia()}
               </div>
             )}
@@ -305,7 +309,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
           
           {/* Media Content sau tin nhắn văn bản */}
           {message.media && (
-            <div className="flex mt-1 mb-4">
+            <div className="flex mt-1 mb-12">
               {renderMedia()}
             </div>
           )}
