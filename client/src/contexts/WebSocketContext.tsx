@@ -17,6 +17,7 @@ interface WebSocketContextType {
   sendMessage: (content: string, media?: any, mentions?: string[]) => void;
   setUsername: (username: string) => void;
   findMessagesByUsername: (username: string) => ChatMessage[];
+  findMessageById: (messageId: number) => ChatMessage | undefined;
 }
 
 const WebSocketContext = createContext<WebSocketContextType>({
@@ -26,6 +27,7 @@ const WebSocketContext = createContext<WebSocketContextType>({
   sendMessage: () => {},
   setUsername: () => {},
   findMessagesByUsername: () => [],
+  findMessageById: () => undefined,
 });
 
 export const useWebSocket = () => useContext(WebSocketContext);
@@ -339,7 +341,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         onlineUsers,
         sendMessage,
         setUsername,
-        findMessagesByUsername
+        findMessagesByUsername,
+        findMessageById
       }}
     >
       {children}

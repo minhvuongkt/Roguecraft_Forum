@@ -16,7 +16,7 @@ interface MessageProps {
 
 function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
   const { user: currentUser } = useAuth();
-  const { findMessagesByUsername, messages } = useWebSocket();
+  const { findMessagesByUsername, findMessageById, messages } = useWebSocket();
   const [, navigate] = useLocation();
   const isCurrentUser = message.userId === currentUser?.id;
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
@@ -26,6 +26,21 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
   
   // Xác định xem tin nhắn có phải là phản hồi không dựa trên nội dung
   const isReplyMessage = message.content.trim().startsWith('@');
+  
+  // Hàm cuộn đến tin nhắn cụ thể theo ID
+  const scrollToMessageById = (messageId: number) => {
+    const targetElement = document.getElementById(`msg-${messageId}`);
+    if (targetElement) {
+      // Cuộn đến tin nhắn và tạo hiệu ứng highlight tạm thời
+      targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      targetElement.classList.add("bg-yellow-100", "dark:bg-yellow-900/20");
+      
+      // Sau 2 giây, xóa hiệu ứng highlight
+      setTimeout(() => {
+        targetElement.classList.remove("bg-yellow-100", "dark:bg-yellow-900/20");
+      }, 2000);
+    }
+  };
 
   // Handle reply to message
   const handleReply = () => {
@@ -426,29 +441,26 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                           );
                           
                           if (earlierMessages.length > 0) {
-                            // Sắp xếp để lấy tin nhắn gần nhất trước tin nhắn hiện tại
+                            // Sắp xếp để lấy tin nhắn đúng với tin nhắn đang trả lời
+                            // (tin nhắn gần nhất trước tin nhắn hiện tại)
                             const sortedMessages = earlierMessages.sort((a, b) => 
                               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
                             );
                             
-                            const targetMessageId = sortedMessages[0].id;
-                            const targetElement = document.getElementById(`msg-${targetMessageId}`);
-                            
-                            if (targetElement) {
-                              // Cuộn đến tin nhắn và highlight
-                              targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
-                              targetElement.classList.add("bg-yellow-100", "dark:bg-yellow-900/20");
-                              
-                              setTimeout(() => {
-                                targetElement.classList.remove("bg-yellow-100", "dark:bg-yellow-900/20");
-                              }, 2000);
-                            }
+                            // Sử dụng hàm cuộn đến tin nhắn thay vì code trực tiếp tại đây
+                            scrollToMessageById(sortedMessages[0].id);
                           }
                         }
                       }
                     }}
                   >
-                    Trả lời cho @{message.content.match(/@(\S+)/)?.[1]}
+                    <div className="flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-corner-up-left">
+                        <polyline points="9 14 4 9 9 4"></polyline>
+                        <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
+                      </svg>
+                      Trả lời cho @{message.content.match(/@(\S+)/)?.[1]}
+                    </div>
                   </div>
                 )}
 
