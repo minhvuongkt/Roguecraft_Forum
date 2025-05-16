@@ -209,6 +209,13 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
               </div>
             )}
             
+            {/* Media Content trước, tin nhắn văn bản sau */}
+            {message.media && (
+              <div className="flex justify-end mb-1">
+                {renderMedia()}
+              </div>
+            )}
+            
             {/* Tin nhắn văn bản */}
             <div className="flex justify-end">
               <div className="bg-blue-600 text-white p-2 px-3 rounded-2xl rounded-tr-sm break-words relative group">
@@ -224,13 +231,6 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                 </button>
               </div>
             </div>
-            
-            {/* Media Content (gần hơn với tin nhắn) */}
-            {message.media && (
-              <div className="flex justify-end mt-0.5">
-                {renderMedia()}
-              </div>
-            )}
           </div>
           
           <Avatar className="h-7 w-7 flex-shrink-0 self-start">
@@ -303,9 +303,9 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
             </div>
           </div>
           
-          {/* Media Content (gần hơn với tin nhắn) */}
+          {/* Media Content trước, tin nhắn văn bản sau */}
           {message.media && (
-            <div className="flex mt-0.5">
+            <div className="flex mb-1">
               {renderMedia()}
             </div>
           )}
