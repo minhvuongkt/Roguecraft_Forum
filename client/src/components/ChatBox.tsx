@@ -20,11 +20,9 @@ import {
   ChevronDown,
   Loader2,
   Info,
-  BellDot,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
-import { VariableSizeList as VirtualList } from "react-window";
 import { ChatMessage } from "@/types";
 import {
   Dialog,
@@ -44,14 +42,22 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ChatSearch } from "@/components/ui/chat-search";
+import AutoSizer from "react-virtualized-auto-sizer";
+import { VariableSizeList as VirtualList } from "react-window";
+import { cn } from "@/lib/utils";
+
+// Kích thước tin nhắn mặc định và với media
+const DEFAULT_MESSAGE_HEIGHT = 70;
+const MESSAGE_WITH_MEDIA_HEIGHT = 200;
 
 export function ChatBox() {
   const { groupedMessages, sendMessage } = useChat();
   const { isConnected, onlineUsers } = useWebSocket();
   const { user, setTemporaryUser } = useAuth();
   const { toast } = useToast();
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<VirtualList>(null);
+  const messageHeightsRef = useRef<{ [key: string]: number }>({});
 
   const [state, setState] = useState({
     autoScroll: true,
@@ -61,9 +67,6 @@ export function ChatBox() {
     replyingTo: null as ChatMessage | null,
     searchTerm: "",
     isScrolling: false,
-    newMessagesCount: 0,
-    lastReadMessageId: "",
-    lastMessageHeight: 0,
   });
 
   // Filter messages based on search term
@@ -92,145 +95,103 @@ export function ChatBox() {
 
   // Create flattened message list for virtual scrolling
   const flattenedMessages = useMemo(() => {
-    const flattened: {
-      message: ChatMessage;
-      showUser: boolean;
-      dateHeader?: string;
-      isNewMessage?: boolean;
-    }[] = [];
+    return Object.entries(filteredGroupedMessages).reduce(
+      (acc, [date, messages]) => {
+        // Add date header
+        const dateString =
+          date === new Date().toLocaleDateString("vi-VN") ? "Hôm nay" : date;
 
-    // Lấy ID của tin nhắn cuối cùng đã đọc trước đó
-    const lastReadId = state.lastReadMessageId;
-    let foundNewMessages = false;
-    let newMessagesCount = 0;
-
-    Object.entries(filteredGroupedMessages).forEach(([date, messages]) => {
-      // Add date header
-      const dateString =
-        date === new Date().toLocaleDateString("vi-VN") ? "Hôm nay" : date;
-      if (messages.length > 0) {
-        flattened.push({
-          message: messages[0],
-          showUser: false,
-          dateHeader: dateString,
-        });
-      }
-
-      // Add messages
-      messages.forEach((message, index) => {
-        // Kiểm tra tin nhắn mới
-        const isNewMessage = lastReadId
-          ? lastReadId !== message.id &&
-            !foundNewMessages &&
-            message.createdAt > new Date(Date.now() - 30000).toISOString()
-          : false;
-
-        if (isNewMessage) {
-          foundNewMessages = true;
-          newMessagesCount += 1;
+        // Chỉ thêm tiêu đề ngày nếu có tin nhắn
+        if (messages.length > 0) {
+          acc.push({
+            type: "date-header",
+            id: `date-${date}`,
+            content: dateString,
+          });
         }
 
-        flattened.push({
-          message,
-          showUser:
-            index === 0 || messages[index - 1]?.userId !== message.userId,
-          dateHeader: undefined,
-          isNewMessage,
+        // Thêm tin nhắn với thông tin nhóm
+        messages.forEach((message, index) => {
+          const previousMessage = index > 0 ? messages[index - 1] : null;
+          const nextMessage =
+            index < messages.length - 1 ? messages[index + 1] : null;
+
+          // Kiểm tra xem tin nhắn có thuộc cùng người gửi không để nhóm
+          const isFirstInGroup =
+            !previousMessage || previousMessage.userId !== message.userId;
+          const isLastInGroup =
+            !nextMessage || nextMessage.userId !== message.userId;
+
+          acc.push({
+            type: "message",
+            id: `msg-${message.id}`,
+            message,
+            isFirstInGroup,
+            isLastInGroup,
+            showUser: isFirstInGroup,
+          });
         });
-      });
-    });
 
-    // Cập nhật số tin nhắn mới
-    if (state.newMessagesCount !== newMessagesCount && newMessagesCount > 0) {
-      // Dùng setTimeout để tránh lỗi "Cannot update a component while rendering a different component"
-      setTimeout(() => {
-        setState((prev) => ({ ...prev, newMessagesCount }));
-      }, 0);
+        return acc;
+      },
+      [] as Array<{
+        type: "date-header" | "message";
+        id: string;
+        content?: string;
+        message?: ChatMessage;
+        isFirstInGroup?: boolean;
+        isLastInGroup?: boolean;
+        showUser?: boolean;
+      }>,
+    );
+  }, [filteredGroupedMessages]);
+
+  // Ước tính chiều cao mỗi item để VirtualList render chính xác
+  const getItemSize = useCallback(
+    (index: number): number => {
+      const item = flattenedMessages[index];
+      if (!item) return DEFAULT_MESSAGE_HEIGHT;
+
+      // Nếu đã có chiều cao được lưu trữ, sử dụng nó
+      if (messageHeightsRef.current[item.id]) {
+        return messageHeightsRef.current[item.id];
+      }
+
+      // Tính chiều cao dựa vào loại item
+      if (item.type === "date-header") {
+        return 40; // Date header height
+      }
+
+      // Nếu là tin nhắn có media, cho nhiều không gian hơn
+      if (item.message?.media) {
+        return MESSAGE_WITH_MEDIA_HEIGHT;
+      }
+
+      // Tin nhắn văn bản thông thường
+      return DEFAULT_MESSAGE_HEIGHT;
+    },
+    [flattenedMessages],
+  );
+
+  // Lưu trữ thực tế chiều cao của phần tử đã render
+  const setItemSize = useCallback((id: string, height: number) => {
+    if (messageHeightsRef.current[id] !== height) {
+      messageHeightsRef.current[id] = height;
+      // Thông báo với VirtualList để cập nhật lại kích thước
+      if (listRef.current) {
+        listRef.current.resetAfterIndex(0);
+      }
     }
+  }, []);
 
-    return flattened;
-  }, [filteredGroupedMessages, state.lastReadMessageId]);
-
-  // Sử dụng ref để theo dõi độ dài trước đó của danh sách tin nhắn
-  const prevMessagesLengthRef = useRef(flattenedMessages.length);
-
-  // Auto-scroll to bottom when new messages arrive
+  // Tự động cuộn xuống khi có tin nhắn mới
   useEffect(() => {
-    const currentLength = flattenedMessages.length;
-    const prevLength = prevMessagesLengthRef.current;
-
-    // Nếu có tin nhắn mới
-    if (currentLength > prevLength) {
-      if (state.autoScroll) {
-        // Đợi một chút để DOM cập nhật
-        setTimeout(() => {
-          if (listRef.current) {
-            listRef.current.scrollToItem(currentLength - 1, "end");
-            // Đánh dấu tất cả đã đọc khi tự động cuộn
-            markAllAsRead();
-          }
-        }, 100);
-      } else {
-        // Nếu người dùng đang xem tin nhắn cũ, hiển thị thông báo
-        const latestMessage = flattenedMessages[currentLength - 1]?.message;
-        if (latestMessage) {
-          setState((prev) => ({
-            ...prev,
-            lastReadMessageId:
-              prev.lastReadMessageId || String(latestMessage.id),
-          }));
-        }
-      }
+    if (state.autoScroll && listRef.current && flattenedMessages.length > 0) {
+      listRef.current.scrollToItem(flattenedMessages.length - 1, "end");
     }
-
-    // Cập nhật ref
-    prevMessagesLengthRef.current = currentLength;
   }, [flattenedMessages.length, state.autoScroll]);
 
-  // Handle scroll to detect when user manually scrolls up
-  // const handleScroll = useCallback(
-  //   ({
-  //     scrollOffset,
-  //     scrollUpdateWasRequested,
-  //   }: {
-  //     scrollOffset: number;
-  //     scrollUpdateWasRequested: boolean;
-  //   }) => {
-  //     if (scrollUpdateWasRequested) return;
-
-  //     setState((prev) => ({
-  //       ...prev,
-  //       isScrolling: true,
-  //     }));
-
-  //     // Giải phóng trạng thái isScrolling sau một thời gian
-  //     setTimeout(() => {
-  //       setState((prev) => ({ ...prev, isScrolling: false }));
-  //     }, 150);
-
-  //     // Tính toán vị trí cuộn và chiều cao để xác định trạng thái autoScroll
-  //     if (listRef.current) {
-  //       const listHeight = listRef.current._outerRef.clientHeight;
-  //       const contentHeight = listRef.current._outerRef.scrollHeight;
-  //       const distanceFromBottom = contentHeight - scrollOffset - listHeight;
-
-  //       const isNearBottom = distanceFromBottom < 100;
-
-  //       if (isNearBottom !== state.autoScroll) {
-  //         setState((prev) => ({
-  //           ...prev,
-  //           autoScroll: isNearBottom,
-  //         }));
-
-  //         // Nếu người dùng cuộn xuống cuối, đánh dấu tất cả là đã đọc
-  //         if (isNearBottom) {
-  //           markAllAsRead();
-  //         }
-  //       }
-  //     }
-  //   },
-  //   [state.autoScroll],
-  // );
+  // Xử lý sự kiện cuộn
   const handleScroll = useCallback(
     ({
       scrollOffset,
@@ -246,61 +207,42 @@ export function ChatBox() {
         isScrolling: true,
       }));
 
-      // Giải phóng trạng thái isScrolling sau một thời gian
+      // Reset trạng thái cuộn sau một khoảng thời gian
       setTimeout(() => {
         setState((prev) => ({ ...prev, isScrolling: false }));
       }, 150);
 
-      // Tính toán vị trí cuộn và chiều cao để xác định trạng thái autoScroll
-      if (scrollRef.current) {
-        const listHeight = listRef.current?._outerRef?.clientHeight || 0;
-        const contentHeight = scrollRef.current?.scrollHeight || 0;
+      // Kiểm tra xem đang ở gần cuối không để bật autoScroll
+      if (listRef.current) {
+        const listHeight = listRef.current._outerRef.clientHeight;
+        const contentHeight = listRef.current._instanceProps.totalSize;
         const distanceFromBottom = contentHeight - scrollOffset - listHeight;
 
         const isNearBottom = distanceFromBottom < 100;
 
-        if (isNearBottom !== state.autoScroll) {
-          setState((prev) => ({
-            ...prev,
-            autoScroll: isNearBottom,
-          }));
-
-          // Nếu người dùng cuộn xuống cuối, đánh dấu tất cả là đã đọc
-          if (isNearBottom) {
-            markAllAsRead();
-          }
-        }
+        setState((prev) => ({
+          ...prev,
+          autoScroll: isNearBottom,
+        }));
       }
     },
-    [state.autoScroll],
+    [],
   );
-  // Đánh dấu tất cả tin nhắn là đã đọc
-  const markAllAsRead = useCallback(() => {
-    if (flattenedMessages.length > 0) {
-      const lastMessage =
-        flattenedMessages[flattenedMessages.length - 1].message;
-      setState((prev) => ({
-        ...prev,
-        lastReadMessageId: lastMessage.id.toString(),
-        newMessagesCount: 0,
-      }));
-    }
-  }, [flattenedMessages]);
 
-  // Handle reply to a message
+  // Xử lý trả lời tin nhắn
   const handleReplyToMessage = useCallback((message: ChatMessage) => {
     setState((prev) => ({ ...prev, replyingTo: message }));
   }, []);
 
-  // Handle canceling a reply
+  // Hủy trả lời
   const handleCancelReply = useCallback(() => {
     setState((prev) => ({ ...prev, replyingTo: null }));
   }, []);
 
-  // Handle sending a message with kiểm tra media hợp lệ
+  // Xử lý gửi tin nhắn
   const handleSendMessage = useCallback(
     (message: string, media?: any) => {
-      // Check if message starts with /ten command
+      // Kiểm tra lệnh đặt tên
       if (message.startsWith("/ten ")) {
         const newUsername = message.substring(5).trim();
         if (newUsername) {
@@ -309,57 +251,61 @@ export function ChatBox() {
         }
       }
 
+      // Kiểm tra người dùng đã đăng nhập chưa
       if (!user) {
         setState((prev) => ({ ...prev, isUsernameDialogOpen: true }));
         return;
       }
 
-      // Kiểm tra media hợp lệ
-      if (media && typeof media !== "object") {
-        console.error("Media không hợp lệ:", media);
-        toast({
-          title: "Lỗi tải lên",
-          description: "Định dạng media không hợp lệ",
-          variant: "destructive",
-        });
-        return;
-      }
+      // Kiểm tra tính hợp lệ của media
+      if (media) {
+        if (typeof media !== "object") {
+          console.error("Media không hợp lệ:", media);
+          toast({
+            title: "Lỗi tải lên",
+            description: "Định dạng media không hợp lệ",
+            variant: "destructive",
+          });
+          return;
+        }
 
-      // Nếu đang trả lời, thêm mention vào nội dung
-      let finalMessage = message;
-      if (state.replyingTo && state.replyingTo.user) {
-        // Nếu tin nhắn chưa có mention người dùng, thêm vào
-        if (!message.includes(`@${state.replyingTo.user.username}`)) {
-          finalMessage = `@${state.replyingTo.user.username} ${message}`;
+        // Kiểm tra xem media có phải là object rỗng không
+        if (Object.keys(media).length === 0) {
+          // Gửi tin nhắn không kèm media
+          media = undefined;
         }
       }
 
-      // Gửi tin nhắn với media đã được upload
+      // Nếu đang trả lời, thêm mention
+      let finalMessage = message;
+      if (state.replyingTo && state.replyingTo.user) {
+        const username = state.replyingTo.user.username;
+        if (!finalMessage.includes(`@${username}`)) {
+          finalMessage = `@${username} ${finalMessage}`;
+        }
+      }
+
+      // Gửi tin nhắn
       sendMessage(finalMessage, media);
+
+      // Reset state
       setState((prev) => ({
         ...prev,
         replyingTo: null,
         autoScroll: true,
       }));
 
-      // Đảm bảo cuộn xuống và đánh dấu đã đọc sau khi gửi tin nhắn
+      // Cuộn xuống cuối sau khi gửi
       setTimeout(() => {
         if (listRef.current) {
           listRef.current.scrollToItem(flattenedMessages.length, "end");
-          markAllAsRead();
         }
       }, 100);
     },
-    [
-      user,
-      state.replyingTo,
-      toast,
-      sendMessage,
-      flattenedMessages.length,
-      markAllAsRead,
-    ],
+    [user, state.replyingTo, toast, sendMessage, flattenedMessages.length],
   );
 
+  // Xử lý đặt tên người dùng
   const handleSetUsername = async (newUsername: string) => {
     if (!newUsername || newUsername.trim() === "") {
       toast({
@@ -394,7 +340,7 @@ export function ChatBox() {
     }
   };
 
-  // Handlers để cập nhật các state riêng lẻ
+  // Các handler state
   const handleSearchChange = useCallback((term: string) => {
     setState((prev) => ({ ...prev, searchTerm: term }));
   }, []);
@@ -414,38 +360,62 @@ export function ChatBox() {
     setState((prev) => ({ ...prev, autoScroll: true }));
     if (listRef.current && flattenedMessages.length > 0) {
       listRef.current.scrollToItem(flattenedMessages.length - 1, "end");
-      // Đánh dấu tất cả là đã đọc khi cuộn xuống
-      markAllAsRead();
     }
-  }, [flattenedMessages.length, markAllAsRead]);
+  }, [flattenedMessages.length]);
 
-  // Đo kích thước dựa vào điều kiện message
-  const getItemSize = useCallback(
-    (index: number) => {
-      const item = flattenedMessages[index];
-      if (!item) return 70;
+  // Render item trong VirtualList
+  const ItemRenderer = ({
+    index,
+    style,
+  }: {
+    index: number;
+    style: React.CSSProperties;
+  }) => {
+    const item = flattenedMessages[index];
 
-      if (item.dateHeader) {
-        return 40; // Kích thước cho date header
+    // Tạo ref để đo kích thước thực của mỗi item sau khi render
+    const itemRef = useRef<HTMLDivElement>(null);
+
+    // Đo kích thước thực tế sau khi render
+    useEffect(() => {
+      if (itemRef.current && item) {
+        const height = itemRef.current.getBoundingClientRect().height;
+        setItemSize(item.id, height);
       }
+    }, [item]);
 
-      // Nếu là message có media, cho kích thước lớn hơn
-      if (item.message.media) {
-        return 200;
-      }
+    if (item.type === "date-header") {
+      return (
+        <div style={style} ref={itemRef}>
+          <div className="flex items-center justify-center my-2 relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
+            </div>
+            <div className="relative px-3 py-0.5 bg-white dark:bg-gray-900 text-xs text-gray-500 dark:text-gray-400 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
+              {item.content}
+            </div>
+          </div>
+        </div>
+      );
+    }
 
-      // Ước tính kích thước dựa vào độ dài nội dung
-      const contentLength = item.message.content?.length || 0;
-      if (contentLength > 200) {
-        return 120; // Tin nhắn dài
-      } else if (contentLength > 100) {
-        return 90; // Tin nhắn trung bình
-      }
+    if (item.type === "message" && item.message) {
+      return (
+        <div style={style} ref={itemRef}>
+          <Message
+            key={item.id}
+            message={item.message}
+            showUser={item.showUser}
+            isFirstInGroup={item.isFirstInGroup}
+            isLastInGroup={item.isLastInGroup}
+            onReply={handleReplyToMessage}
+          />
+        </div>
+      );
+    }
 
-      return 70; // Tin nhắn ngắn
-    },
-    [flattenedMessages],
-  );
+    return null;
+  };
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg shadow h-[calc(100vh-150px)] md:h-[calc(100vh-120px)] flex flex-col border border-gray-200 dark:border-gray-800">
@@ -454,9 +424,9 @@ export function ChatBox() {
         <div className="flex items-center">
           <h2 className="font-semibold text-base flex items-center gap-2">
             {isConnected ? (
-              <span className="ml-2 inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+              <span className="inline-flex h-2 w-2 rounded-full bg-green-500"></span>
             ) : (
-              <span className="ml-2 inline-flex h-2.5 w-2.5 rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse"></span>
+              <span className="inline-flex h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600"></span>
             )}
             {!isConnected && (
               <span className="text-xs text-gray-600 dark:text-gray-400">
@@ -495,7 +465,7 @@ export function ChatBox() {
       </div>
 
       {/* Chat Messages */}
-      <div className="flex-1 relative overflow-hidden">
+      <div ref={containerRef} className="flex-1 relative overflow-hidden">
         {/* Thông báo người dùng chưa đăng nhập */}
         {!user && (
           <div className="absolute top-0 left-0 right-0 bg-amber-50 dark:bg-amber-950/30 p-3 text-center z-10 flex items-center justify-center border-b border-amber-100 dark:border-amber-800/50 backdrop-blur-sm">
@@ -530,79 +500,49 @@ export function ChatBox() {
           </TooltipProvider>
         </div>
 
-        <div className={`h-[calc(100%-40px)] ${!user ? "pt-10" : "pt-2"}`}>
-          {/* Nút "tin mới nhất" được cải tiến */}
-          {(!state.autoScroll || state.newMessagesCount > 0) && (
-            <div className="absolute bottom-4 right-4 z-10">
-              <Button
-                variant="outline"
-                size="sm"
-                className={`rounded-full shadow-md border-gray-200 dark:border-gray-700 ${
-                  state.newMessagesCount > 0
-                    ? "bg-blue-500 text-white hover:bg-blue-600 border-blue-600"
-                    : "bg-white dark:bg-gray-800"
-                } flex items-center gap-1.5 px-3 py-1 h-8 transition-all`}
-                onClick={scrollToBottom}
-                disabled={state.isScrolling}
-              >
-                {state.isScrolling ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : state.newMessagesCount > 0 ? (
-                  <>
-                    <BellDot className="h-3.5 w-3.5" />
-                    <span className="text-xs font-medium">
-                      {state.newMessagesCount} tin nhắn mới
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="h-3.5 w-3.5" />
-                    <span className="text-xs">Tin mới nhất</span>
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
-
+        {/* Messages Virtualized List */}
+        <div className={cn("h-[calc(100%-40px)]", !user && "pt-10")}>
           {flattenedMessages.length > 0 ? (
-            <VirtualList
-              ref={listRef}
-              height={400} // Sử dụng ước tính, AutoSizer sẽ cập nhật chính xác hơn
-              width="100%"
-              itemCount={flattenedMessages.length}
-              itemSize={getItemSize} // Sử dụng hàm ước tính kích thước
-              onScroll={handleScroll}
-              className="px-4"
-              overscanCount={3} // Giảm để tối ưu hiệu năng
-              initialScrollOffset={0}
-            >
-              {({ index, style }) => {
-                const item = flattenedMessages[index];
-                return (
-                  <div style={{ ...style, height: "auto" }}>
-                    {item.dateHeader && (
-                      <div className="flex items-center justify-center my-2 relative">
-                        <div className="absolute inset-0 flex items-center">
-                          <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
-                        </div>
-                        <div className="relative px-3 py-0.5 bg-white dark:bg-gray-900 text-xs text-gray-500 dark:text-gray-400 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
-                          {item.dateHeader}
-                        </div>
-                      </div>
+            <div className="h-full">
+              {/* Nút cuộn xuống */}
+              {!state.autoScroll && (
+                <div className="absolute bottom-4 right-4 z-10">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full shadow-md border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center gap-1 px-3 py-1 h-8"
+                    onClick={scrollToBottom}
+                    disabled={state.isScrolling}
+                  >
+                    {state.isScrolling ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <ChevronDown className="h-3.5 w-3.5" />
                     )}
-                    {!item.dateHeader && (
-                      <Message
-                        key={item.message.id}
-                        message={item.message}
-                        showUser={item.showUser}
-                        onReply={handleReplyToMessage}
-                        isNewMessage={item.isNewMessage}
-                      />
-                    )}
-                  </div>
-                );
-              }}
-            </VirtualList>
+                    <span className="text-xs">Tin mới nhất</span>
+                  </Button>
+                </div>
+              )}
+
+              {/* AutoSizer đảm bảo VirtualList điền đầy container */}
+              <AutoSizer>
+                {({ height, width }) => (
+                  <VirtualList
+                    ref={listRef}
+                    height={height}
+                    width={width}
+                    itemCount={flattenedMessages.length}
+                    itemSize={getItemSize}
+                    onScroll={handleScroll}
+                    className="px-4"
+                    overscanCount={5}
+                    itemData={flattenedMessages}
+                  >
+                    {ItemRenderer}
+                  </VirtualList>
+                )}
+              </AutoSizer>
+            </div>
           ) : (
             <div className="flex flex-col justify-center items-center h-48 px-4 mt-6">
               <div className="h-16 w-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4 border border-gray-200 dark:border-gray-700 shadow-sm">
@@ -691,7 +631,8 @@ export function ChatBox() {
           type="chat"
           disabled={!user}
         />
-        <div className="mt-1 text-xs text-muted-foreground px-2">
+        <div className="mt-1 text-xs text-muted-foreground px-2 flex items-center">
+          <Info className="h-3 w-3 mr-1" />
           Tin nhắn được lưu trữ tối đa trong 4 ngày. Gõ @ để tag người dùng.
         </div>
       </div>
@@ -731,7 +672,7 @@ export function ChatBox() {
               }}
             />
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex justify-end gap-2">
             <Button
               variant="outline"
               onClick={() => toggleUsernameDialog(false)}
@@ -745,7 +686,13 @@ export function ChatBox() {
               disabled={!state.username || state.isSubmitting}
               className="w-24"
             >
-              {state.isSubmitting ? "Đang xử lý..." : "Xác nhận"}
+              {state.isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Xử lý
+                </>
+              ) : (
+                "Xác nhận"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
