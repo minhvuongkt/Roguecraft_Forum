@@ -4,7 +4,7 @@ import { Message } from '@/components/Message';
 import { MessageInput } from '@/components/ui/message-input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Search, MoreVertical, Send, User, AlertCircle, X, CornerUpLeft } from 'lucide-react';
+import { Search, MoreVertical, Send, User, AlertCircle, X, CornerUpLeft, Clock, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWebSocket } from '@/contexts/WebSocketContext';
 import { FixedSizeList as VirtualList } from 'react-window';
@@ -21,6 +21,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function ChatBox() {
   const { groupedMessages, sendMessage } = useChat();
@@ -198,27 +204,62 @@ export function ChatBox() {
       </div>
       
       {/* Chat Messages */}
-      <div className="flex-1 relative">
-        {/* System Message */}
-        <div className="flex items-center justify-center pt-3 pb-1 relative">
-          <div className="absolute inset-0 flex items-center px-4">
-            <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
+      <div className="flex-1 relative overflow-hidden">
+        {/* Thông báo người dùng chưa đăng nhập */}
+        {!user && (
+          <div className="absolute top-0 left-0 right-0 bg-amber-50 dark:bg-amber-950/30 p-3 text-center z-10 flex items-center justify-center border-b border-amber-100 dark:border-amber-800/50 backdrop-blur-sm">
+            <AlertCircle className="h-4 w-4 text-amber-500 mr-2 flex-shrink-0" />
+            <span className="text-sm text-amber-800 dark:text-amber-200">
+              Vui lòng <button onClick={() => setIsUsernameDialogOpen(true)} className="font-bold underline hover:text-amber-900 dark:hover:text-amber-100">đặt tên hiển thị</button> để tham gia trò chuyện
+            </span>
           </div>
-          <div className="relative px-3 py-0.5 bg-white dark:bg-gray-900 text-xs text-gray-500 dark:text-gray-400 rounded-full border border-gray-200 dark:border-gray-700">
-            Hiển thị tin nhắn từ 3 ngày gần đây
-          </div>
-        </div>
+        )}
         
+        {/* Thanh thời gian hiển thị */}
+        <div className="sticky top-0 z-10 flex items-center justify-center pt-3 pb-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="relative px-3 py-1 bg-white/80 dark:bg-gray-900/80 text-xs text-gray-500 dark:text-gray-400 rounded-full border border-gray-200 dark:border-gray-700 backdrop-blur-sm flex items-center gap-1.5 shadow-sm hover:bg-white dark:hover:bg-gray-800 transition-colors cursor-default">
+                  <Clock className="h-3 w-3" />
+                  <span>Hiển thị tin nhắn từ 3 ngày gần đây</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">Tin nhắn cũ hơn sẽ được lưu trữ</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+
         {flattenedMessages.length > 0 ? (
-          <div className="h-[calc(100%-40px)] pt-2">
+          <div className={`h-[calc(100%-40px)] ${!user ? 'pt-10' : 'pt-2'}`}>
+            {!autoScroll && (
+              <div className="absolute bottom-4 right-4 z-10">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="rounded-full shadow-md border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center gap-1 px-3 py-1 h-8"
+                  onClick={() => {
+                    setAutoScroll(true);
+                    listRef.current?.scrollToItem(flattenedMessages.length - 1, 'end');
+                  }}
+                >
+                  <ChevronDown className="h-3.5 w-3.5" />
+                  <span className="text-xs">Cuối</span>
+                </Button>
+              </div>
+            )}
+            
             <VirtualList
               ref={listRef}
               height={400}
               width="100%"
               itemCount={flattenedMessages.length}
-              itemSize={70} // Giảm kích thước mặc định để tin nhắn gần nhau hơn
+              itemSize={60} // Giảm kích thước mặc định để tin nhắn gần nhau hơn
               onScroll={handleScroll}
               className="px-4"
+              overscanCount={5} // Tăng số lượng tin nhắn preload để tránh hiện tượng nhấp nháy
             >
               {({ index, style }) => {
                 const item = flattenedMessages[index];
@@ -229,7 +270,7 @@ export function ChatBox() {
                         <div className="absolute inset-0 flex items-center">
                           <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
                         </div>
-                        <div className="relative px-3 py-0.5 bg-white dark:bg-gray-900 text-xs text-gray-500 dark:text-gray-400 rounded-full border border-gray-200 dark:border-gray-700">
+                        <div className="relative px-3 py-0.5 bg-white dark:bg-gray-900 text-xs text-gray-500 dark:text-gray-400 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
                           {item.dateHeader}
                         </div>
                       </div>
@@ -248,8 +289,8 @@ export function ChatBox() {
             </VirtualList>
           </div>
         ) : (
-          <div className="flex flex-col justify-center items-center h-48 px-4">
-            <div className="h-16 w-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+          <div className="flex flex-col justify-center items-center h-48 px-4 mt-6">
+            <div className="h-16 w-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4 border border-gray-200 dark:border-gray-700 shadow-sm">
               <Send className="h-6 w-6 text-gray-400 dark:text-gray-500" />
             </div>
             <p className="text-gray-500 dark:text-gray-400 text-sm text-center">
