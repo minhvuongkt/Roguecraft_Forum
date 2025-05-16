@@ -282,7 +282,8 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
         {/* Message Body */}
         <div
           className={cn(
-            "flex flex-col max-w-[75%] md:max-w-[70%]",
+            "flex flex-col relative", // Add relative here
+            "max-w-[75%] md:max-w-[70%]",
             isCurrentUser ? "items-end" : "items-start",
           )}
         >
@@ -296,7 +297,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
             >
               <span
                 className={cn(
-                  "font-medium text-gray-800 dark:text-gray-200",
+                  "font-medium text-gray-800 p-1 dark:text-gray-200",
                   isCurrentUser ? "mr-1" : "ml-1",
                 )}
               >
@@ -315,29 +316,52 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                   </button>
                 )}
               </span>
-              <span className="text-gray-500 dark:text-gray-400">
-                {" ["}
+              <span className="text-gray-500 p-1 dark:text-gray-400">
+                {"["}
                 {formatTime(new Date(message.createdAt))}
-                {"] "}
+                {"]"}
               </span>
             </div>
           )}
 
-          {/* Text Bubble - TEXT ONLY */}
-          {message.content && (
-            <div
-              className={cn(
-                "p-2 px-3 rounded-2xl mb-1 break-words max-w-full",
-                isCurrentUser
-                  ? "bg-blue-500 text-white rounded-tr-sm"
-                  : "bg-gray-200 dark:bg-gray-700 dark:text-white rounded-tl-sm",
-              )}
-            >
-              <p className="text-sm leading-relaxed break-words whitespace-pre-line">
-                {parseMessageContent(message.content)}
-              </p>
-            </div>
-          )}
+          <div className="relative flex items-center">
+            {isCurrentUser && (
+              <button
+                onClick={handleReply}
+                className="mr-1 p-1 bg-white dark:bg-gray-800 rounded-full shadow-sm opacity-70 hover:opacity-100 transition-opacity duration-150"
+                title="Trả lời tin nhắn này"
+              >
+                <CornerUpLeft className="h-3 w-3 text-gray-600 dark:text-gray-300" />
+              </button>
+            )}
+
+            {/* Text Bubble - TEXT ONLY */}
+            {message.content && (
+              <div
+                className={cn(
+                  "p-2 px-3 rounded-2xl mb-1 break-words max-w-full",
+                  isCurrentUser
+                    ? "bg-blue-500 text-white rounded-tr-sm"
+                    : "bg-gray-200 dark:bg-gray-700 dark:text-white rounded-tl-sm",
+                )}
+              >
+                <p className="text-sm leading-relaxed break-words whitespace-pre-line">
+                  {parseMessageContent(message.content)}
+                </p>
+              </div>
+            )}
+
+            {/* Reply button - right side for other users' messages */}
+            {!isCurrentUser && (
+              <button
+                onClick={handleReply}
+                className="ml-1 p-1 bg-white dark:bg-gray-800 rounded-full shadow-sm opacity-70 hover:opacity-100 transition-opacity duration-150"
+                title="Trả lời tin nhắn này"
+              >
+                <CornerUpLeft className="h-3 w-3 text-gray-600 dark:text-gray-300" />
+              </button>
+            )}
+          </div>
 
           {/* Media Content - COMPLETELY SEPARATE */}
           <div
@@ -348,17 +372,17 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
         </div>
 
         {/* Always visible Reply Button */}
-        <button
+        {/* <button
           onClick={handleReply}
           className={cn(
-            "absolute top-1/2 -translate-y-1/2 p-1.5 bg-white dark:bg-gray-800 rounded-full shadow-sm",
-            isCurrentUser ? "-left-0" : "-right-0",
+            "absolute top-1/2 -translate-y-1/2 p-1 bg-white dark:bg-gray-800 rounded-full shadow-sm",
+            isCurrentUser ? "-left-1" : "-right-1",
             "opacity-70 hover:opacity-100 transition-opacity duration-150",
           )}
           title="Trả lời tin nhắn này"
         >
           <CornerUpLeft className="h-3.5 w-3.5 text-gray-600 dark:text-gray-300" />
-        </button>
+        </button> */}
       </div>
 
       {/* Image viewer modal */}
