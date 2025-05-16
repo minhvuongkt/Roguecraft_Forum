@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'wouter';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from "react";
+import { Link, useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bell, LogOut, Moon, Sun, User, UserPlus } from 'lucide-react';
-import { useTheme } from '@/hooks/use-theme';
-import { useAuth } from '@/contexts/AuthContext';
-import { LoginModal } from './LoginModal';
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Bell, LogOut, Moon, Sun, User, UserPlus } from "lucide-react";
+import { useTheme } from "@/hooks/use-theme";
+import { useAuth } from "@/contexts/AuthContext";
+import { LoginModal } from "./LoginModal";
 
 export function Header() {
-  const [activeTab, setActiveTab] = useState<'forum' | 'chat'>('forum');
+  const [activeTab, setActiveTab] = useState<"forum" | "chat">("forum");
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const { user, logout, isAuthenticated } = useAuth();
@@ -23,20 +23,20 @@ export function Header() {
 
   useEffect(() => {
     // Set active tab based on URL path
-    if (location === '/' || location.includes('/forum')) {
-      setActiveTab('forum');
-    } else if (location.includes('/chat')) {
-      setActiveTab('chat');
+    if (location === "/" || location.includes("/forum")) {
+      setActiveTab("forum");
+    } else if (location.includes("/chat")) {
+      setActiveTab("chat");
     }
   }, [location]);
 
-  const handleTabChange = (tab: 'forum' | 'chat') => {
+  const handleTabChange = (tab: "forum" | "chat") => {
     setActiveTab(tab);
     setLocation(`/${tab}`);
   };
 
   const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    setTheme(theme === "dark" ? "light" : "dark");
   };
 
   return (
@@ -45,26 +45,26 @@ export function Header() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-              <svg 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 className="w-6 h-6 text-primary mr-2"
               >
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
-              <span className="font-bold text-xl">ForumChat</span>
+              <span className="font-bold text-xl">Roguecraft</span>
             </Link>
           </div>
-          
+
           <div className="hidden md:flex items-center space-x-4">
             <Button
               variant="ghost"
-              className={activeTab === 'forum' ? 'text-primary' : ''}
-              onClick={() => handleTabChange('forum')}
+              className={activeTab === "forum" ? "text-primary" : ""}
+              onClick={() => handleTabChange("forum")}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -84,8 +84,8 @@ export function Header() {
             </Button>
             <Button
               variant="ghost"
-              className={activeTab === 'chat' ? 'text-primary' : ''}
-              onClick={() => handleTabChange('chat')}
+              className={activeTab === "chat" ? "text-primary" : ""}
+              onClick={() => handleTabChange("chat")}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -101,17 +101,20 @@ export function Header() {
               Chat
             </Button>
           </div>
-          
+
           <div className="flex items-center space-x-3">
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
               <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500"></span>
             </Button>
-            
+
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-2 text-sm">
+                  <Button
+                    variant="ghost"
+                    className="flex items-center space-x-2 text-sm"
+                  >
                     <Avatar className="h-8 w-8">
                       {user?.avatar ? (
                         <AvatarImage src={user.avatar} alt={user.username} />
@@ -125,8 +128,8 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem 
-                    className="cursor-pointer" 
+                  <DropdownMenuItem
+                    className="cursor-pointer"
                     onClick={() => {
                       if (user?.isTemporary) {
                         setIsLoginModalOpen(true);
@@ -155,9 +158,9 @@ export function Header() {
                 <span>Đăng nhập</span>
               </Button>
             )}
-            
+
             <Button variant="ghost" size="icon" onClick={toggleTheme}>
-              {theme === 'dark' ? (
+              {theme === "dark" ? (
                 <Sun className="h-5 w-5" />
               ) : (
                 <Moon className="h-5 w-5" />
@@ -166,18 +169,18 @@ export function Header() {
           </div>
         </div>
       </div>
-      
+
       {/* Mobile Tab Navigation */}
       <div className="md:hidden border-t dark:border-gray-700">
         <div className="grid grid-cols-2 w-full">
           <Button
             variant="ghost"
             className={`text-center py-3 ${
-              activeTab === 'forum'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-gray-500 dark:text-gray-400'
+              activeTab === "forum"
+                ? "border-b-2 border-primary text-primary"
+                : "text-gray-500 dark:text-gray-400"
             }`}
-            onClick={() => handleTabChange('forum')}
+            onClick={() => handleTabChange("forum")}
           >
             <svg
               viewBox="0 0 24 24"
@@ -198,11 +201,11 @@ export function Header() {
           <Button
             variant="ghost"
             className={`text-center py-3 ${
-              activeTab === 'chat'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-gray-500 dark:text-gray-400'
+              activeTab === "chat"
+                ? "border-b-2 border-primary text-primary"
+                : "text-gray-500 dark:text-gray-400"
             }`}
-            onClick={() => handleTabChange('chat')}
+            onClick={() => handleTabChange("chat")}
           >
             <svg
               viewBox="0 0 24 24"
@@ -220,9 +223,9 @@ export function Header() {
         </div>
       </div>
 
-      <LoginModal 
-        isOpen={isLoginModalOpen} 
-        onClose={() => setIsLoginModalOpen(false)} 
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
       />
     </header>
   );

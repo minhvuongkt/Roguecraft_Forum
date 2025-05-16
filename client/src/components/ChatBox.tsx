@@ -659,22 +659,26 @@ export function ChatBox() {
         }
       }
 
-      // Nếu đang trả lời, thêm mention và replyToMessageId
+      // Nếu đang trả lời, thêm mention
       let finalMessage = message;
-      let replyToMessageId = undefined;
+      let replyToMessageId = null;
 
-      if (state.replyingTo && state.replyingTo.user) {
-        const username = state.replyingTo.user.username;
-        // Thêm @ để người được tag biết họ được tag
-        if (!finalMessage.includes(`@${username}`)) {
-          finalMessage = `@${username} ${finalMessage}`;
-        }
-        // Thêm ID tin nhắn đang trả lời
+      if (state.replyingTo) {
+        // Always set replyToMessageId when replying
         replyToMessageId = state.replyingTo.id;
+
+        // Add @mention for readability if not already included
+        if (state.replyingTo.user) {
+          const username = state.replyingTo.user.username;
+          if (!finalMessage.includes(`@${username}`)) {
+            finalMessage = `@${username} ${finalMessage}`;
+          }
+        }
       }
 
       // Gửi tin nhắn với replyToMessageId
-      sendMessage(finalMessage, media, undefined, replyToMessageId);
+      // Make sure your sendMessage function accepts replyToMessageId parameter
+      sendMessage(finalMessage, media, replyToMessageId);
 
       // Reset state and enable auto-scroll
       setState((prev) => ({
@@ -697,7 +701,6 @@ export function ChatBox() {
     },
     [user, state.replyingTo, toast, sendMessage, flattenedMessages.length],
   );
-
   // Xử lý đặt tên người dùng
   const handleSetUsername = async (newUsername: string) => {
     if (!newUsername || newUsername.trim() === "") {

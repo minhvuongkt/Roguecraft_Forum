@@ -1,4 +1,4 @@
-import React, { memo, useState, useRef } from "react";
+import React, { memo, useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChatMessage } from "@/types";
@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import { cn } from "@/lib/utils";
 import { ImageViewerModal } from "./ImageViewerModal";
-import { CornerUpLeft } from "lucide-react";
+import { CornerUpLeft, MessageSquare } from "lucide-react";
 
 interface MessageProps {
   message: ChatMessage;
@@ -16,32 +16,63 @@ interface MessageProps {
 
 function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
   const { user: currentUser } = useAuth();
-  const { findMessagesByUsername, findMessageById, messages } = useWebSocket();
+  const { findMessagesByUsername, findMessageById } = useWebSocket();
   const [, navigate] = useLocation();
   const isCurrentUser = message.userId === currentUser?.id;
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState("");
   const [isHovered, setIsHovered] = useState(false);
   const messageRef = useRef<HTMLDivElement>(null);
-  
-  // Xác định xem tin nhắn có phải là phản hồi không dựa trên replyToMessageId hoặc nội dung
-  const isReplyMessage = message.replyToMessageId !== null && message.replyToMessageId !== undefined || message.content.trim().startsWith('@');
-  
-  // Lấy tin nhắn gốc nếu có replyToMessageId
-  const originalMessage = message.replyToMessageId ? findMessageById(message.replyToMessageId) : undefined;
-  
-  // Hàm cuộn đến tin nhắn cụ thể theo ID
-  const scrollToMessageById = (messageId: number) => {
-    const targetElement = document.getElementById(`msg-${messageId}`);
-    if (targetElement) {
-      // Cuộn đến tin nhắn và tạo hiệu ứng highlight tạm thời
-      targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
-      targetElement.classList.add("bg-yellow-100", "dark:bg-yellow-900/20");
-      
-      // Sau 2 giây, xóa hiệu ứng highlight
-      setTimeout(() => {
-        targetElement.classList.remove("bg-yellow-100", "dark:bg-yellow-900/20");
+  const [highlightOriginal, setHighlightOriginal] = useState(false);
+
+  // Determine if message is a reply based on replyToMessageId
+  const isReplyMessage =
+    message.replyToMessageId !== null && message.replyToMessageId !== undefined;
+
+  // Get original message if replyToMessageId exists
+  const originalMessage = isReplyMessage
+    ? findMessageById(message.replyToMessageId!)
+    : undefined;
+
+  // Check if this is a self-reply (replying to own message)
+  const isSelfReply =
+    originalMessage && message.userId === originalMessage.userId;
+
+  // Add highlight effect when targeted
+  useEffect(() => {
+    if (highlightOriginal) {
+      const timer = setTimeout(() => {
+        setHighlightOriginal(false);
       }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightOriginal]);
+
+  // Function to scroll to message with highlight effect
+  const scrollToMessageById = (messageId: number) => {
+    // Find the target element
+    const targetElement = document.getElementById(`msg-${messageId}`);
+
+    if (targetElement) {
+      // Scroll to the element with smooth behavior
+      targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      // Apply a highlight effect with animation
+      targetElement.classList.add("bg-yellow-100", "dark:bg-yellow-900/30");
+      targetElement.classList.add("scale-[1.02]");
+      targetElement.classList.add("shadow-md");
+
+      // Remove the highlight effect after animation completes
+      setTimeout(() => {
+        targetElement.classList.remove(
+          "bg-yellow-100",
+          "dark:bg-yellow-900/30",
+        );
+        targetElement.classList.remove("scale-[1.02]");
+        targetElement.classList.remove("shadow-md");
+      }, 2000);
+    } else {
+      console.log("Message not found or not in view:", messageId);
     }
   };
 
@@ -60,19 +91,18 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
     });
   };
 
-  // Parse message content to highlight mentions - FIX MENTION HIGHLIGHTING
+  // Parse message content to highlight mentions
   const parseMessageContent = (content: string): JSX.Element => {
-    // Regex mới để bắt toàn bộ tên người dùng sau @
-    // Tìm @ kèm theo chuỗi ký tự cho đến khi gặp khoảng trắng hoặc kết thúc chuỗi
+    // Regex to catch @username mentions
     const mentionRegex = /@(\S+)/g;
     const parts = [];
 
     let lastIndex = 0;
     let match;
 
-    // Tìm tất cả các mention trong nội dung tin nhắn
+    // Find all mentions in message content
     while ((match = mentionRegex.exec(content)) !== null) {
-      // Phần văn bản trước mention
+      // Text before mention
       if (match.index > lastIndex) {
         parts.push(
           <span key={`text-${lastIndex}`}>
@@ -81,41 +111,29 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
         );
       }
 
-      // Phần mention (@username)
-      const mentionText = match[0]; // Lấy toàn bộ chuỗi @username
-      const username = mentionText.substring(1); // Bỏ ký tự @ ở đầu
-      
+      // Mention part (@username)
+      const mentionText = match[0];
+      const username = mentionText.substring(1);
+
       parts.push(
         <span
           key={`mention-${match.index}`}
           className="text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800/50"
           title={`Nhấn để xem tin nhắn của ${username}`}
           onClick={() => {
-            // Tìm tin nhắn của người dùng này trong hệ thống
+            // Find user's messages
             const userMessages = findMessagesByUsername(username);
-            console.log(`Tìm tin nhắn của người dùng: ${username}`, userMessages);
-            
-            // Nếu tìm thấy tin nhắn, cuộn đến tin nhắn gần nhất
+
             if (userMessages.length > 0) {
-              // Tìm tin nhắn gần nhất (sắp xếp theo thời gian giảm dần và lấy tin nhắn đầu tiên)
-              const sortedMessages = [...userMessages].sort((a, b) => 
-                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              // Sort by time and get the most recent
+              const sortedMessages = [...userMessages].sort(
+                (a, b) =>
+                  new Date(b.createdAt).getTime() -
+                  new Date(a.createdAt).getTime(),
               );
-              
-              // Cuộn đến tin nhắn đầu tiên (mới nhất) của người dùng
-              const targetMessageId = sortedMessages[0].id;
-              const targetElement = document.getElementById(`msg-${targetMessageId}`);
-              
-              if (targetElement) {
-                // Cuộn đến tin nhắn đích và tạo hiệu ứng highlight tạm thời
-                targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
-                targetElement.classList.add("bg-yellow-100", "dark:bg-yellow-900/20");
-                
-                // Sau 2 giây, xóa hiệu ứng highlight
-                setTimeout(() => {
-                  targetElement.classList.remove("bg-yellow-100", "dark:bg-yellow-900/20");
-                }, 2000);
-              }
+
+              // Scroll to the most recent message
+              scrollToMessageById(sortedMessages[0].id);
             }
           }}
         >
@@ -123,27 +141,26 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
         </span>,
       );
 
-      // Cập nhật vị trí cuối cùng đã xử lý
+      // Update position
       lastIndex = match.index + mentionText.length;
     }
 
-    // Thêm phần văn bản còn lại sau mention cuối cùng (nếu có)
+    // Add remaining text
     if (lastIndex < content.length) {
       parts.push(
         <span key={`text-${lastIndex}`}>{content.substring(lastIndex)}</span>,
       );
     }
 
-    // Trả về các phần đã được phân tích
     return <>{parts}</>;
   };
 
-  // Render media completely isolated from text content
+  // Render media content (keeping your existing implementation)
   const renderMedia = () => {
     if (!message.media) return null;
 
     try {
-      // Kiểm tra nếu media là định dạng JSON {"1": "path1", "2": "path2"}
+      // Check if media is a JSON format {"1": "path1", "2": "path2"}
       if (
         typeof message.media === "object" &&
         Object.keys(message.media).some((key) => /^\d+$/.test(key))
@@ -158,13 +175,13 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
             data-message-id={`media-container-${message.id}`}
           >
             {Object.entries(message.media).map(([key, path]) => {
-              // Đảm bảo đường dẫn là đầy đủ
+              // Ensure path is complete
               let imagePath = path as string;
               if (!imagePath.startsWith("http") && !imagePath.startsWith("/")) {
                 imagePath = "/" + imagePath;
               }
 
-              // Kiểm tra loại file dựa trên phần mở rộng
+              // Check file type based on extension
               const isImage = imagePath.match(
                 /\.(jpg|jpeg|png|gif|webp|svg)$/i,
               );
@@ -175,7 +192,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                   <div
                     key={`media-${message.id}-${key}`}
                     className="overflow-hidden rounded-lg cursor-pointer isolate bg-gray-100 dark:bg-gray-800"
-                    style={{ isolation: "isolate" }} // Double ensure isolation
+                    style={{ isolation: "isolate" }}
                   >
                     <div
                       className="relative w-full h-full"
@@ -222,7 +239,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                   </div>
                 );
               } else {
-                // File đính kèm
+                // File attachment
                 return (
                   <div
                     key={`file-${message.id}-${key}`}
@@ -246,7 +263,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
         );
       }
 
-      // Định dạng cũ - một object với url, type, v.v.
+      // Old format - an object with url, type, etc.
       if (message.media.url) {
         return (
           <div
@@ -308,12 +325,18 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
     }
   };
 
-  // ===== COMPONENT LAYOUT WITH FULL ISOLATION =====
+  // COMPONENT LAYOUT
   return (
     <div
-      className={cn("w-full py-1 clear-both", "my-0.5 relative isolate")}
+      className={cn(
+        "w-full py-1 clear-both",
+        "my-0.5 relative isolate",
+        highlightOriginal &&
+          "bg-yellow-100 dark:bg-yellow-900/30 transition-all duration-300 ease-in-out",
+      )}
       style={{ isolation: "isolate" }}
       data-message-id={message.id}
+      id={`msg-${message.id}`}
     >
       <div
         className={cn(
@@ -322,6 +345,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
         )}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        ref={messageRef}
       >
         {/* Avatar */}
         <div
@@ -361,7 +385,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
         {/* Message Body */}
         <div
           className={cn(
-            "flex flex-col relative", // Add relative here
+            "flex flex-col relative",
             "max-w-[75%] md:max-w-[70%]",
             isCurrentUser ? "items-end" : "items-start",
           )}
@@ -425,64 +449,56 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                   isReplyMessage ? "relative pt-5" : "",
                 )}
               >
-                {/* Phần tham chiếu đến tin nhắn gốc nếu đây là tin nhắn trả lời */}
-                {isReplyMessage && (
-                  <div 
-                    className="absolute -top-3 left-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-600 px-2 py-0.5 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
-                    onClick={() => {
-                      // Ưu tiên sử dụng replyToMessageId nếu có
-                      if (message.replyToMessageId) {
-                        // Sử dụng hàm cuộn đến tin nhắn theo ID
-                        scrollToMessageById(message.replyToMessageId);
-                      } else {
-                        // Phương án dự phòng: Trích xuất tên người dùng từ tin nhắn trả lời
-                        const match = message.content.match(/@(\S+)/);
-                        if (match && match[1]) {
-                          const username = match[1];
-                          
-                          // Tìm tin nhắn của người dùng được tag
-                          const userMessages = findMessagesByUsername(username);
-                          if (userMessages.length > 0) {
-                            // Tìm tin nhắn gần nhất trước tin nhắn hiện tại
-                            const earlierMessages = userMessages.filter(msg => 
-                              new Date(msg.createdAt).getTime() < new Date(message.createdAt).getTime()
-                            );
-                            
-                            if (earlierMessages.length > 0) {
-                              // Sắp xếp để lấy tin nhắn gần nhất trước tin nhắn hiện tại
-                              const sortedMessages = earlierMessages.sort((a, b) => 
-                                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                              );
-                              
-                              // Cuộn đến tin nhắn gần nhất
-                              scrollToMessageById(sortedMessages[0].id);
-                            }
-                          }
-                        }
-                      }
-                    }}
+                {/* Reply reference section - IMPROVED */}
+                {isReplyMessage && originalMessage && (
+                  <div
+                    className={cn(
+                      "absolute -top-3 left-2 text-xs px-2 py-1 rounded cursor-pointer transition-colors",
+                      "flex items-center gap-1.5 max-w-[90%] overflow-hidden",
+                      isSelfReply
+                        ? "bg-blue-100 dark:bg-blue-800/60 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-700"
+                        : "bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-500",
+                    )}
+                    onClick={() =>
+                      scrollToMessageById(message.replyToMessageId!)
+                    }
+                    title="Nhấn để xem tin nhắn gốc"
                   >
-                    <div className="flex items-center gap-1">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-corner-up-left">
-                        <polyline points="9 14 4 9 9 4"></polyline>
-                        <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
-                      </svg>
-                      {message.replyToMessageId && originalMessage ? (
-                        <span>
-                          Trả lời cho <strong>{originalMessage.user?.username || "người dùng"}</strong>: 
-                          <span className="italic opacity-75 ml-1">
-                            {originalMessage.content.length > 15 
-                              ? originalMessage.content.substring(0, 15) + "..." 
-                              : originalMessage.content}
-                          </span>
+                    <div className="flex items-center gap-1 whitespace-nowrap">
+                      <MessageSquare className="h-3 w-3 flex-shrink-0" />
+
+                      {/* Different text for self-replies vs other replies */}
+                      {isSelfReply ? (
+                        <span className="flex items-center">
+                          Trả lời tin nhắn của chính mình
                         </span>
                       ) : (
-                        <span>Trả lời cho @{message.content.match(/@(\S+)/)?.[1]}</span>
+                        <span className="flex items-center">
+                          Trả lời cho{" "}
+                          <strong className="mx-1">
+                            {originalMessage.user?.username || "người dùng"}
+                          </strong>
+                        </span>
                       )}
+
+                      {/* Preview of original message */}
+                      <span className="italic opacity-75 ml-1 text-ellipsis overflow-hidden whitespace-nowrap">
+                        {originalMessage.content.length > 15
+                          ? originalMessage.content.substring(0, 15) + "..."
+                          : originalMessage.content}
+                      </span>
                     </div>
                   </div>
                 )}
 
+                {/* Display warning if reply target doesn't exist */}
+                {isReplyMessage && !originalMessage && (
+                  <div className="absolute -top-3 left-2 text-xs px-2 py-1 rounded bg-amber-100 dark:bg-amber-800/60 text-amber-700 dark:text-amber-300">
+                    Trả lời tin nhắn đã bị xóa hoặc hết hạn
+                  </div>
+                )}
+
+                {/* Message content */}
                 <p className="text-sm leading-relaxed break-words whitespace-pre-line">
                   {parseMessageContent(message.content)}
                 </p>
@@ -493,7 +509,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
             {!isCurrentUser && (
               <button
                 onClick={handleReply}
-                className="ml-1 p-1 bg-white dark:bg-gray-800 rounded-full shadow-sm opacity-70 hover:opacity-100 transition-opacity duration-150"
+                className="ml-1.5 p-1 bg-white dark:bg-gray-800 rounded-full shadow-sm opacity-70 hover:opacity-100 transition-opacity duration-150"
                 title="Trả lời tin nhắn này"
               >
                 <CornerUpLeft className="h-3 w-3 text-gray-600 dark:text-gray-300" />
@@ -501,26 +517,13 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
             )}
           </div>
 
-          {/* Media Content - COMPLETELY SEPARATE */}
+          {/* Media Content */}
           <div
             className={cn("w-full", isCurrentUser ? "flex justify-end" : "")}
           >
             {renderMedia()}
           </div>
         </div>
-
-        {/* Always visible Reply Button */}
-        {/* <button
-          onClick={handleReply}
-          className={cn(
-            "absolute top-1/2 -translate-y-1/2 p-1 bg-white dark:bg-gray-800 rounded-full shadow-sm",
-            isCurrentUser ? "-left-1" : "-right-1",
-            "opacity-70 hover:opacity-100 transition-opacity duration-150",
-          )}
-          title="Trả lời tin nhắn này"
-        >
-          <CornerUpLeft className="h-3.5 w-3.5 text-gray-600 dark:text-gray-300" />
-        </button> */}
       </div>
 
       {/* Image viewer modal */}
