@@ -78,7 +78,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
               }
               
               // Kiểm tra loại file dựa trên phần mở rộng
-              const isImage = imagePath.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+              const isImage = imagePath.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
               const isVideo = imagePath.match(/\.(mp4|webm|mov|avi|mkv)$/i);
               
               if (isImage) {
