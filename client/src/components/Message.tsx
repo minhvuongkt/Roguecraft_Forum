@@ -36,27 +36,51 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
     });
   };
 
-  // Parse message content to highlight mentions
+  // Parse message content to highlight mentions - FIX MENTION HIGHLIGHTING
   const parseMessageContent = (content: string): JSX.Element => {
-    const parts = content.split(/(@\w+)/g);
+    // Thay đổi regex để nhận dạng mention đầy đủ
+    // Tìm các chuỗi bắt đầu bằng @ và theo sau là các chữ cái, số, dấu gạch dưới, dấu cách
+    const mentionRegex = /@(\w+)/g;
+    const parts = [];
 
-    return (
-      <>
-        {parts.map((part, index) => {
-          if (part.match(/@\w+/)) {
-            return (
-              <span
-                key={index}
-                className="text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-md"
-              >
-                {part}
-              </span>
-            );
-          }
-          return <span key={index}>{part}</span>;
-        })}
-      </>
-    );
+    let lastIndex = 0;
+    let match;
+
+    // Tìm tất cả các mention trong nội dung tin nhắn
+    while ((match = mentionRegex.exec(content)) !== null) {
+      // Phần văn bản trước mention
+      if (match.index > lastIndex) {
+        parts.push(
+          <span key={`text-${lastIndex}`}>
+            {content.substring(lastIndex, match.index)}
+          </span>,
+        );
+      }
+
+      // Phần mention (@username)
+      const mentionText = match[0]; // Lấy toàn bộ chuỗi @username
+      parts.push(
+        <span
+          key={`mention-${match.index}`}
+          className="text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-md"
+        >
+          {mentionText}
+        </span>,
+      );
+
+      // Cập nhật vị trí cuối cùng đã xử lý
+      lastIndex = match.index + mentionText.length;
+    }
+
+    // Thêm phần văn bản còn lại sau mention cuối cùng (nếu có)
+    if (lastIndex < content.length) {
+      parts.push(
+        <span key={`text-${lastIndex}`}>{content.substring(lastIndex)}</span>,
+      );
+    }
+
+    // Trả về các phần đã được phân tích
+    return <>{parts}</>;
   };
 
   // Render media completely isolated from text content
@@ -238,7 +262,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
     >
       <div
         className={cn(
-          "flex items-start gap-2 relative",
+          "flex items-center gap-2 relative mx-3",
           isCurrentUser ? "flex-row-reverse" : "flex-row",
         )}
         onMouseEnter={() => setIsHovered(true)}
@@ -247,7 +271,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
         {/* Avatar */}
         <div
           className={cn(
-            "w-7 h-7 flex-shrink-0 self-start",
+            "w-7 h-7 flex-shrink-0 self-center",
             isCurrentUser ? "ml-2" : "mr-2",
           )}
         >

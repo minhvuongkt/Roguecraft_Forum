@@ -478,7 +478,7 @@ export function ChatBox() {
     };
   }, [state.mentionState.active]);
 
-  // Handle user selection from mention dropdown
+  // Sửa hàm handleSelectMentionUser để xử lý mention người dùng đúng cách
   const handleSelectMentionUser = useCallback(
     (selectedUser: { id: string; username: string }) => {
       if (!inputRef.current) return;
@@ -486,30 +486,41 @@ export function ChatBox() {
       const text = inputRef.current.value;
       const cursorPosition = inputRef.current.selectionStart || 0;
       const textBeforeCursor = text.substring(0, cursorPosition);
+
+      // Tìm vị trí của @ gần nhất trước con trỏ
       const atIndex = textBeforeCursor.lastIndexOf("@");
 
       if (atIndex >= 0) {
-        // Replace @partial_name with @selected_username
+        // Kiểm tra xem có phần username đang được nhập không
+        const existingMentionMatch = text.substring(atIndex).match(/^@(\S+)/);
+        const existingMention = existingMentionMatch
+          ? existingMentionMatch[0]
+          : "@";
+
+        // Tính toán vị trí kết thúc của mention hiện tại
+        const endOfMentionIndex = atIndex + existingMention.length;
+
+        // Thay thế @partial_name với @selected_username
         const newText =
           text.substring(0, atIndex) +
           `@${selectedUser.username} ` +
-          text.substring(cursorPosition);
+          text.substring(endOfMentionIndex);
 
-        // Update input value
+        // Cập nhật giá trị input
         inputRef.current.value = newText;
 
-        // Move cursor after inserted username
-        const newCursorPosition = atIndex + selectedUser.username.length + 2; // +2 for @ and space
+        // Di chuyển con trỏ sau username đã chèn
+        const newCursorPosition = atIndex + selectedUser.username.length + 2; // +2 cho @ và khoảng trắng
         inputRef.current.setSelectionRange(
           newCursorPosition,
           newCursorPosition,
         );
 
-        // Focus back on input
+        // Focus lại vào input
         inputRef.current.focus();
       }
 
-      // Close mention dropdown
+      // Đóng dropdown mention
       setState((prev) => ({
         ...prev,
         mentionState: {
