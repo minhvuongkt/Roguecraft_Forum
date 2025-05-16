@@ -40,13 +40,22 @@ export function Header() {
   };
 
   return (
-    <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
+    <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-sm sticky top-0 z-10 border-b border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <Link href="/" className="flex items-center">
-              <img src="https://roguecraft.asia/assets/image/bannermc.png" />
-              <span className="font-bold text-xl">Roguecraft</span>
+            <Link
+              href="/"
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            >
+              <img
+                src="https://roguecraft.asia/assets/image/bannermc.png"
+                alt="Roguecraft Logo"
+                className="h-8 w-auto"
+              />
+              <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
+                Roguecraft
+              </span>
             </Link>
           </div>
 
@@ -93,10 +102,10 @@ export function Header() {
           </div>
 
           <div className="flex items-center space-x-3">
-            <Button variant="ghost" size="icon" className="relative">
+            {/* <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
               <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500"></span>
-            </Button>
+            </Button> */}
 
             {isAuthenticated ? (
               <DropdownMenu>
