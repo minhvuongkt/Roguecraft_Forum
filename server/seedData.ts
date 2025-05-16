@@ -105,7 +105,7 @@ async function createSampleTopics(users: any[]) {
       userId: users[2].id,
       title: 'Top 10 mod Minecraft hay nhất năm 2025',
       content: 'Tôi đã thử qua nhiều mod và đánh giá 10 mod hay nhất. Đặc biệt ấn tượng với Create mod và Biomes O Plenty. Ai cũng đang dùng mod nào thì chia sẻ nhé!',
-      media: null,
+      media: { "1": "/topic-images/sample-topic.svg" },
       category: 'Mods',
       isAnonymous: false
     },
@@ -285,7 +285,7 @@ async function createSampleChatMessages(users: any[]) {
     {
       userId: users[0].id,
       content: 'Hôm nay mình vừa tìm được cả kho diamond trong hang động! 😃',
-      media: null,
+      media: { "1": "/chat-images/sample-image.svg" },
       mentions: []
     },
     {
