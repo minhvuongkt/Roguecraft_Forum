@@ -87,7 +87,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                     <img 
                       src={imagePath} 
                       alt={`Image ${key}`} 
-                      className="object-cover h-auto max-h-32 max-w-32"
+                      className="object-cover h-auto max-h-48 max-w-48"
                       onClick={() => {
                         setViewingImageUrl(imagePath);
                         setImageViewerOpen(true);
@@ -225,9 +225,9 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
               </div>
             </div>
             
-            {/* Media Content (hoàn toàn tách biệt) */}
+            {/* Media Content (gần hơn với tin nhắn) */}
             {message.media && (
-              <div className="flex justify-end mt-1">
+              <div className="flex justify-end mt-0.5">
                 {renderMedia()}
               </div>
             )}
@@ -303,9 +303,9 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
             </div>
           </div>
           
-          {/* Media Content (hoàn toàn tách biệt) */}
+          {/* Media Content (gần hơn với tin nhắn) */}
           {message.media && (
-            <div className="flex mt-1">
+            <div className="flex mt-0.5">
               {renderMedia()}
             </div>
           )}
