@@ -2,11 +2,24 @@ import { storage } from './storage';
 import { InsertUser, InsertTopic, InsertChatMessage, InsertComment } from '@shared/schema';
 
 /**
- * This function no longer seeds data - database is set up through PostgreSQL
+ * Add sample data to the in-memory database
  */
 export async function seedData() {
-  console.log('Database connection checked - no data seeding performed');
-  return;
+  console.log('Seeding database with sample data...');
+  
+  // Create sample users
+  const users = await createSampleUsers();
+  
+  // Create sample topics
+  const topics = await createSampleTopics(users);
+  
+  // Create sample comments
+  await createSampleComments(users, topics);
+  
+  // Create sample chat messages
+  await createSampleChatMessages(users);
+  
+  console.log('Database seeded successfully!');
 }
 
 async function createSampleUsers() {

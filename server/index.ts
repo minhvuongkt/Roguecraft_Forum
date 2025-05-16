@@ -68,7 +68,11 @@ app.use((req, res, next) => {
   }, async () => {
     log(`serving on port ${port}`);
     
-    // Database has been set up through PostgreSQL configuration
-    console.log('Database connection established');
+    // Seed database with sample data
+    try {
+      await seedData();
+    } catch (error) {
+      console.error('Error seeding database:', error);
+    }
   });
 })();

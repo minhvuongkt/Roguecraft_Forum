@@ -3,13 +3,12 @@ import App from "./App";
 import "./index.css";
 
 // Set page title and metadata
-document.title = "[ROGUECRAFT] Forum & Chat";
+document.title = "ForumChat - Kết hợp Forum & Chat";
 
 // Add meta description
-const metaDescription = document.createElement("meta");
+const metaDescription = document.createElement('meta');
 metaDescription.name = "description";
-metaDescription.content =
-  "Một ứng dụng kết hợp giữa Forum và Chat, cho phép người dùng tạo bài viết, bình luận và trò chuyện trong thời gian thực.";
+metaDescription.content = "ForumChat - Nền tảng kết hợp forum thảo luận và chat trực tuyến. Chia sẻ, trao đổi và kết nối với cộng đồng.";
 document.head.appendChild(metaDescription);
 
 // Create app
