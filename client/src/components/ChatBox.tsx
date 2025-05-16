@@ -284,7 +284,7 @@ export function ChatBox() {
               height={400}
               width="100%"
               itemCount={flattenedMessages.length}
-              itemSize={60} // Giảm kích thước mặc định để tin nhắn gần nhau hơn
+              itemSize={120} // Tăng kích thước để chứa đủ tin nhắn với hình ảnh
               onScroll={handleScroll}
               className="px-4"
               overscanCount={5} // Tăng số lượng tin nhắn preload để tránh hiện tượng nhấp nháy
