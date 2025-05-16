@@ -176,7 +176,8 @@ export function ChatBox() {
         if (latestMessage) {
           setState((prev) => ({
             ...prev,
-            lastReadMessageId: prev.lastReadMessageId || latestMessage.id,
+            lastReadMessageId:
+              prev.lastReadMessageId || String(latestMessage.id),
           }));
         }
       }
@@ -187,6 +188,49 @@ export function ChatBox() {
   }, [flattenedMessages.length, state.autoScroll]);
 
   // Handle scroll to detect when user manually scrolls up
+  // const handleScroll = useCallback(
+  //   ({
+  //     scrollOffset,
+  //     scrollUpdateWasRequested,
+  //   }: {
+  //     scrollOffset: number;
+  //     scrollUpdateWasRequested: boolean;
+  //   }) => {
+  //     if (scrollUpdateWasRequested) return;
+
+  //     setState((prev) => ({
+  //       ...prev,
+  //       isScrolling: true,
+  //     }));
+
+  //     // Giải phóng trạng thái isScrolling sau một thời gian
+  //     setTimeout(() => {
+  //       setState((prev) => ({ ...prev, isScrolling: false }));
+  //     }, 150);
+
+  //     // Tính toán vị trí cuộn và chiều cao để xác định trạng thái autoScroll
+  //     if (listRef.current) {
+  //       const listHeight = listRef.current._outerRef.clientHeight;
+  //       const contentHeight = listRef.current._outerRef.scrollHeight;
+  //       const distanceFromBottom = contentHeight - scrollOffset - listHeight;
+
+  //       const isNearBottom = distanceFromBottom < 100;
+
+  //       if (isNearBottom !== state.autoScroll) {
+  //         setState((prev) => ({
+  //           ...prev,
+  //           autoScroll: isNearBottom,
+  //         }));
+
+  //         // Nếu người dùng cuộn xuống cuối, đánh dấu tất cả là đã đọc
+  //         if (isNearBottom) {
+  //           markAllAsRead();
+  //         }
+  //       }
+  //     }
+  //   },
+  //   [state.autoScroll],
+  // );
   const handleScroll = useCallback(
     ({
       scrollOffset,
@@ -208,9 +252,9 @@ export function ChatBox() {
       }, 150);
 
       // Tính toán vị trí cuộn và chiều cao để xác định trạng thái autoScroll
-      if (listRef.current) {
-        const listHeight = listRef.current._outerRef.clientHeight;
-        const contentHeight = listRef.current._instanceProps.totalSize;
+      if (scrollRef.current) {
+        const listHeight = listRef.current?._outerRef?.clientHeight || 0;
+        const contentHeight = scrollRef.current?.scrollHeight || 0;
         const distanceFromBottom = contentHeight - scrollOffset - listHeight;
 
         const isNearBottom = distanceFromBottom < 100;
@@ -230,7 +274,6 @@ export function ChatBox() {
     },
     [state.autoScroll],
   );
-
   // Đánh dấu tất cả tin nhắn là đã đọc
   const markAllAsRead = useCallback(() => {
     if (flattenedMessages.length > 0) {
@@ -238,7 +281,7 @@ export function ChatBox() {
         flattenedMessages[flattenedMessages.length - 1].message;
       setState((prev) => ({
         ...prev,
-        lastReadMessageId: lastMessage.id,
+        lastReadMessageId: lastMessage.id.toString(),
         newMessagesCount: 0,
       }));
     }
