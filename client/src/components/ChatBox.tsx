@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
-import { FixedSizeList as VirtualList } from "react-window";
+import { VariableSizeList as VirtualList } from "react-window";
 import { ChatMessage } from "@/types";
 import {
   Dialog,
