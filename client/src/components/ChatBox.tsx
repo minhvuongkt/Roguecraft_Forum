@@ -4,7 +4,7 @@ import { Message } from '@/components/Message';
 import { MessageInput } from '@/components/ui/message-input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Search, MoreVertical, Send, User, AlertCircle, X, CornerUpLeft, Clock, ChevronDown } from 'lucide-react';
+import { MoreVertical, Send, User, AlertCircle, X, CornerUpLeft, Clock, ChevronDown, Search } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWebSocket } from '@/contexts/WebSocketContext';
 import { FixedSizeList as VirtualList } from 'react-window';
@@ -27,6 +27,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ChatSearch } from "@/components/ui/chat-search";
 
 export function ChatBox() {
   const { groupedMessages, sendMessage } = useChat();
@@ -40,6 +41,7 @@ export function ChatBox() {
   const [username, setUsername] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Create flattened message list for virtual scrolling
   const flattenedMessages = useMemo(() => {

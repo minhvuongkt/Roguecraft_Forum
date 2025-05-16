@@ -212,18 +212,23 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                 <span className="font-medium text-xs">Tôi</span>
               </div>
             )}
-            <div className="bg-blue-600 text-white p-2 px-3 rounded-2xl rounded-tr-sm max-w-full break-words relative group">
-              <p className="text-sm leading-relaxed">{parseMessageContent(message.content)}</p>
-              {renderMedia()}
+            <div className="flex flex-col items-start gap-2">
+              {/* Text Message */}
+              <div className="bg-blue-600 text-white p-2 px-3 rounded-2xl rounded-tr-sm break-words relative group">
+                <p className="text-sm leading-relaxed">{parseMessageContent(message.content)}</p>
+                
+                {/* Reply button (visible on hover) */}
+                <button 
+                  onClick={handleReply}
+                  className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 p-1 rounded-full hover:bg-black/20"
+                  title="Trả lời tin nhắn này"
+                >
+                  <CornerUpLeft className="h-3.5 w-3.5 text-white" />
+                </button>
+              </div>
               
-              {/* Reply button (visible on hover) */}
-              <button 
-                onClick={handleReply}
-                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 p-1 rounded-full hover:bg-black/20"
-                title="Trả lời tin nhắn này"
-              >
-                <CornerUpLeft className="h-3.5 w-3.5 text-white" />
-              </button>
+              {/* Media Content (if any) */}
+              {message.media && renderMedia()}
             </div>
           </div>
           <Avatar className="h-7 w-7 mt-4">
@@ -279,18 +284,23 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
               </span>
             </div>
           )}
-          <div className="bg-gray-200 dark:bg-gray-800 p-2 px-3 rounded-2xl rounded-tl-sm dark:text-gray-100 relative group">
-            <p className="text-sm leading-relaxed">{parseMessageContent(message.content)}</p>
-            {renderMedia()}
+          <div className="flex flex-col items-start gap-2">
+            {/* Text Message */}
+            <div className="bg-gray-200 dark:bg-gray-800 p-2 px-3 rounded-2xl rounded-tl-sm dark:text-gray-100 relative group">
+              <p className="text-sm leading-relaxed">{parseMessageContent(message.content)}</p>
+              
+              {/* Reply button (visible on hover) */}
+              <button 
+                onClick={handleReply}
+                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-300/50 dark:bg-gray-700/50 p-1 rounded-full hover:bg-gray-300 dark:hover:bg-gray-700"
+                title="Trả lời tin nhắn này"
+              >
+                <CornerUpLeft className="h-3.5 w-3.5 text-gray-700 dark:text-gray-300" />
+              </button>
+            </div>
             
-            {/* Reply button (visible on hover) */}
-            <button 
-              onClick={handleReply}
-              className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-300/50 dark:bg-gray-700/50 p-1 rounded-full hover:bg-gray-300 dark:hover:bg-gray-700"
-              title="Trả lời tin nhắn này"
-            >
-              <CornerUpLeft className="h-3.5 w-3.5 text-gray-700 dark:text-gray-300" />
-            </button>
+            {/* Media Content (if any) */}
+            {message.media && renderMedia()}
           </div>
         </div>
       </div>
