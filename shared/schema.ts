@@ -28,6 +28,7 @@ export const chatMessages = pgTable("chat_messages", {
   media: jsonb("media"),
   createdAt: timestamp("created_at").defaultNow(),
   mentions: text("mentions").array(),
+  replyToMessageId: integer("reply_to_message_id").references(() => chatMessages.id),
 });
 
 export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
@@ -35,6 +36,7 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
   content: true,
   media: true,
   mentions: true,
+  replyToMessageId: true,
 });
 
 // Forum topic schema

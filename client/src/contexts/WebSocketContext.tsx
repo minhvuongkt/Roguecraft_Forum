@@ -325,6 +325,11 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       message.user?.username?.toLowerCase() === username.toLowerCase()
     );
   }, [messages]);
+  
+  // Hàm tìm kiếm tin nhắn theo ID
+  const findMessageById = useCallback((messageId: number) => {
+    return messages.find(message => message.id === messageId);
+  }, [messages]);
 
   return (
     <WebSocketContext.Provider 

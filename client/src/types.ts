@@ -12,6 +12,7 @@ export interface ChatMessage {
   media: Record<string, string> | null;
   createdAt: Date;
   mentions: string[] | null;
+  replyToMessageId?: number;
   user?: {
     id: number;
     username: string;
