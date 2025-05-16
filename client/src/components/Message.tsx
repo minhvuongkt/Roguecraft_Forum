@@ -301,7 +301,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                 )}
               >
                 {isCurrentUser ? (
-                  "Tôi"
+                  " Tôi "
                 ) : (
                   <button
                     onClick={() => {
@@ -311,12 +311,14 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                     }}
                     className="hover:underline"
                   >
-                    {message.user?.username || "Unknown"}
+                    {message.user?.username || " Unknown "}
                   </button>
                 )}
               </span>
               <span className="text-gray-500 dark:text-gray-400">
+                {" ["}
                 {formatTime(new Date(message.createdAt))}
+                {"] "}
               </span>
             </div>
           )}
