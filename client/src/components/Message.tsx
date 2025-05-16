@@ -198,18 +198,19 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
   if (isCurrentUser) {
     return (
       <>
-        <div className="flex items-start justify-end gap-2 mb-2 group relative">
-          <div className="flex flex-col items-end max-w-[80%]">
+        <div className="flex justify-end mb-2 group relative">
+          <div className="max-w-[75%] pr-2">
             {showUser && (
-              <div className="flex items-center gap-1 mb-0.5">
+              <div className="flex items-center justify-end gap-1 mb-0.5">
                 <span className="text-xs text-muted-foreground/80">
                   {formatTime(new Date(message.createdAt))}
                 </span>
                 <span className="font-medium text-xs">Tôi</span>
               </div>
             )}
-            <div className="flex flex-col items-start gap-2">
-              {/* Text Message */}
+            
+            {/* Tin nhắn văn bản */}
+            <div className="flex justify-end">
               <div className="bg-blue-600 text-white p-2 px-3 rounded-2xl rounded-tr-sm break-words relative group">
                 <p className="text-sm leading-relaxed">{parseMessageContent(message.content)}</p>
                 
@@ -222,12 +223,17 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                   <CornerUpLeft className="h-3.5 w-3.5 text-white" />
                 </button>
               </div>
-              
-              {/* Media Content (if any) */}
-              {message.media && renderMedia()}
             </div>
+            
+            {/* Media Content (hoàn toàn tách biệt) */}
+            {message.media && (
+              <div className="flex justify-end mt-1">
+                {renderMedia()}
+              </div>
+            )}
           </div>
-          <Avatar className="h-7 w-7 mt-4">
+          
+          <Avatar className="h-7 w-7 flex-shrink-0 self-start">
             {currentUser?.avatar ? (
               <AvatarImage src={currentUser.avatar} alt={currentUser.username} />
             ) : (
@@ -251,8 +257,8 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
   
   return (
     <>
-      <div className="flex items-start gap-2 mb-2 max-w-[90%] group relative">
-        <Avatar className="h-7 w-7 mt-4">
+      <div className="flex mb-2 group relative">
+        <Avatar className="h-7 w-7 flex-shrink-0 self-start">
           {message.user?.avatar ? (
             <AvatarImage src={message.user.avatar} alt={message.user.username} />
           ) : (
@@ -261,7 +267,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
             </AvatarFallback>
           )}
         </Avatar>
-        <div className="max-w-[90%]">
+        <div className="max-w-[75%] pl-2">
           {showUser && (
             <div className="flex items-center gap-1 mb-0.5">
               <button 
@@ -280,8 +286,9 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
               </span>
             </div>
           )}
-          <div className="flex flex-col items-start gap-2">
-            {/* Text Message */}
+          
+          {/* Tin nhắn văn bản */}
+          <div className="flex">
             <div className="bg-gray-200 dark:bg-gray-800 p-2 px-3 rounded-2xl rounded-tl-sm dark:text-gray-100 relative group">
               <p className="text-sm leading-relaxed">{parseMessageContent(message.content)}</p>
               
@@ -294,10 +301,14 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                 <CornerUpLeft className="h-3.5 w-3.5 text-gray-700 dark:text-gray-300" />
               </button>
             </div>
-            
-            {/* Media Content (if any) */}
-            {message.media && renderMedia()}
           </div>
+          
+          {/* Media Content (hoàn toàn tách biệt) */}
+          {message.media && (
+            <div className="flex mt-1">
+              {renderMedia()}
+            </div>
+          )}
         </div>
       </div>
 
