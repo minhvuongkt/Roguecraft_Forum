@@ -92,10 +92,17 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
+    // Ensure replyToMessageId is properly handled
+    let finalReplyToMessageId = message.replyToMessageId;
+    if (finalReplyToMessageId === undefined || finalReplyToMessageId === null) {
+      finalReplyToMessageId = null;
+    }
+
     const messageToInsert = {
       ...message,
       // Đảm bảo media có định dạng đúng trước khi lưu
-      media: finalMedia
+      media: finalMedia,
+      replyToMessageId: finalReplyToMessageId
     };
 
     try {

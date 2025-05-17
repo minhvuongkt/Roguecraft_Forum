@@ -98,18 +98,21 @@ const MessageComponent = ({
   // Handle reply to message
   const handleReply = () => {
     if (onReply && message) {
-      // Đảm bảo id là số và hợp lệ
-      const messageId = typeof message.id === 'string' ? parseInt(message.id) : message.id;
-      if (!isNaN(messageId) && messageId > 0) {
-        const messageToReply = {
-          ...message,
-          id: messageId
-        };
-        console.log('Replying to message:', messageId);
-        onReply(messageToReply);
-      } else {
-        console.error('Invalid message ID for reply:', message.id);
-      }
+      // Trực tiếp lấy ID từ message và chuyển thành số
+      const messageId = Number(message.id);
+      
+      // Log để debug
+      console.log('Original message ID:', message.id, 'Type:', typeof message.id);
+      console.log('Converted message ID:', messageId, 'Type:', typeof messageId);
+      
+      // Tạo message với ID đã chuyển đổi
+      const messageToReply = {
+        ...message,
+        id: messageId
+      };
+      
+      console.log('Replying to message with ID:', messageId);
+      onReply(messageToReply);
     }
   };
 

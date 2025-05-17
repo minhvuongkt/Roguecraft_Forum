@@ -38,7 +38,7 @@ export class ChatService {
   async getRecentMessages(days: number = 3): Promise<any[]> {
     // Messages already have user data joined from database
     const messages = await storage.getChatMessagesByDateRange(days);
-    
+
     // Ensure correct date format for frontend
     return messages.map(message => ({
       ...message,
@@ -50,7 +50,7 @@ export class ChatService {
   }
 
   async createMessage(message: InsertChatMessage): Promise<any> {
-    console.log("Creating chat message:", {
+    console.log('Creating chat message:', {
       content: message.content,
       userId: message.userId,
       replyToMessageId: message.replyToMessageId,
@@ -58,70 +58,62 @@ export class ChatService {
       hasMedia: !!message.media
     });
 
-    // Đảm bảo replyToMessageId là số nguyên hợp lệ
+    // Ensure replyToMessageId is a number or null
     let finalReplyId = null;
     if (message.replyToMessageId !== undefined && message.replyToMessageId !== null) {
-      if (typeof message.replyToMessageId === 'number') {
-        finalReplyId = message.replyToMessageId;
-      } else if (typeof message.replyToMessageId === 'string') {
-        const numericId = parseInt(message.replyToMessageId);
-        if (!isNaN(numericId)) {
-          finalReplyId = numericId;
-        }
-      }
+      finalReplyId = Number(message.replyToMessageId);
+      console.log('Processed replyToMessageId:', {
+        original: message.replyToMessageId,
+        final: finalReplyId
+      });
     }
 
-    // Log để debug
-    console.log("Processed replyToMessageId:", {
-      original: message.replyToMessageId,
-      final: finalReplyId
-    });
-    
-    // Đảm bảo media đúng định dạng
+    // Ensure media is in correct format
     let mediaData = message.media;
-    
+
     if (message.media) {
-      // Nếu media là string, convert về JSON
+      // If media is a string, convert to JSON
       if (typeof message.media === 'string') {
         try {
           mediaData = JSON.parse(message.media);
-          console.log("Converted string media to JSON:", mediaData);
+          console.log('Converted string media to JSON:', mediaData);
         } catch (e) {
-          console.error("Failed to parse media string:", e);
+          console.error('Failed to parse media string:', e);
           // Keep as is if parsing fails
         }
       } else {
-        console.log("Media is already an object:", mediaData);
+        console.log('Media is already an object:', mediaData);
       }
     }
-    
+
     // Make sure message has the right format
     const processedMessage: InsertChatMessage = {
       ...message,
-      media: mediaData
+      media: mediaData,
+      replyToMessageId: finalReplyId
     };
-    
-    console.log("Final processed message media:", JSON.stringify(processedMessage.media, null, 2));
-    
+
+    console.log('Final processed message media:', JSON.stringify(processedMessage.media, null, 2));
+
     // Create message in database
     const newMessage = await storage.createChatMessage(processedMessage);
-    
+
     // Get user info
-    const user = newMessage.userId 
+    const user = newMessage.userId
       ? await storage.getUser(newMessage.userId)
       : undefined;
-    
+
     if (newMessage.userId) {
       await storage.updateUserLastActive(newMessage.userId);
     }
-    
+
     // Log the created message for debugging
-    console.log("New message created in database:", JSON.stringify({
+    console.log('New message created in database:', JSON.stringify({
       id: newMessage.id,
       content: newMessage.content,
       media: newMessage.media
     }, null, 2));
-    
+
     return {
       ...newMessage,
       user: user ? {
@@ -131,12 +123,12 @@ export class ChatService {
       } : null
     };
   }
-  
+
   async cleanupOldMessages(): Promise<void> {
     // Delete messages older than 4 days
     await storage.deleteChatMessagesOlderThan(4);
   }
-  
+
   async createTemporaryUser(username: string): Promise<User> {
     // Check if user already exists
     const existingUser = await storage.getUserByUsername(username);
@@ -145,7 +137,7 @@ export class ChatService {
       await storage.updateUserLastActive(existingUser.id);
       return existingUser;
     }
-    
+
     // Create new temporary user
     const user: InsertUser = {
       username,
@@ -153,17 +145,17 @@ export class ChatService {
       avatar: null,
       isTemporary: true,
     };
-    
+
     return await storage.createUser(user);
   }
-  
+
   async createPermanentUser(username: string, password: string): Promise<User> {
     // Check if username already exists
     const existingUser = await storage.getUserByUsername(username);
     if (existingUser) {
       throw new Error("Username already exists");
     }
-    
+
     // Create new permanent user
     const user: InsertUser = {
       username,
@@ -171,7 +163,7 @@ export class ChatService {
       avatar: null,
       isTemporary: false,
     };
-    
+
     return await storage.createUser(user);
   }
 }

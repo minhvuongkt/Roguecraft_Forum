@@ -76,12 +76,12 @@ function UserProfilePage() {
     }
   }, [id, navigate]);
 
-  // Redirect nếu không có quyền truy cập
+  // Hiển thị modal đăng nhập nếu chưa đăng nhập
   React.useEffect(() => {
-    if (!isAuthenticated && !isLoading) {
+    if (!isAuthenticated && !isLoading && id) {
       setIsLoginModalOpen(true);
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, id]);
   
   // State hooks
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -93,18 +93,31 @@ function UserProfilePage() {
   // Configure fetcher trực tiếp để xử lý lỗi tốt hơn
   const { data, isLoading, error } = useQuery<UserProfile>({
     queryKey: ['users', id],
-    enabled: !!id && isAuthenticated,
-    retry: 2,
+    enabled: !!id,
+    retry: 3,
     refetchOnWindowFocus: false,
     queryFn: async () => {
       try {
         console.log(`Fetching profile for user ID: ${id}`);
-        const response = await fetch(`/api/users/${id}`);
+        // Đảm bảo id là số
+        const numericId = Number(id);
+        if (isNaN(numericId)) {
+          throw new Error('Invalid user ID');
+        }
+        
+        // Sử dụng apiRequest từ queryClient thay vì fetch trực tiếp
+        const response = await fetch(`/api/users/${numericId}`);
         if (!response.ok) {
           throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
         }
+        
         const result = await response.json();
         console.log("Profile data received:", result);
+        
+        if (!result || !result.user) {
+          throw new Error('Invalid user profile data');
+        }
+        
         return result;
       } catch (err) {
         console.error("Error fetching profile:", err);
