@@ -217,19 +217,36 @@ export class WebSocketHandler {
         }
       }
 
+      // Extract mentions from content
+      const mentionRegex = /@(\w+)/g;
+      const mentions = [];
+      let match;
+      while ((match = mentionRegex.exec(content)) !== null) {
+        mentions.push(match[1]);
+      }
+
       const messageData = {
         content,
         media,
         userId: ws.userId,
         replyToMessageId: replyId,
-        mentions: payload.mentions || [],
+        mentions: mentions.length > 0 ? mentions : (payload.mentions || []),
       };
 
       const message = await chatService.createMessage(messageData);
+      
+      // Add user info to message payload
+      const messageWithUser = {
+        ...message,
+        user: {
+          id: ws.userId,
+          username: ws.username,
+        }
+      };
 
       this.broadcast({
         type: WebSocketMessageType.CHAT_MESSAGE,
-        payload: message,
+        payload: messageWithUser,
       });
     } catch (error) {
       console.error("Error handling chat message:", error);
