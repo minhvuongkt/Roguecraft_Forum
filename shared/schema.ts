@@ -28,7 +28,7 @@ export const chatMessages = pgTable("chat_messages", {
   media: jsonb("media"),
   createdAt: timestamp("created_at").defaultNow(),
   mentions: text("mentions").array(),
-  replyToMessageId: integer("reply_to_message_id").references(() => chatMessages.id),
+  replyToMessageId: integer("reply_to_message_id"),
 });
 
 export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({

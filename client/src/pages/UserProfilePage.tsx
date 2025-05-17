@@ -71,14 +71,19 @@ function UserProfilePage() {
   // Kiểm tra id và chuyển hướng
   React.useEffect(() => {
     if (!id || isNaN(Number(id))) {
+      console.error("Invalid user ID:", id);
       navigate('/forum');
       return;
     }
+    
+    // Fetch profile data when ID is valid
+    // Data fetching is handled by the query below
   }, [id, navigate]);
 
   // Hiển thị modal đăng nhập nếu chưa đăng nhập
   React.useEffect(() => {
     if (!isAuthenticated && !isLoading && id) {
+      console.log("User not authenticated, showing login modal");
       setIsLoginModalOpen(true);
     }
   }, [isAuthenticated, isLoading, id]);
@@ -93,9 +98,10 @@ function UserProfilePage() {
   // Configure fetcher trực tiếp để xử lý lỗi tốt hơn
   const { data, isLoading, error } = useQuery<UserProfile>({
     queryKey: ['users', id],
-    enabled: !!id,
+    enabled: !!id && isAuthenticated, // Chỉ fetch khi đã đăng nhập và có ID
     retry: 3,
     refetchOnWindowFocus: false,
+    staleTime: 60000, // Cache 1 phút
     queryFn: async () => {
       try {
         console.log(`Fetching profile for user ID: ${id}`);
@@ -105,8 +111,20 @@ function UserProfilePage() {
           throw new Error('Invalid user ID');
         }
         
-        // Sử dụng apiRequest từ queryClient thay vì fetch trực tiếp
-        const response = await fetch(`/api/users/${numericId}`);
+        // Fetch trực tiếp với timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        const response = await fetch(`/api/users/${numericId}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
         if (!response.ok) {
           throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
         }
@@ -128,12 +146,16 @@ function UserProfilePage() {
   
   const isOwnProfile = currentUser?.id === parseInt(id);
   
-  // Handle not logged in users trying to view profiles
+  // Handle users trying to view profiles
   React.useEffect(() => {
     if (!isAuthenticated && !isLoading) {
+      // Chưa đăng nhập thì hiển thị form login
       setIsLoginModalOpen(true);
+    } else if (isAuthenticated && data && data.user) {
+      // Đã đăng nhập và có dữ liệu thì đóng form login
+      setIsLoginModalOpen(false);
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, data]);
   
   // Render loading state
   if (isLoading) {

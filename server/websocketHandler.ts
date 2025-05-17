@@ -238,8 +238,11 @@ export class WebSocketHandler {
       let finalReplyId: number | null = null;
 
       if (replyToMessageId !== undefined && replyToMessageId !== null) {
-        // Chuyển đổi thành số nguyên
-        const numericId = Number(replyToMessageId);
+        // Đảm bảo chuyển đổi thành số nguyên
+        const numericId = typeof replyToMessageId === 'string' 
+          ? parseInt(replyToMessageId) 
+          : Number(replyToMessageId);
+          
         if (!isNaN(numericId) && Number.isInteger(numericId) && numericId > 0) {
           finalReplyId = numericId;
         }
