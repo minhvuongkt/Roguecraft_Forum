@@ -57,47 +57,12 @@ export class ChatService {
       hasMedia: !!message.media
     });
 
-    // Validate and process replyToMessageId with improved error handling
+    // Simple replyToMessageId validation
     let finalReplyId = null;
-    if (message.replyToMessageId !== undefined && message.replyToMessageId !== null) {
-      try {
-        // Extract and normalize the ID value
-        let rawId = message.replyToMessageId;
-        
-        // Handle object case (full message object)
-        if (typeof rawId === 'object' && rawId !== null) {
-          rawId = (rawId as any).id;
-        }
-
-        // Convert to number
-        let tempReplyId: number | null = null;
-        if (typeof rawId === 'string') {
-          // Remove any non-numeric characters and parse
-          const cleanId = rawId.replace(/[^0-9]/g, "");
-          if (cleanId) {
-            tempReplyId = parseInt(cleanId, 10);
-          }
-        } else if (typeof rawId === 'number') {
-          tempReplyId = Math.floor(rawId); // Ensure integer
-        }
-
-        // Validate the converted ID
-        if (tempReplyId !== null && !isNaN(tempReplyId) && tempReplyId > 0) {
-          // Verify message exists in database
-          const originalMessage = await storage.getChatMessageById(tempReplyId);
-          
-          if (originalMessage && originalMessage.length > 0) {
-            finalReplyId = tempReplyId;
-            console.log(`Reply validation successful: ${finalReplyId} (original type: ${typeof message.replyToMessageId})`);
-          } else {
-            console.warn(`Message ${tempReplyId} not found in database`);
-          }
-        } else {
-          console.warn(`Invalid ID after conversion: ${tempReplyId}, original: ${JSON.stringify(rawId)}`);
-        }
-      } catch (error) {
-        console.error(`Reply ID processing error:`, error);
-        console.error('Original value:', message.replyToMessageId);
+    if (message.replyToMessageId) {
+      const replyId = Number(message.replyToMessageId);
+      if (!isNaN(replyId) && replyId > 0) {
+        finalReplyId = replyId;
       }
     }
 
