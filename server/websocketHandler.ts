@@ -179,7 +179,7 @@ export class WebSocketHandler {
         console.log("Processing reply to message ID:", replyId, "Type:", typeof replyId);
       }
 
-      const message = await chatService.createChatMessage({
+      const message = await chatService.createMessage({
         content,
         media,
         userId: ws.userId,
