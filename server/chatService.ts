@@ -57,25 +57,28 @@ export class ChatService {
       hasMedia: !!message.media
     });
 
-    // Validate and process replyToMessageId
+    // Validate and process replyToMessageId with improved error handling
     let finalReplyId = null;
     if (message.replyToMessageId !== undefined && message.replyToMessageId !== null) {
       try {
-        let tempReplyId: number | null = null;
+        // Extract and normalize the ID value
+        let rawId = message.replyToMessageId;
+        
+        // Handle object case (full message object)
+        if (typeof rawId === 'object' && rawId !== null) {
+          rawId = (rawId as any).id;
+        }
 
-        // Handle different types of replyToMessageId
-        if (typeof message.replyToMessageId === 'object') {
-          // Handle case where full message object is passed
-          const msgObj = message.replyToMessageId as any;
-          if (msgObj.id) {
-            tempReplyId = typeof msgObj.id === 'string' 
-              ? parseInt(msgObj.id.replace(/[^0-9]/g, ""), 10)
-              : Number(msgObj.id);
+        // Convert to number
+        let tempReplyId: number | null = null;
+        if (typeof rawId === 'string') {
+          // Remove any non-numeric characters and parse
+          const cleanId = rawId.replace(/[^0-9]/g, "");
+          if (cleanId) {
+            tempReplyId = parseInt(cleanId, 10);
           }
-        } else if (typeof message.replyToMessageId === 'string') {
-          tempReplyId = parseInt(message.replyToMessageId.replace(/[^0-9]/g, ""), 10);
-        } else if (typeof message.replyToMessageId === 'number') {
-          tempReplyId = message.replyToMessageId;
+        } else if (typeof rawId === 'number') {
+          tempReplyId = Math.floor(rawId); // Ensure integer
         }
 
         // Validate the converted ID
@@ -85,17 +88,22 @@ export class ChatService {
           
           if (originalMessage && originalMessage.length > 0) {
             finalReplyId = tempReplyId;
-            console.log(`Verified reply to message ID ${finalReplyId} (original type: ${typeof message.replyToMessageId})`);
+            console.log(`Reply validation successful: ${finalReplyId} (original type: ${typeof message.replyToMessageId})`);
           } else {
-            console.warn(`Cannot reply to non-existent message ID: ${tempReplyId}`);
+            console.warn(`Message ${tempReplyId} not found in database`);
           }
         } else {
-          console.warn(`Invalid replyToMessageId after conversion: ${tempReplyId} (original: ${JSON.stringify(message.replyToMessageId)})`);
+          console.warn(`Invalid ID after conversion: ${tempReplyId}, original: ${JSON.stringify(rawId)}`);
         }
       } catch (error) {
-        console.error(`Error processing replyToMessageId:`, error);
+        console.error(`Reply ID processing error:`, error);
         console.error('Original value:', message.replyToMessageId);
       }
+    }
+
+    // Debug logging
+    if (finalReplyId !== null) {
+      console.log(`Reply ID validated and ready for database: ${finalReplyId}`);
     }
 
     console.log('Final reply ID:', {
