@@ -38,7 +38,7 @@ const MessageComponent = ({
     ? findMessageById(
         typeof message.replyToMessageId === "string"
           ? parseInt(message.replyToMessageId)
-          : message.replyToMessageId,
+          : (message.replyToMessageId ?? 0), // fallback to 0 if undefined
       )
     : undefined;
 
@@ -363,7 +363,9 @@ const MessageComponent = ({
           <Avatar className="w-full h-full">
             {(isCurrentUser ? currentUser?.avatar : message.user?.avatar) ? (
               <AvatarImage
-                src={isCurrentUser ? currentUser?.avatar : message.user?.avatar}
+                src={
+                  (isCurrentUser ? currentUser?.avatar : message.user?.avatar) ?? undefined
+                }
                 alt={
                   isCurrentUser
                     ? currentUser?.username

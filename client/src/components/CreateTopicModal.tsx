@@ -208,7 +208,6 @@ export function CreateTopicModal({ isOpen, onClose }: CreateTopicModalProps) {
             <FileUpload
               onFileSelect={handleFileSelect}
               value={files}
-              disabled={isUploading || isCreatingTopic}
             />
           </div>
           

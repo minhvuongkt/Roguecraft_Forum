@@ -234,8 +234,8 @@ export class WebSocketHandler {
 
           // Xác minh message tồn tại trong database
           if (replyId !== null) {
-            const [originalMessage] =
-              await chatService.verifyMessageExists(replyId);
+            // MySQL2/Drizzle: Use storage.getChatMessageById instead of chatService.verifyMessageExists
+            const [originalMessage] = await storage.getChatMessageById(replyId);
             if (!originalMessage) {
               if (this.DEBUG_MODE) {
                 console.warn(`Reply to non-existent message ID: ${replyId}`);
@@ -353,7 +353,8 @@ export class WebSocketHandler {
       });
 
       const updatePromises: Promise<void>[] = [];
-      for (const userId of userIds) {
+      // Convert Set to Array for compatibility with all TS targets
+      for (const userId of Array.from(userIds)) {
         updatePromises.push(
           storage.updateUserLastActive(userId).catch((error) => {
             console.error(

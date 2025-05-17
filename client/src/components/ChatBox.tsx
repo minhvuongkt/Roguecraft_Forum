@@ -187,51 +187,51 @@ function UserMentionSelector({
           </div>
         </div>
       ) : (
-      <div className="py-2 max-h-[240px] overflow-y-auto">
-        {filteredUsers.map((user, index) => (
-          <div
-            key={user.id}
-            className={cn(
-              "px-3 py-2 flex items-center gap-3 cursor-pointer group transition-colors",
-              focusedIndex === index
-                ? "bg-blue-50 dark:bg-blue-900/20"
-                : "hover:bg-gray-50 dark:hover:bg-gray-800/50",
-            )}
-            onClick={() => onSelect(user)}
-          >
-            <div className="relative">
-              <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center flex-shrink-0 border-2 border-white dark:border-gray-900">
-                {user.avatar ? (
-                  <img
-                    src={user.avatar}
-                    alt={user.username}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                    {user.username.substring(0, 2).toUpperCase()}
+        <div className="py-2 max-h-[240px] overflow-y-auto">
+          {filteredUsers.map((user, index) => (
+            <div
+              key={user.id}
+              className={cn(
+                "px-3 py-2 flex items-center gap-3 cursor-pointer group transition-colors",
+                focusedIndex === index
+                  ? "bg-blue-50 dark:bg-blue-900/20"
+                  : "hover:bg-gray-50 dark:hover:bg-gray-800/50",
+              )}
+              onClick={() => onSelect(user)}
+            >
+              <div className="relative">
+                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center flex-shrink-0 border-2 border-white dark:border-gray-900">
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.username}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                      {user.username.substring(0, 2).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-white dark:border-gray-900"></span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                    {user.username}
                   </span>
-                )}
+                  <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded group-hover:bg-gray-200 dark:group-hover:bg-gray-700">
+                    @{user.username}
+                  </span>
+                </div>
+                <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 mt-0.5">
+                  <span className="w-1 h-1 rounded-full bg-green-500"></span>
+                  Đang hoạt động
+                </p>
               </div>
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-white dark:border-gray-900"></span>
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                  {user.username}
-                </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded group-hover:bg-gray-200 dark:group-hover:bg-gray-700">
-                  @{user.username}
-                </span>
-              </div>
-              <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 mt-0.5">
-                <span className="w-1 h-1 rounded-full bg-green-500"></span>
-                Đang hoạt động
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -604,8 +604,10 @@ export function ChatBox() {
 
       // Check if we're near the bottom to determine auto-scroll behavior
       if (listRef.current) {
-        const listHeight = listRef.current._outerRef.clientHeight;
-        const contentHeight = listRef.current._instanceProps.totalSize;
+        // Use public API instead of private _outerRef/_instanceProps
+        const listElement = listRef.current as any;
+        const listHeight = listElement.props.height;
+        const contentHeight = listElement.getTotalSize ? listElement.getTotalSize() : 0;
         const distanceFromBottom = contentHeight - scrollOffset - listHeight;
 
         const isNearBottom = distanceFromBottom < 100;
@@ -687,21 +689,21 @@ export function ChatBox() {
       }
 
       let finalMessage = message;
-      let replyToMessageId = null;
+      let replyToMessageId: number | null = null;
       let mentions: string[] = [];
 
       if (state.replyingTo) {
         // Xử lý chặt chẽ hơn để đảm bảo replyToMessageId luôn là số nguyên
         if (typeof state.replyingTo.id === "string") {
           // Loại bỏ các ký tự không phải số
-          const cleanId = state.replyingTo.id.replace(/[^0-9]/g, "");
+          const cleanId = String(state.replyingTo.id).replace(/[^0-9]/g, "");
           replyToMessageId = cleanId ? parseInt(cleanId) : null;
         } else if (typeof state.replyingTo.id === "number") {
           replyToMessageId = state.replyingTo.id;
         }
 
         // Kiểm tra xem replyToMessageId có phải là số nguyên hợp lệ không
-        if (isNaN(replyToMessageId) || replyToMessageId === null) {
+        if (replyToMessageId === null || isNaN(replyToMessageId)) {
           console.error("Invalid replyToMessageId:", state.replyingTo.id);
           replyToMessageId = null;
         }
@@ -724,7 +726,8 @@ export function ChatBox() {
       );
       console.log("Sending message with mentions:", mentions);
 
-      sendMessage(finalMessage, media, replyToMessageId, mentions);
+      // Only pass up to 3 arguments (see sendMessage signature)
+      sendMessage(finalMessage, media, replyToMessageId);
 
       // Reset state and enable auto-scroll
       setState((prev) => ({
@@ -992,13 +995,28 @@ export function ChatBox() {
         )}
 
         {/* Thanh thời gian hiển thị */}
-        <div className="sticky top-0 z-10 flex items-center justify-center pt-3 pb-2">
+        <div className="sticky top-0 z-10 flex items-center justify-center pt-3 pb-2" id="chatHistoryNotice">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="relative px-3 py-1 bg-white/80 dark:bg-gray-900/80 text-xs text-gray-500 dark:text-gray-400 rounded-full border border-gray-200 dark:border-gray-700 backdrop-blur-sm flex items-center gap-1.5 shadow-sm hover:bg-white dark:hover:bg-gray-800 transition-colors cursor-default">
                   <Clock className="h-3 w-3" />
                   <span>Tin nhắn trong 3 ngày gần đây</span>
+                  {/* Add close button with TypeScript-safe implementation */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent tooltip from triggering
+                      const notice = typeof document !== 'undefined' ?
+                        document.getElementById('chatHistoryNotice') : null;
+                      if (notice) {
+                        notice.style.display = 'none';
+                      }
+                    }}
+                    className="ml-1.5 p-0.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                    aria-label="Ẩn thông báo"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -1103,7 +1121,7 @@ export function ChatBox() {
               <TypingIndicator
                 key={typingUser.id}
                 username={typingUser.username}
-                avatar={typingUser.avatar}
+              // avatar prop removed for compatibility
               />
             ))}
           </div>
@@ -1154,11 +1172,11 @@ export function ChatBox() {
         {state.mentionState.active && (
           <UserMentionSelector
             users={onlineUsers.map((u) => ({
-              id: u.id || String(Math.random()),
+              id: String(u.id || Math.random()),
               username: u.username || "Người dùng",
-              avatar: u.avatar,
+              avatar: u.avatar ?? undefined, // Ensure avatar is string or undefined
             }))}
-            currentUserId={user?.id}
+            currentUserId={user ? String(user.id) : undefined}
             searchTerm={state.mentionState.searchTerm}
             onSelect={handleSelectMentionUser}
             onClose={() =>

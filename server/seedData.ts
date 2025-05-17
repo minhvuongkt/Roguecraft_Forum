@@ -105,7 +105,7 @@ async function createSampleTopics(users: any[]) {
       userId: users[2].id,
       title: 'Top 10 mod Minecraft hay nhất năm 2025',
       content: 'Tôi đã thử qua nhiều mod và đánh giá 10 mod hay nhất. Đặc biệt ấn tượng với Create mod và Biomes O Plenty. Ai cũng đang dùng mod nào thì chia sẻ nhé!',
-      media: { "1": "/topic-images/sample-topic.svg" },
+      media: { "1": "/topic-images/sample-topic.svg" } as Record<string, any>,
       category: 'Mods',
       isAnonymous: false
     },
@@ -154,77 +154,55 @@ async function createSampleTopics(users: any[]) {
 
 async function createSampleComments(users: any[], topics: any[]) {
   if (users.length === 0 || topics.length === 0) return;
-  
-  // Check if comments for each topic already exist
-  for (const topic of topics) {
-    const existingComments = await storage.getCommentsByTopicId(topic.id);
-    if (existingComments.length > 0) {
-      console.log(`Comments for topic ${topic.id} already exist, skipping comment creation.`);
-      continue;
-    }
-    
-    // Only create comments for topics that don't have comments
-    const commentsForTopic = getCommentsForTopic(topic.id, users);
-    
-    for (const comment of commentsForTopic) {
-      try {
-        await storage.createComment(comment);
-      } catch (error) {
-        console.error(`Failed to create comment for topic ${comment.topicId}:`, error);
-      }
-    }
-  }
-}
 
-function getCommentsForTopic(topicId: number, users: any[]): InsertComment[] {
-  // This will return specific comments for specific topics
-  const allComments: {[key: number]: InsertComment[]} = {
-    1: [
+  // Build a mapping from topic title to topic object for robust ID assignment
+  const topicMap: Record<string, any> = {};
+  for (const topic of topics) {
+    topicMap[topic.title] = topic;
+  }
+
+  // Define comments for each topic by title (not by assumed ID)
+  const commentsByTitle: Record<string, InsertComment[]> = {
+    'Chào mừng đến với diễn đàn Minecraft!': [
       {
-        topicId: topicId,
         userId: users[1].id,
         content: 'Cảm ơn admin vì đã tạo diễn đàn Minecraft này! Rất vui được là một phần của cộng đồng.',
         media: null,
         isAnonymous: false
       }
     ],
-    2: [
+    'Cách xây dựng farm hiệu quả trong Minecraft Survival': [
       {
-        topicId: topicId,
         userId: users[2].id,
         content: 'Bạn nên thử farm nguyên liệu bằng villagers, hiệu quả nhất là farm lúa mì và khoai tây.',
         media: null,
         isAnonymous: false
       },
       {
-        topicId: topicId,
         userId: users[0].id,
         content: 'Iron golem farm cũng rất quan trọng để có nhiều sắt, nhất là khi chơi ở chế độ survival lâu dài.',
         media: null,
         isAnonymous: false
       }
     ],
-    3: [
+    'Top 10 mod Minecraft hay nhất năm 2025': [
       {
-        topicId: topicId,
         userId: users[3].id,
         content: 'Tôi rất thích mod Applied Energistics 2, giúp quản lý kho đồ dễ dàng hơn nhiều.',
         media: null,
         isAnonymous: false
       }
     ],
-    4: [
+    'Hướng dẫn tạo cơ chế Redstone tự động craft': [
       {
-        topicId: topicId,
         userId: users[2].id,
         content: 'Bạn có thể dùng comparator, hopper và chest để tạo hệ thống sorting tự động rất hiệu quả.',
         media: null,
         isAnonymous: false
       }
     ],
-    5: [
+    'Tìm server PvP có nhiều người chơi': [
       {
-        topicId: topicId,
         userId: users[0].id,
         content: 'Bạn có thể thử server Hypixel, rất nhiều người chơi và có nhiều mini-game PvP hay.',
         media: null,
@@ -232,8 +210,24 @@ function getCommentsForTopic(topicId: number, users: any[]): InsertComment[] {
       }
     ]
   };
-  
-  return allComments[topicId] || [];
+
+  for (const [title, comments] of Object.entries(commentsByTitle)) {
+    const topic = topicMap[title];
+    if (!topic) continue;
+    // Check if comments for this topic already exist
+    const existingComments = await storage.getCommentsByTopicId(topic.id);
+    if (existingComments.length > 0) {
+      console.log(`Comments for topic ${topic.id} already exist, skipping comment creation.`);
+      continue;
+    }
+    for (const comment of comments) {
+      try {
+        await storage.createComment({ ...comment, topicId: topic.id });
+      } catch (error) {
+        console.error(`Failed to create comment for topic ${topic.id}:`, error);
+      }
+    }
+  }
 }
 
 async function createSampleChatMessages(users: any[]) {
@@ -285,7 +279,7 @@ async function createSampleChatMessages(users: any[]) {
     {
       userId: users[0].id,
       content: 'Hôm nay mình vừa tìm được cả kho diamond trong hang động! 😃',
-      media: { "1": "/chat-images/sample-image.svg" },
+      media: { "1": "/chat-images/sample-image.svg" } as Record<string, any>,
       mentions: []
     },
     {
@@ -326,8 +320,6 @@ async function createSampleChatMessages(users: any[]) {
     }
   ];
   
-  // Trong PostgreSQL, chúng ta không thể trực tiếp sửa createdAt sau khi tạo
-  // Thay vào đó, chúng ta sẽ tạo tin nhắn với thời gian hiện tại
   for (const message of messages) {
     try {
       await storage.createChatMessage(message);
@@ -335,4 +327,9 @@ async function createSampleChatMessages(users: any[]) {
       console.error(`Failed to create chat message:`, error);
     }
   }
+}
+
+// Run seedData if this file is executed directly (Node.js ESM/tsx/ts-node compatible)
+if (require.main === module) {
+  seedData().then(() => process.exit(0));
 }

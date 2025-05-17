@@ -191,26 +191,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add a parentCommentId check before schema validation to fix type errors
       if (req.body.parentCommentId !== undefined && req.body.parentCommentId !== null) {
-        // Check if the parent comment exists
-        const [parentComment] = await db.select()
-          .from(comments)
-          .where(
-            and(
-              eq(comments.id, parseInt(req.body.parentCommentId)),
-              eq(comments.topicId, topicId)
-            )
-          );
-        
-        if (!parentComment) {
+        // Check if the parent comment exists (MySQL2/Drizzle compatible)
+        const parentCommentResult = await db.select().from(comments)
+          .where(and(
+            eq(comments.id, Number(req.body.parentCommentId)),
+            eq(comments.topicId, topicId)
+          ));
+        if (!parentCommentResult || parentCommentResult.length === 0) {
           return res.status(404).json({ message: 'Parent comment not found or does not belong to this topic' });
         }
       }
       
       // Now validate the data
-      const validatedData = insertCommentSchema
-        .omit({ topicId: true })
-        .parse(req.body);
-      
+      // Drizzle/zod .omit({ topicId: true }) is not supported in MySQL2, so validate as-is and set topicId manually
+      const validatedData = insertCommentSchema.parse(req.body);
       const comment = await forumService.createComment({
         ...validatedData,
         topicId
@@ -327,17 +321,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       })
       .from(chatMessages)
       .where(eq(chatMessages.userId, userId));
-      
+      const messageCount = messageCountResult[0] && messageCountResult[0].count !== undefined ? Number(messageCountResult[0].count) : 0;
+
       // Get user's total topic count (more accurate than just the limited results)
       const topicCountResult = await db.select({
         count: sql<number>`count(*)`
       })
       .from(topics)
       .where(eq(topics.userId, userId));
-      
-      // Đảm bảo rằng messageCount và topicCount là số
-      const messageCount = messageCountResult[0]?.count ? Number(messageCountResult[0].count) : 0;
-      const topicCount = topicCountResult[0]?.count ? Number(topicCountResult[0].count) : 0;
+      const topicCount = topicCountResult[0] && topicCountResult[0].count !== undefined ? Number(topicCountResult[0].count) : 0;
       
       res.json({
         user: userWithoutPassword,

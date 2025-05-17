@@ -75,3 +75,14 @@ export interface OnlineUser {
   avatar: string | null;
   lastActive: Date;
 }
+
+// Kiểu cho hồ sơ người dùng (profile)
+export interface UserProfile extends User {
+  bio?: string;
+  joinDate?: string;
+  location?: string;
+  email?: string;
+  birthday?: string;
+  totalPosts?: number;
+  totalComments?: number;
+}

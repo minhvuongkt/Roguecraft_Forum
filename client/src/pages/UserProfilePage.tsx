@@ -340,7 +340,7 @@ export default function UserProfilePage() {
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Back button */}
       <div className="mb-6">
-        <Button variant="outline" onClick={() => navigate(-1)}>
+        <Button variant="outline" onClick={() => navigate('/forum')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Quay lại
         </Button>
@@ -705,7 +705,6 @@ export default function UserProfilePage() {
       <LoginModal 
         isOpen={isLoginModalOpen} 
         onClose={() => setIsLoginModalOpen(false)} 
-        defaultTab="signup"
       />
     </div>
   );

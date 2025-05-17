@@ -3,7 +3,7 @@ import { useRoute, Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { useForum } from '@/hooks/useForum';
 import { useAuth } from '@/contexts/AuthContext';
-import { Comment as CommentType } from '@/types';
+import type { Comment as CommentType } from '@/types/index';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -56,7 +56,7 @@ const CommentItem = ({
             ) : null}
             
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              {formatDate(comment.createdAt)}
+              {formatDate(typeof comment.createdAt === 'string' ? comment.createdAt : comment.createdAt.toISOString())}
             </span>
           </div>
           
@@ -250,7 +250,7 @@ export default function TopicDetailPage() {
       content: comment,
       isAnonymous,
       media: null,
-      parentCommentId: replyingTo,
+      parentCommentId: replyingTo === null ? undefined : replyingTo,
     });
     
     setComment('');
@@ -342,7 +342,7 @@ export default function TopicDetailPage() {
                     key={key}
                     src={path as string}
                     alt={`Topic image ${key}`}
-                    className="rounded-lg max-h-96 max-w-full cursor-pointer object-cover"
+                    className="rounded-lg max-h-96 max-w-full cursor-cover"
                     onClick={() => {
                       setViewingImageUrl(path as string);
                       setImageViewerOpen(true);

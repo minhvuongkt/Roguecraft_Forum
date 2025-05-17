@@ -65,7 +65,7 @@ export class ChatService {
 
         // Convert to number if string
         if (typeof message.replyToMessageId === 'string') {
-          const cleanId = message.replyToMessageId.replace(/[^0-9]/g, "");
+          const cleanId = (message.replyToMessageId as string).replace(/[^0-9]/g, "");
           if (cleanId) {
             tempReplyId = parseInt(cleanId, 10);
           }

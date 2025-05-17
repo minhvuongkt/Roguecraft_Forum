@@ -1,13 +1,13 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, unique } from "drizzle-orm/pg-core";
+import { mysqlTable, varchar, int, boolean, timestamp, json, unique, primaryKey } from "drizzle-orm/mysql-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // User schema
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password"),
-  avatar: text("avatar"),
+export const users = mysqlTable("users", {
+  id: int("id").autoincrement().primaryKey(),
+  username: varchar("username", { length: 255 }).notNull().unique(),
+  password: varchar("password", { length: 255 }),
+  avatar: varchar("avatar", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow(),
   lastActive: timestamp("last_active").defaultNow(),
   isTemporary: boolean("is_temporary").default(true),
@@ -21,14 +21,14 @@ export const insertUserSchema = createInsertSchema(users).pick({
 });
 
 // Chat message schema
-export const chatMessages = pgTable("chat_messages", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
-  content: text("content").notNull(),
-  media: jsonb("media"),
+export const chatMessages = mysqlTable("chat_messages", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").references(() => users.id),
+  content: varchar("content", { length: 1000 }).notNull(),
+  media: json("media").$type<Record<string, any>>(),
   createdAt: timestamp("created_at").defaultNow(),
-  mentions: text("mentions").array(),
-  replyToMessageId: integer("reply_to_message_id"),
+  mentions: json("mentions").$type<string[]>(),
+  replyToMessageId: int("reply_to_message_id"),
 });
 
 export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
@@ -39,19 +39,19 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
   replyToMessageId: true,
 });
 
-// Forum topic schema
-export const topics = pgTable("topics", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
-  title: text("title").notNull(),
-  content: text("content").notNull(),
-  media: jsonb("media"),
-  category: text("category").notNull(),
+// Topics schema
+export const topics = mysqlTable("topics", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").references(() => users.id),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: varchar("content", { length: 10000 }).notNull(),
+  media: json("media").$type<Record<string, any>>(),
+  category: varchar("category", { length: 50 }).notNull(),
   isAnonymous: boolean("is_anonymous").default(false),
   createdAt: timestamp("created_at").defaultNow(),
-  viewCount: integer("view_count").default(0),
-  likeCount: integer("like_count").default(0),
-  commentCount: integer("comment_count").default(0),
+  viewCount: int("view_count").default(0),
+  likeCount: int("like_count").default(0),
+  commentCount: int("comment_count").default(0),
 });
 
 export const insertTopicSchema = createInsertSchema(topics).pick({
@@ -63,29 +63,27 @@ export const insertTopicSchema = createInsertSchema(topics).pick({
   isAnonymous: true,
 });
 
-// Forum comment schema
-export const comments = pgTable("comments", {
-  id: serial("id").primaryKey(),
-  topicId: integer("topic_id").references(() => topics.id),
-  userId: integer("user_id").references(() => users.id),
-  content: text("content").notNull(),
-  media: jsonb("media"),
+// Comments schema (self-referencing foreign key cannot be enforced in Drizzle+TS, see comment)
+export const comments = mysqlTable("comments", {
+  id: int("id").autoincrement().primaryKey(),
+  topicId: int("topic_id").references(() => topics.id),
+  userId: int("user_id").references(() => users.id),
+  content: varchar("content", { length: 1000 }).notNull(),
+  media: json("media").$type<Record<string, any>>(),
   createdAt: timestamp("created_at").defaultNow(),
   isAnonymous: boolean("is_anonymous").default(false),
-  parentCommentId: integer("parent_comment_id").references(() => comments.id),
+  parentCommentId: int("parent_comment_id"), // Self-referencing FK not enforced here; see migration
 });
 
-// Topic likes schema (to prevent multiple likes from the same user)
-export const topicLikes = pgTable("topic_likes", {
-  id: serial("id").primaryKey(),
-  topicId: integer("topic_id").references(() => topics.id).notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+// Topic likes schema
+export const topicLikes = mysqlTable("topic_likes", {
+  id: int("id").autoincrement().primaryKey(),
+  topicId: int("topic_id").references(() => topics.id),
+  userId: int("user_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
-}, (table) => {
-  return {
-    uniqueUserTopic: unique("unique_user_topic").on(table.userId, table.topicId),
-  };
-});
+}, (table) => ({
+  uniqueUserTopic: unique().on(table.userId, table.topicId),
+}));
 
 export const insertCommentSchema = createInsertSchema(comments).pick({
   topicId: true,

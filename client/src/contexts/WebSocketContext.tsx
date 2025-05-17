@@ -312,8 +312,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const sendMessage = (
     content: string,
     media?: any,
+    replyToMessageId?: number | null,
     mentions?: string[],
-    replyToMsgId?: number | null,
   ) => {
     if (!socket || !isConnected) {
       toast({
@@ -326,12 +326,12 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Đảm bảo replyToMessageId là số hoặc null
     let processedReplyId = null;
-    if (replyToMsgId !== undefined && replyToMsgId !== null) {
-      processedReplyId = Number(replyToMsgId);
+    if (replyToMessageId !== undefined && replyToMessageId !== null) {
+      processedReplyId = Number(replyToMessageId);
 
       // Log để debug
       console.log("Sending message with replyToMessageId:", {
-        original: replyToMsgId,
+        original: replyToMessageId,
         processed: processedReplyId,
         type: typeof processedReplyId,
       });

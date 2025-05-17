@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Topic, Comment } from '@/types';
+// Use the correct import for Topic and Comment types
+import type { Topic, Comment } from '@/types/index';
 
 export function useForum() {
   const [selectedCategory, setSelectedCategory] = useState<string>('Tất cả');

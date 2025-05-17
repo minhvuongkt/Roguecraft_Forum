@@ -22,9 +22,11 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user || undefined;
   }
-
+  
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
+    const result = await db.insert(users).values(insertUser);
+    const userId = Number(result[0].insertId);
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
     return user;
   }
 
@@ -33,13 +35,12 @@ export class DatabaseStorage implements IStorage {
       .set({ lastActive: new Date() })
       .where(eq(users.id, id));
   }
-
   async updateUserProfile(id: number, updates: Partial<InsertUser>): Promise<User> {
-    const [updatedUser] = await db.update(users)
+    await db.update(users)
       .set(updates)
-      .where(eq(users.id, id))
-      .returning();
+      .where(eq(users.id, id));
 
+    const [updatedUser] = await db.select().from(users).where(eq(users.id, id));
     return updatedUser;
   }
 
@@ -52,11 +53,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserAvatar(id: number, avatarUrl: string): Promise<User> {
-    const [updatedUser] = await db.update(users)
+    await db.update(users)
       .set({ avatar: avatarUrl })
-      .where(eq(users.id, id))
-      .returning();
+      .where(eq(users.id, id));
 
+    const [updatedUser] = await db.select().from(users).where(eq(users.id, id));
     return updatedUser;
   }
 
@@ -69,24 +70,22 @@ export class DatabaseStorage implements IStorage {
       let finalMedia = message.media;
 
       // Kiểm tra và sửa đường dẫn nếu cần
-      if (finalMedia && typeof finalMedia === 'object') {
-        const hasTopicImage = Object.values(finalMedia).some(
-          path => typeof path === 'string' && path.toString().includes('/topic-images/')
-        );
-
-        if (hasTopicImage) {
+      if (finalMedia && typeof finalMedia === 'object' && !Array.isArray(finalMedia)) {
+        const mediaString = JSON.stringify(finalMedia);
+        if (mediaString.includes('/topic-images/')) {
           console.warn("Warning: Found topic-images path in chat message, fixing this");
-
-          const fixedMedia: Record<string, string> = {};
-          Object.entries(finalMedia).forEach(([key, value]) => {
+          const fixedMedia: Record<string, any> = {};
+          Object.entries(finalMedia as Record<string, any>).forEach(([key, value]) => {
             if (typeof value === 'string' && value.includes('/topic-images/')) {
-              // Tạo tên file mới trong chat-images
               const originalFileName = value.split('/').pop() || 'unknown.jpg';
-              const newPath = `/chat-images/chat-${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(originalFileName)}`;
+              const timestamp = Date.now();
+              const randomPart = Math.round(Math.random() * 1E9);
+              const extension = path.extname(originalFileName);
+              const newPath = `/chat-images/chat-${timestamp}-${randomPart}${extension}`;
               fixedMedia[key] = newPath;
               console.log(`Fixed media path from ${value} to ${newPath}`);
             } else {
-              fixedMedia[key] = value as string;
+              fixedMedia[key] = value;
             }
           });
           finalMedia = fixedMedia;
@@ -103,7 +102,7 @@ export class DatabaseStorage implements IStorage {
         try {
           // Xử lý khác nhau dựa trên kiểu dữ liệu
           if (typeof message.replyToMessageId === 'string') {
-            const cleanId = message.replyToMessageId.replace(/[^0-9]/g, "");
+            const cleanId = (message.replyToMessageId as string).replace(/[^0-9]/g, "");
             finalReplyToMessageId = cleanId ? parseInt(cleanId, 10) : null;
           } else if (typeof message.replyToMessageId === 'number') {
             finalReplyToMessageId = Number.isInteger(message.replyToMessageId) ? message.replyToMessageId : null;
@@ -136,7 +135,7 @@ export class DatabaseStorage implements IStorage {
             }
           }
         } catch (error) {
-          console.error(`Error processing replyToMessageId: ${error}`);
+          console.error(`Error processing replyToMessageId: ${error instanceof Error ? error.message : error}`);
           finalReplyToMessageId = null;
         }
       }
@@ -145,9 +144,9 @@ export class DatabaseStorage implements IStorage {
       const messageToInsert = {
         ...message,
         content: message.content?.trim() || "",
-        media: finalMedia,
+        media: finalMedia as Record<string, any> | null,
         replyToMessageId: finalReplyToMessageId,
-        mentions: Array.isArray(message.mentions) ? message.mentions : []
+        mentions: Array.isArray(message.mentions) ? message.mentions.map(String) : []
       };
 
       // 4. Lưu vào database
@@ -157,9 +156,10 @@ export class DatabaseStorage implements IStorage {
         replyToMessageId: messageToInsert.replyToMessageId
       });
 
-      const [createdMessage] = await db.insert(chatMessages)
-        .values(messageToInsert)
-        .returning();
+      // Drizzle MySQL does not support .returning(), so insert and then select
+      const result = await db.insert(chatMessages).values(messageToInsert);
+      const insertId = Number(result[0]?.insertId);
+      const [createdMessage] = await db.select().from(chatMessages).where(eq(chatMessages.id, insertId));
 
       console.log("Chat message created in database:", JSON.stringify({
         id: createdMessage.id,
@@ -169,8 +169,9 @@ export class DatabaseStorage implements IStorage {
 
       return createdMessage;
     } catch (error) {
-      console.error("Error creating chat message:", error);
-      throw new Error(`Failed to save chat message: ${error.message}`);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      console.error("Error creating chat message:", errMsg);
+      throw new Error(`Failed to save chat message: ${errMsg}`);
     }
   }
 
@@ -217,7 +218,10 @@ export class DatabaseStorage implements IStorage {
       media: topic.media
     };
 
-    const [createdTopic] = await db.insert(topics).values(topicToInsert).returning();
+    // Drizzle MySQL does not support .returning(), so insert and then select
+    const result = await db.insert(topics).values(topicToInsert);
+    const insertId = Number(result[0]?.insertId);
+    const [createdTopic] = await db.select().from(topics).where(eq(topics.id, insertId));
 
     console.log("Topic created in database:", JSON.stringify({
       id: createdTopic.id,
@@ -267,6 +271,7 @@ export class DatabaseStorage implements IStorage {
 
     if (!result) return undefined;
 
+    // Cast to Topic & add user info
     return {
       ...result.topics,
       user: result.users ? {
@@ -274,7 +279,7 @@ export class DatabaseStorage implements IStorage {
         username: result.users.username,
         avatar: result.users.avatar
       } : null
-    };
+    } as Topic & { user: { id: number; username: string; avatar: string } | null };
   }
 
   async incrementTopicViews(id: number): Promise<void> {
@@ -365,12 +370,14 @@ export class DatabaseStorage implements IStorage {
     // Start a transaction to ensure data consistency
     return await db.transaction(async (tx) => {
       // Insert the comment
-      const [createdComment] = await tx.insert(comments).values(comment).returning();
+      const result = await tx.insert(comments).values(comment);
+      const insertId = Number(result[0]?.insertId);
+      const [createdComment] = await tx.select().from(comments).where(eq(comments.id, insertId));
 
       // Increment the comment count for the topic
       await tx.update(topics)
-        .set({ commentCount: sql`${topics.commentCount} + 1` })
-        .where(eq(topics.id, comment.topicId))
+        .set({ commentCount: sql`comment_count + 1` })
+        .where(eq((topics as any).id, (comment as any).topicId))
         .execute();
 
       return createdComment;
@@ -423,5 +430,28 @@ export class DatabaseStorage implements IStorage {
     });
 
     return rootComments;
+  }
+
+  async getChatMessageById(id: number): Promise<ChatMessage[]> {
+    // Select the chat message and join user info
+    const result = await db.select({
+      chat_message: chatMessages,
+      user: users
+    })
+      .from(chatMessages)
+      .leftJoin(users, eq(chatMessages.userId, users.id))
+      .where(eq(chatMessages.id, id));
+
+    // Map to expected format (array, for compatibility)
+    return result.map(row => ({
+      ...row.chat_message,
+      user: row.user
+        ? {
+            id: row.user.id,
+            username: row.user.username,
+            avatar: row.user.avatar
+          }
+        : null
+    }));
   }
 }

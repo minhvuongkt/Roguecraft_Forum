@@ -147,7 +147,7 @@ export function MinecraftChatbox({
   return (
     <div className={cn("relative w-full", className)}>
       {replyPreview && (
-        <div className="mb-2" data-reply-id={replyPreview.props.message?.id}>
+        <div className="mb-2">
           {replyPreview}
         </div>
       )}

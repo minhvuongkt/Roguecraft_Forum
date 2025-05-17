@@ -6,7 +6,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
-import { OnlineUser, User } from '@/types';
+import { OnlineUser } from '@/types';
+import type { User } from '@/types/index';
 import { Users } from 'lucide-react';
 
 interface OnlineUsersProps {

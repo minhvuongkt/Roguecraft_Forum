@@ -1,13 +1,8 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-
-interface User {
-  id: number;
-  username: string;
-  avatar: string | null;
-  isTemporary: boolean;
-}
+// Use the shared User type for consistency
+import type { User, UserProfile } from '@/types/index';
 
 interface AuthContextType {
   user: User | null;
@@ -17,7 +12,7 @@ interface AuthContextType {
   register: (username: string, password: string) => Promise<void>;
   logout: () => void;
   setTemporaryUser: (username: string) => Promise<void>;
-  updateProfile: (username: string) => Promise<User>;
+  updateProfile: (profile: Partial<UserProfile>) => Promise<User>;
   updatePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   updateAvatar: (avatarUrl: string) => Promise<User>;
 }
@@ -42,13 +37,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  // Helper to normalize user object to shared User type
+  function normalizeUser(data: any): User {
+    return {
+      id: data.id,
+      username: data.username,
+      avatar: data.avatar ?? null,
+      isTemporary: data.isTemporary ?? false,
+      createdAt: data.createdAt ?? new Date(),
+      lastActive: data.lastActive ?? new Date(),
+    };
+  }
+
   useEffect(() => {
     // Check for stored user in localStorage
     const storedUser = localStorage.getItem('forum_chat_user');
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
+        setUser(normalizeUser(parsedUser));
       } catch (error) {
         console.error('Failed to parse stored user:', error);
         localStorage.removeItem('forum_chat_user');
@@ -64,8 +71,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await apiRequest('POST', '/api/auth/temp-user', { username });
       const data = await response.json();
       
-      setUser(data);
-      localStorage.setItem('forum_chat_user', JSON.stringify(data));
+      setUser(normalizeUser(data));
+      localStorage.setItem('forum_chat_user', JSON.stringify(normalizeUser(data)));
       
       toast({
         title: "Đăng nhập thành công",
@@ -90,8 +97,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       const data = await response.json();
       
-      setUser(data);
-      localStorage.setItem('forum_chat_user', JSON.stringify(data));
+      setUser(normalizeUser(data));
+      localStorage.setItem('forum_chat_user', JSON.stringify(normalizeUser(data)));
       
       toast({
         title: "Đăng ký thành công",
@@ -121,8 +128,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await apiRequest('POST', '/api/auth/temp-user', { username });
       const data = await response.json();
       
-      setUser(data);
-      localStorage.setItem('forum_chat_user', JSON.stringify(data));
+      setUser(normalizeUser(data));
+      localStorage.setItem('forum_chat_user', JSON.stringify(normalizeUser(data)));
       
       toast({
         title: "Đã đặt tên thành công",
@@ -141,32 +148,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Cập nhật thông tin người dùng
-  const updateProfile = async (username: string): Promise<User> => {
+  // Accepts a partial profile object for extensibility
+  const updateProfile = async (profile: Partial<UserProfile>): Promise<User> => {
     if (!user) {
       throw new Error('User not logged in');
     }
 
     try {
-      const response = await apiRequest(`/api/users/${user.id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ username }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      const updatedUser = response as User;
-      
-      // Cập nhật localStorage
+      const response = await apiRequest('PUT', `/api/users/${user.id}`, profile);
+      const updatedUser: User = normalizeUser(await response.json());
       localStorage.setItem('forum_chat_user', JSON.stringify(updatedUser));
       localStorage.setItem('username', updatedUser.username);
-      
-      // Cập nhật state
       setUser(updatedUser);
-      
       toast({
         title: 'Cập nhật thành công',
         description: 'Thông tin cá nhân đã được cập nhật',
       });
-      
       return updatedUser;
     } catch (error) {
       console.error('Failed to update profile:', error);
@@ -186,12 +183,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     try {
-      await apiRequest(`/api/users/${user.id}/password`, {
-        method: 'PUT',
-        body: JSON.stringify({ currentPassword, newPassword }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
+      await apiRequest('PUT', `/api/users/${user.id}/password`, { currentPassword, newPassword });      
       toast({
         title: 'Đổi mật khẩu thành công',
         description: 'Mật khẩu đã được cập nhật',
@@ -223,13 +215,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     try {
-      const response = await apiRequest(`/api/users/${user.id}/avatar`, {
-        method: 'PUT',
-        body: JSON.stringify({ avatarUrl }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      const updatedUser = response as User;
+      const response = await apiRequest('PUT', `/api/users/${user.id}/avatar`, { avatarUrl });
+
+      const updatedUser: User = normalizeUser(await response.json());
       
       // Cập nhật localStorage
       localStorage.setItem('forum_chat_user', JSON.stringify(updatedUser));
