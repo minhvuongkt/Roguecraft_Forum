@@ -1,9 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+/* Discord style chat */
+.discord-theme {
+  --discord-bg: #36393f;
+  --discord-channel-bg: #2f3136;
+  --discord-message-bg: #36393f;
+  --discord-message-hover: #32353b;
+  --discord-my-message-bg: #7289da;
+  --discord-my-message-hover: #677bc4;
+  --discord-online: #43b581;
+  --discord-reply-bar: #6c16c4;
+  --discord-reply-bubble: #4d1b92;
+  --discord-reply-highlight: #492e8e;
+}
+
+.discord-bubble {
+  border-radius: 18px;
+  background-color: var(--discord-message-bg);
+  transition: all 0.2s;
+}
+
+.discord-bubble:hover {
+  background-color: var(--discord-message-hover);
+}
+
+.discord-my-bubble {
+  border-radius: 18px;
+  background-color: var(--discord-my-message-bg);
+  color: white;
+  transition: all 0.2s;
+}
+
+.discord-my-bubble:hover {
+  background-color: var(--discord-my-message-hover);
+}
+
+.discord-reply-bar {
+  background-color: var(--discord-reply-bar);
+  border-left: 3px solid var(--discord-reply-bar);
+}
+
+.discord-reply-bubble {
+  background-color: var(--discord-reply-bubble);
+  border-radius: 12px;
+  color: white;
+}
+
+.discord-reply-reference {
+  background-color: var(--discord-reply-highlight);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
 
 /* Minecraft-inspired styles */
 .minecraft-font {

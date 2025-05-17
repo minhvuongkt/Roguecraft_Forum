@@ -463,10 +463,10 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
             {message.content && (
               <div
                 className={cn(
-                  "p-2 px-3 mb-1 break-words max-w-full minecraft-font",
+                  "p-2 px-3 mb-1 break-words max-w-full",
                   isCurrentUser
-                    ? "minecraft-panel text-white rounded-tr-sm rounded-bl-sm rounded-br-sm"
-                    : "minecraft-panel text-white rounded-tl-sm rounded-bl-sm rounded-br-sm",
+                    ? "discord-my-bubble text-white"
+                    : "discord-bubble dark:text-white",
                   isReplyMessage ? "relative pt-5" : "",
                 )}
               >
@@ -474,10 +474,10 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                 {isReplyMessage && originalMessage && (
                   <div 
                     className={cn(
-                      "w-full mb-2 cursor-pointer overflow-hidden minecraft-item rounded-sm pixelated",
+                      "w-full mb-2 cursor-pointer overflow-hidden discord-reply-bubble",
                       isSelfReply
-                        ? "minecraft-border"
-                        : "minecraft-border"
+                        ? "border-l-4 border-purple-500"
+                        : "border-l-4 border-purple-500"
                     )}
                     onClick={() => scrollToMessageById(message.replyToMessageId!)}
                     title="Nhấn để xem tin nhắn gốc"
@@ -502,10 +502,10 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                         </span>
                       </div>
                       
-                      {/* Original message content with Minecraft style and ellipsis if too long */}
-                      <div className="text-sm text-white dark:text-white pl-4 minecraft-font p-2 bg-gray-800/80 dark:bg-gray-900/80 rounded pixelated">
-                        {originalMessage.content.length > 30 
-                          ? originalMessage.content.substring(0, 30) + "..."
+                      {/* Original message content like Discord with ellipsis if too long */}
+                      <div className="text-sm text-white p-2 pl-3 discord-reply-reference">
+                        <span className="font-medium">{isSelfReply ? "Bạn đã trả lời" : "Bạn đã trả lời " + (originalMessage.user?.username || "người dùng")}:</span> {originalMessage.content.length > 20 
+                          ? originalMessage.content.substring(0, 20) + "..."
                           : originalMessage.content}
                       </div>
                       

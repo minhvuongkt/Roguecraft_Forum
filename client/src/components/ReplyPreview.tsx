@@ -13,19 +13,19 @@ export function ReplyPreview({ message, onCancel }: ReplyPreviewProps) {
   // Reference để có thể scroll tới element này khi cần
   const previewRef = useRef<HTMLDivElement>(null);
   
-  // Lấy nội dung trích dẫn từ tin nhắn gốc, tối đa 40 ký tự
-  const quoteContent = message.content.length > 40
-    ? message.content.substring(0, 40) + '...'
+  // Lấy nội dung trích dẫn từ tin nhắn gốc, tối đa 20 ký tự
+  const quoteContent = message.content.length > 20
+    ? message.content.substring(0, 20) + '...'
     : message.content;
 
   // Hiệu ứng khi component được mounted
   useEffect(() => {
     // Flash animation cho element khi xuất hiện
     if (previewRef.current) {
-      previewRef.current.classList.add('bg-blue-50', 'dark:bg-blue-900/20');
+      previewRef.current.classList.add('bg-purple-500/20');
       setTimeout(() => {
         if (previewRef.current) {
-          previewRef.current.classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
+          previewRef.current.classList.remove('bg-purple-500/20');
         }
       }, 500);
     }
@@ -39,7 +39,7 @@ export function ReplyPreview({ message, onCancel }: ReplyPreviewProps) {
         animate={{ opacity: 1, y: 0, height: 'auto' }}
         exit={{ opacity: 0, height: 0 }}
         transition={{ duration: 0.2 }}
-        className="px-3 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center gap-2 mb-2 transition-colors duration-500"
+        className="px-3 py-2 border-l-4 border-purple-500 bg-[#36393f] flex items-center gap-2 mb-2 transition-colors duration-300"
       >
         <div className="flex-1 flex items-center gap-2">
           {/* Avatar của người gửi tin nhắn gốc */}
@@ -52,7 +52,7 @@ export function ReplyPreview({ message, onCancel }: ReplyPreviewProps) {
               {message.user?.avatar ? (
                 <AvatarImage src={message.user.avatar} alt={message.user?.username || 'User'} />
               ) : (
-                <AvatarFallback className="text-xs bg-blue-500 text-white">
+                <AvatarFallback className="text-xs bg-purple-600 text-white">
                   {message.user?.username?.substring(0, 2).toUpperCase() || 'U'}
                 </AvatarFallback>
               )}
@@ -64,22 +64,22 @@ export function ReplyPreview({ message, onCancel }: ReplyPreviewProps) {
               initial={{ opacity: 0, x: -5 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3, delay: 0.2 }}
-              className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1"
+              className="text-xs text-gray-300 flex items-center gap-1"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-corner-up-left">
                 <polyline points="9 14 4 9 9 4"></polyline>
                 <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
               </svg>
-              Đang trả lời {message.user?.username}
+              <span className="text-white">Bạn đã trả lời</span>
             </motion.span>
-            <motion.span 
+            <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3, delay: 0.3 }}
-              className="text-xs text-gray-600 dark:text-gray-300 font-light italic"
+              className="text-xs text-purple-300 rounded px-2 py-1 bg-purple-900/30"
             >
               {quoteContent}
-            </motion.span>
+            </motion.div>
           </div>
         </div>
         
@@ -88,7 +88,7 @@ export function ReplyPreview({ message, onCancel }: ReplyPreviewProps) {
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.4 }}
           onClick={onCancel}
-          className="h-5 w-5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+          className="h-5 w-5 rounded-full bg-purple-700 text-white flex items-center justify-center hover:bg-purple-600"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           aria-label="Hủy trả lời"
