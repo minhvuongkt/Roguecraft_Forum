@@ -661,6 +661,7 @@ export function ChatBox() {
 
       let finalMessage = message;
       let replyToMessageId = null;
+      let mentions: string[] = [];
 
       if (state.replyingTo) {
         // Chuyển đổi ID sang số nếu cần thiết
@@ -672,12 +673,26 @@ export function ChatBox() {
           const username = state.replyingTo.user.username;
           if (!finalMessage.includes(`@${username}`)) {
             finalMessage = `@${username} ${finalMessage}`;
+            // Thêm username vào mentions
+            mentions.push(username);
           }
         }
       }
+      
+      // Tìm các mentions trong tin nhắn
+      const mentionRegex = /@(\S+)/g;
+      let match;
+      while ((match = mentionRegex.exec(finalMessage)) !== null) {
+        const username = match[1];
+        if (!mentions.includes(username)) {
+          mentions.push(username);
+        }
+      }
+      
       // Đảm bảo replyToMessageId được gửi chính xác như tham số thứ 3
       console.log('Sending message with replyToMessageId:', replyToMessageId, typeof replyToMessageId);
-      sendMessage(finalMessage, media, replyToMessageId);
+      console.log('Sending message with mentions:', mentions);
+      sendMessage(finalMessage, media, replyToMessageId, mentions);
 
       // Reset state and enable auto-scroll
       setState((prev) => ({
