@@ -508,9 +508,9 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                 )}
 
                 {/* Message content */}
-                <p className="text-sm leading-relaxed break-words whitespace-pre-line minecraft-font">
+                <div className="text-sm leading-relaxed break-words whitespace-pre-line message-text">
                   {parseMessageContent(message.content)}
-                </p>
+                </div>
               </div>
             )}
 

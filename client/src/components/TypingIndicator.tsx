@@ -1,65 +1,25 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from '@/lib/utils';
 
 interface TypingIndicatorProps {
-  username: string;
-  avatar?: string | null;
+  username?: string;
+  className?: string;
 }
 
-export function TypingIndicator({ username, avatar }: TypingIndicatorProps) {
+export function TypingIndicator({ username, className }: TypingIndicatorProps) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2">
-      <Avatar className="h-7 w-7 flex-shrink-0">
-        {avatar ? (
-          <AvatarImage src={avatar} alt={username} />
-        ) : (
-          <AvatarFallback className="text-xs bg-purple-600 text-white">
-            {username.substring(0, 2).toUpperCase()}
-          </AvatarFallback>
-        )}
-      </Avatar>
-      
-      <div className="bg-gray-700 rounded-xl p-3 text-sm min-w-[80px]">
-        <div className="flex gap-1 items-center">
-          <motion.div
-            className="w-2 h-2 rounded-full bg-purple-400"
-            animate={{
-              y: [0, -5, 0],
-              opacity: [0.5, 1, 0.5]
-            }}
-            transition={{
-              duration: 1,
-              repeat: Infinity,
-              delay: 0
-            }}
-          />
-          <motion.div
-            className="w-2 h-2 rounded-full bg-purple-400"
-            animate={{
-              y: [0, -5, 0],
-              opacity: [0.5, 1, 0.5]
-            }}
-            transition={{
-              duration: 1,
-              repeat: Infinity,
-              delay: 0.2
-            }}
-          />
-          <motion.div
-            className="w-2 h-2 rounded-full bg-purple-400"
-            animate={{
-              y: [0, -5, 0],
-              opacity: [0.5, 1, 0.5]
-            }}
-            transition={{
-              duration: 1,
-              repeat: Infinity,
-              delay: 0.4
-            }}
-          />
-        </div>
+    <div className={cn("flex items-center py-1 px-2 text-sm text-gray-400", className)}>
+      <div className="flex mr-2">
+        <span className="w-2 h-2 bg-gray-300 rounded-full mr-1 animate-pulse" style={{ animationDelay: '0ms' }}></span>
+        <span className="w-2 h-2 bg-gray-300 rounded-full mr-1 animate-pulse" style={{ animationDelay: '200ms' }}></span>
+        <span className="w-2 h-2 bg-gray-300 rounded-full animate-pulse" style={{ animationDelay: '400ms' }}></span>
       </div>
+      
+      {username && (
+        <span className="italic minecraft-font">
+          {username} đang nhập...
+        </span>
+      )}
     </div>
   );
 }

@@ -61,11 +61,21 @@
 .minecraft-font {
   font-family: 'VT323', monospace;
   letter-spacing: 0.5px;
+  font-size: 1.25rem;
 }
 
 .gaming-font {
   font-family: 'Press Start 2P', cursive;
   letter-spacing: 0.5px;
+  font-size: 0.9rem;
+}
+
+/* Chat message font styles */
+.message-text {
+  font-family: 'VT323', monospace;
+  font-size: 1.35rem;
+  letter-spacing: 0.5px;
+  line-height: 1.25;
 }
 
 .messenger-reply-animation {

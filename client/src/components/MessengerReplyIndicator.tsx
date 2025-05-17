@@ -1,8 +1,7 @@
-import React, { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ChatMessage } from "@/types";
-import { Reply } from 'lucide-react';
+import React from 'react';
+import { X } from 'lucide-react';
+import { ChatMessage } from '@/types';
+import { cn } from '@/lib/utils';
 
 interface MessengerReplyIndicatorProps {
   message: ChatMessage;
@@ -10,64 +9,38 @@ interface MessengerReplyIndicatorProps {
 }
 
 export function MessengerReplyIndicator({ message, onCancel }: MessengerReplyIndicatorProps) {
-  const indicatorRef = useRef<HTMLDivElement>(null);
-  
-  useEffect(() => {
-    // Thêm hiệu ứng highlight khi component được render
-    if (indicatorRef.current) {
-      indicatorRef.current.classList.add('bg-purple-500/10');
-      setTimeout(() => {
-        if (indicatorRef.current) {
-          indicatorRef.current.classList.remove('bg-purple-500/10');
-        }
-      }, 1000);
-    }
-  }, []);
-
-  // Cắt ngắn nội dung nếu quá dài
-  const displayContent = message.content.length > 35
-    ? message.content.substring(0, 35) + '...'
-    : message.content;
+  // Hàm để rút gọn nội dung tin nhắn nếu quá dài
+  const truncateContent = (content: string, maxLength = 50) => {
+    if (content.length <= maxLength) return content;
+    return content.substring(0, maxLength) + '...';
+  };
 
   return (
-    <motion.div
-      ref={indicatorRef}
-      initial={{ opacity: 0, height: 0, y: -20 }}
-      animate={{ opacity: 1, height: 'auto', y: 0 }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ type: "spring", stiffness: 300, damping: 25 }}
-      className="px-3 py-2 messenger-reply-animation border-l-4 border-purple-500 bg-gray-800 flex items-center gap-2 transition-all duration-300"
-    >
-      <div className="flex-1 flex items-center gap-2">
-        <Avatar className="h-6 w-6">
-          {message.user?.avatar ? (
-            <AvatarImage src={message.user.avatar} alt={message.user?.username || 'User'} />
-          ) : (
-            <AvatarFallback className="text-xs bg-purple-600 text-white">
-              {message.user?.username?.substring(0, 2).toUpperCase() || 'U'}
-            </AvatarFallback>
-          )}
-        </Avatar>
-        
-        <div className="flex flex-col">
-          <div className="flex items-center gap-1 text-xs text-gray-400">
-            <Reply className="h-3 w-3 text-purple-400" />
-            <span className="text-purple-400 font-medium">Đang trả lời {message.user?.username}</span>
+    <div className="flex items-center py-2 px-3 bg-gray-800 rounded-md mb-2 messenger-reply-animation">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center">
+          <div className="w-1 h-6 bg-blue-500 rounded-full mr-2" />
+          <div>
+            <p className="text-xs text-gray-400">
+              Đang trả lời {message.user?.username || 'Người dùng'}
+            </p>
+            <p className={cn(
+              "text-sm text-gray-300 truncate max-w-full",
+              "minecraft-font"
+            )}>
+              {message.content ? truncateContent(message.content) : 'Media'}
+            </p>
           </div>
-          <p className="text-xs text-white bg-purple-900/30 px-2 py-1 mt-1 rounded">
-            {displayContent}
-          </p>
         </div>
       </div>
       
-      <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
+      <button
         onClick={onCancel}
-        className="h-5 w-5 rounded-full bg-purple-700 text-white flex items-center justify-center"
+        className="ml-2 text-gray-400 hover:text-white transition-colors"
+        aria-label="Cancel reply"
       >
-        ✕
-      </motion.button>
-    </motion.div>
+        <X size={18} />
+      </button>
+    </div>
   );
 }
