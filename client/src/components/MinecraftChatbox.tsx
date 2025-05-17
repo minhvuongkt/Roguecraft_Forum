@@ -124,10 +124,14 @@ export function MinecraftChatbox({
     const trimmedMessage = inputValue.trim();
     if (!trimmedMessage && !filePreview) return;
 
-    const mediaData = filePreview ? { [filePreview.type]: filePreview.url } : undefined;
+    // Sử dụng uploadedMedia đã được thiết lập trong quá trình tải lên
+    // Nếu không có media đã upload, sử dụng filePreview nếu có
+    const mediaData = uploadedMedia || (filePreview ? { image: filePreview.url } : undefined);
     onSend(trimmedMessage, mediaData);
+    // Reset all states
     setInputValue("");
     setFilePreview(null);
+    setUploadedMedia(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }

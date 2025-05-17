@@ -671,6 +671,8 @@ export function ChatBox() {
           }
         }
       }
+      // Đảm bảo replyToMessageId được gửi chính xác như tham số thứ 3
+      console.log('Sending message with replyToMessageId:', replyToMessageId);
       sendMessage(finalMessage, media, replyToMessageId);
 
       // Reset state and enable auto-scroll

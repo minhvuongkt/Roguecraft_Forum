@@ -14,7 +14,7 @@ interface WebSocketContextType {
   isConnected: boolean;
   messages: ChatMessage[];
   onlineUsers: OnlineUser[];
-  sendMessage: (content: string, media?: any, mentions?: string[], replyToMessageId?: number) => void;
+  sendMessage: (content: string, media?: any, replyToMessageId?: number | null, mentions?: string[]) => void;
   setUsername: (username: string) => void;
   findMessagesByUsername: (username: string) => ChatMessage[];
   findMessageById: (messageId: number) => ChatMessage | undefined;
