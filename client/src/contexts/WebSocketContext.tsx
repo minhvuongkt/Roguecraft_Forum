@@ -297,14 +297,24 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // Kiểm tra xem media có phải là object rỗng hay không
     const finalMedia = media && typeof media === 'object' && Object.keys(media).length === 0 ? null : media;
     
-    console.log('Sending message with replyToMessageId:', replyToMessageId);
+    // Đảm bảo replyToMessageId là số hoặc null - tránh gửi array hoặc string
+    let finalReplyId = null;
+    if (replyToMessageId !== undefined && replyToMessageId !== null) {
+      if (typeof replyToMessageId === 'number') {
+        finalReplyId = replyToMessageId;
+      } else if (typeof replyToMessageId === 'string' && !isNaN(parseInt(replyToMessageId))) {
+        finalReplyId = parseInt(replyToMessageId);
+      }
+    }
+
+    console.log('Sending message with replyToMessageId:', replyToMessageId, ' -> ', finalReplyId);
     socket.send(JSON.stringify({
       type: WebSocketMessageType.CHAT_MESSAGE,
       payload: {
         content,
         media: finalMedia,
         mentions: mentions || [],
-        replyToMessageId: replyToMessageId || null
+        replyToMessageId: finalReplyId
       }
     }));
   }, [socket, toast]);
