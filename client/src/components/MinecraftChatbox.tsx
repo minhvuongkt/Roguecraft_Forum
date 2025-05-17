@@ -59,10 +59,10 @@ export function MinecraftChatbox({
     try {
       // Create a FormData instance and append the file
       const formData = new FormData();
-      formData.append('files', file);
+      formData.append('file', file);
 
       // Upload the file to the server
-      const response = await fetch('/api/uploads/chat/multiple', {
+      const response = await fetch('/api/uploads/chat', {
         method: 'POST',
         body: formData,
       });
