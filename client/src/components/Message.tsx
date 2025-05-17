@@ -468,13 +468,13 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                   isCurrentUser
                     ? `discord-my-bubble text-white ${isCurrentUser ? (localStorage.getItem('userMessageColor') || 'bg-purple-600') : 'bg-purple-600'}` 
                     : "discord-bubble dark:text-white bg-gray-700",
-                  isReplyMessage ? "relative pt-6" : "",
+                  isReplyMessage ? "relative pt-6 mt-2" : "",
                 )}
               >
                 {/* Phụ đề hiển thị trên tin nhắn - Discord style */}
                 {isReplyMessage && (
                   <div 
-                    className="absolute top-0 left-0 flex items-center gap-1 text-xs px-3 pt-1 text-gray-300 cursor-pointer w-full overflow-hidden"
+                    className="absolute top-0 left-0 flex items-center gap-1 text-xs px-3 pt-1 text-gray-300 cursor-pointer w-full overflow-hidden hover:bg-gray-800/30 rounded-t-md transition-colors duration-200"
                     onClick={() => scrollToMessageById(message.replyToMessageId!)}
                     title="Nhấn để xem tin nhắn gốc"
                   >
@@ -486,9 +486,11 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                       <span className="text-purple-400 hover:underline">
                         {originalMessage?.user?.username || "Unknown User"}
                       </span>
-                      <span className="opacity-80"> {originalMessage?.content && originalMessage.content.length > 20 
-                        ? originalMessage.content.substring(0, 20) + "..."
-                        : originalMessage?.content || "Tin nhắn gốc không có sẵn"}
+                      <span className="opacity-80"> {originalMessage?.content && originalMessage.content.length > 0 
+                        ? (originalMessage.content.length > 20 
+                           ? originalMessage.content.substring(0, 20) + "..."
+                           : originalMessage.content)
+                        : "Tin nhắn gốc không có sẵn"}
                       </span>
                     </span>
                   </div>
