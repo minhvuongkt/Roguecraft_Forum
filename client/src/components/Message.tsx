@@ -470,44 +470,54 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                   isReplyMessage ? "relative pt-5" : "",
                 )}
               >
-                {/* Reply reference section - IMPROVED */}
+                {/* Reply reference section - GAME STYLE FACEBOOK-LIKE */}
                 {isReplyMessage && originalMessage && (
-                  <div
+                  <div 
                     className={cn(
-                      "absolute -top-3 left-2 text-xs px-2 py-1 rounded cursor-pointer transition-colors",
-                      "flex items-center gap-1.5 max-w-[90%] overflow-hidden",
+                      "w-full mb-2 rounded-md cursor-pointer shadow-sm overflow-hidden",
                       isSelfReply
-                        ? "bg-blue-100 dark:bg-blue-800/60 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-700"
-                        : "bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-500",
+                        ? "bg-gradient-to-r from-blue-100/70 to-blue-50/70 dark:from-blue-900/30 dark:to-blue-950/20 border-l-2 border-blue-400"
+                        : "bg-gradient-to-r from-green-100/70 to-green-50/70 dark:from-green-900/30 dark:to-green-950/20 border-l-2 border-green-400",
                     )}
-                    onClick={() =>
-                      scrollToMessageById(message.replyToMessageId!)
-                    }
+                    onClick={() => scrollToMessageById(message.replyToMessageId!)}
                     title="Nhấn để xem tin nhắn gốc"
                   >
-                    <div className="flex items-center gap-1 whitespace-nowrap">
-                      <MessageSquare className="h-3 w-3 flex-shrink-0" />
-
-                      {/* Different text for self-replies vs other replies */}
-                      {isSelfReply ? (
-                        <span className="flex items-center">
-                          Trả lời tin nhắn của chính mình
+                    <div className="flex flex-col w-full p-1.5 relative hover:brightness-105 transition-all">
+                      {/* Header with username */}
+                      <div className="flex items-center gap-1 text-xs mb-1">
+                        <MessageSquare className="h-3 w-3 text-blue-500 dark:text-blue-400" />
+                        
+                        {/* Game-style username badge */}
+                        <div className={cn(
+                          "px-1.5 py-0.5 rounded-sm",
+                          isSelfReply 
+                            ? "bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200" 
+                            : "bg-green-200 dark:bg-green-900/50 text-green-800 dark:text-green-200"
+                        )}>
+                          {isSelfReply ? "Bạn" : originalMessage.user?.username || "người dùng"}
+                        </div>
+                        
+                        <span className="text-gray-500 dark:text-gray-400 flex-1 text-right text-[10px]">
+                          {formatTime(new Date(originalMessage.createdAt))}
                         </span>
-                      ) : (
-                        <span className="flex items-center">
-                          Trả lời cho{" "}
-                          <strong className="mx-1">
-                            {originalMessage.user?.username || "người dùng"}
-                          </strong>
-                        </span>
+                      </div>
+                      
+                      {/* Original message content */}
+                      <div className="text-xs text-gray-600 dark:text-gray-300 pl-4 line-clamp-1 italic">
+                        {originalMessage.content}
+                      </div>
+                      
+                      {/* Show original media thumbnail if exists */}
+                      {originalMessage.media && (
+                        <div className="flex items-center mt-1 pl-4 text-[10px] text-gray-500 dark:text-gray-400">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                            <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                            <circle cx="9" cy="9" r="2" />
+                            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                          </svg>
+                          <span>Hình ảnh đính kèm</span>
+                        </div>
                       )}
-
-                      {/* Preview of original message */}
-                      <span className="italic opacity-75 ml-1 text-ellipsis overflow-hidden whitespace-nowrap">
-                        {originalMessage.content.length > 15
-                          ? originalMessage.content.substring(0, 15) + "..."
-                          : originalMessage.content}
-                      </span>
                     </div>
                   </div>
                 )}
