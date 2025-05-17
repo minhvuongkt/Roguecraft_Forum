@@ -50,8 +50,12 @@ export class ChatService {
   }
 
   async createMessage(message: InsertChatMessage): Promise<any> {
-    console.log("Creating chat message with media:", JSON.stringify(message.media, null, 2));
-    console.log("Media type:", typeof message.media);
+    console.log("Creating chat message:", {
+      content: message.content,
+      userId: message.userId,
+      replyToMessageId: message.replyToMessageId,
+      hasMedia: !!message.media
+    });
     
     // Đảm bảo media đúng định dạng
     let mediaData = message.media;

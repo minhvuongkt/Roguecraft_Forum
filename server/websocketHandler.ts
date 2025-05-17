@@ -234,56 +234,22 @@ export class WebSocketHandler {
         }
       }
 
-      // Xử lý replyToMessageId - ĐÂY LÀ PHẦN ĐƯỢC CẬP NHẬT
-      let finalReplyId = null;
-
-      // Log chi tiết giá trị replyToMessageId nhận được
-      console.log("Debug replyToMessageId:", {
-        value: replyToMessageId,
-        type: typeof replyToMessageId,
-        isNull: replyToMessageId === null,
-        isUndefined: replyToMessageId === undefined,
-      });
+      // Xử lý replyToMessageId
+      let finalReplyId: number | null = null;
 
       if (replyToMessageId !== undefined && replyToMessageId !== null) {
-        if (typeof replyToMessageId === "number") {
-          // Nếu là số, sử dụng trực tiếp
-          finalReplyId = replyToMessageId;
-        } else if (typeof replyToMessageId === "string") {
-          // Nếu là chuỗi, thử chuyển đổi
-          // Xóa các ký tự không phải số để đảm bảo đúng định dạng
-          const cleanedId = replyToMessageId.replace(/[^0-9]/g, "");
-          if (cleanedId && !isNaN(parseInt(cleanedId))) {
-            finalReplyId = parseInt(cleanedId);
-          }
-        } else if (
-          typeof replyToMessageId === "object" &&
-          replyToMessageId.id
-        ) {
-          // Trường hợp client gửi object thay vì id trực tiếp
-          if (typeof replyToMessageId.id === "number") {
-            finalReplyId = replyToMessageId.id;
-          } else if (
-            typeof replyToMessageId.id === "string" &&
-            !isNaN(parseInt(replyToMessageId.id))
-          ) {
-            finalReplyId = parseInt(replyToMessageId.id);
-          }
+        // Chuyển đổi thành số nguyên
+        const numericId = Number(replyToMessageId);
+        if (!isNaN(numericId) && Number.isInteger(numericId) && numericId > 0) {
+          finalReplyId = numericId;
         }
       }
 
-      console.log(
-        "Converted replyToMessageId:",
-        replyToMessageId,
-        " -> ",
-        finalReplyId,
-      );
-
-      // Kiểm tra nếu finalReplyId không phải là số
-      if (finalReplyId !== null && typeof finalReplyId !== "number") {
-        console.error("Warning: finalReplyId is not a number:", finalReplyId);
-        finalReplyId = null;
-      }
+      console.log("Processing replyToMessageId:", {
+        original: replyToMessageId,
+        type: typeof replyToMessageId,
+        final: finalReplyId
+      });
 
       // Create chat message
       console.log("Creating message with replyToMessageId:", finalReplyId);
