@@ -12,7 +12,31 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { LoginModal } from '@/components/LoginModal';
-import { CalendarDays, MessageSquare, FileText, User } from 'lucide-react';
+import { CalendarDays, MessageSquare, FileText, User, Upload, Key, Save } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserProfile {
   user: {
@@ -40,8 +64,13 @@ interface UserProfile {
 function UserProfilePage() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
-  const { user: currentUser, isAuthenticated } = useAuth();
+  const { user: currentUser, isAuthenticated, updateProfile, updatePassword, updateAvatar } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isChangeAvatarOpen, setIsChangeAvatarOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const { toast } = useToast();
   
   const { data, isLoading, error } = useQuery<UserProfile>({
     queryKey: ['/api/users', id],
@@ -171,10 +200,32 @@ function UserProfilePage() {
                 </div>
                 
                 {isOwnProfile && (
-                  <div className="mt-6">
-                    <Button className="w-full" size="sm">
+                  <div className="mt-6 space-y-2">
+                    <Button 
+                      className="w-full" 
+                      size="sm"
+                      onClick={() => setIsEditProfileOpen(true)}
+                    >
                       <User className="mr-2 h-4 w-4" />
-                      Edit Profile
+                      Sửa thông tin
+                    </Button>
+                    <Button 
+                      className="w-full" 
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsChangePasswordOpen(true)}
+                    >
+                      <Key className="mr-2 h-4 w-4" />
+                      Đổi mật khẩu
+                    </Button>
+                    <Button 
+                      className="w-full" 
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => setIsChangeAvatarOpen(true)}
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      Đổi avatar
                     </Button>
                   </div>
                 )}
@@ -271,7 +322,262 @@ function UserProfilePage() {
         isOpen={isLoginModalOpen} 
         onClose={() => setIsLoginModalOpen(false)} 
       />
+
+      {/* Modal để sửa thông tin cá nhân */}
+      <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sửa thông tin cá nhân</DialogTitle>
+            <DialogDescription>
+              Thay đổi tên hiển thị của bạn
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ProfileForm 
+            defaultValues={{ username: currentUser?.username || '' }}
+            onSubmit={async (values) => {
+              try {
+                await updateProfile(values.username);
+                setIsEditProfileOpen(false);
+              } catch (error) {
+                console.error('Error updating profile:', error);
+              }
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal để đổi mật khẩu */}
+      <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Đổi mật khẩu</DialogTitle>
+            <DialogDescription>
+              Đổi mật khẩu đăng nhập của bạn
+            </DialogDescription>
+          </DialogHeader>
+          
+          <PasswordForm 
+            onSubmit={async (values) => {
+              try {
+                const success = await updatePassword(values.currentPassword, values.newPassword);
+                if (success) {
+                  setIsChangePasswordOpen(false);
+                }
+              } catch (error) {
+                console.error('Error changing password:', error);
+              }
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal để đổi avatar */}
+      <Dialog open={isChangeAvatarOpen} onOpenChange={setIsChangeAvatarOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Đổi avatar</DialogTitle>
+            <DialogDescription>
+              Thêm URL hình ảnh cho avatar của bạn
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="flex justify-center mb-4">
+              <Avatar className="h-24 w-24">
+                {avatarUrl ? (
+                  <AvatarImage src={avatarUrl} alt="Avatar preview" />
+                ) : currentUser?.avatar ? (
+                  <AvatarImage src={currentUser.avatar} alt={currentUser.username} />
+                ) : (
+                  <AvatarFallback className="text-2xl">
+                    {currentUser?.username?.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="avatarUrl">URL Avatar</Label>
+              <Input 
+                id="avatarUrl" 
+                type="text"
+                placeholder="https://example.com/avatar.jpg"
+                value={avatarUrl}
+                onChange={(e) => setAvatarUrl(e.target.value)}
+              />
+              <p className="text-sm text-muted-foreground">
+                Nhập URL của hình ảnh bạn muốn làm avatar
+              </p>
+            </div>
+            
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => setIsChangeAvatarOpen(false)}
+              >
+                Hủy
+              </Button>
+              <Button 
+                onClick={async () => {
+                  if (!avatarUrl) {
+                    toast({
+                      title: "Lỗi",
+                      description: "Vui lòng nhập URL avatar",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+
+                  try {
+                    await updateAvatar(avatarUrl);
+                    setIsChangeAvatarOpen(false);
+                    setAvatarUrl('');
+                  } catch (error) {
+                    console.error('Error updating avatar:', error);
+                  }
+                }}
+              >
+                Lưu
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
+  );
+}
+
+// Form schema và component để sửa thông tin cá nhân
+const profileFormSchema = z.object({
+  username: z.string().min(3, {
+    message: "Tên người dùng phải có ít nhất 3 ký tự",
+  }),
+});
+
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
+
+interface ProfileFormProps {
+  defaultValues: Partial<ProfileFormValues>;
+  onSubmit: (values: ProfileFormValues) => Promise<void>;
+}
+
+function ProfileForm({ defaultValues, onSubmit }: ProfileFormProps) {
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
+    defaultValues,
+  });
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
+        <FormField
+          control={form.control}
+          name="username"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tên người dùng</FormLabel>
+              <FormControl>
+                <Input placeholder="Nhập tên hiển thị mới" {...field} />
+              </FormControl>
+              <FormDescription>
+                Đây là tên hiển thị của bạn trong ứng dụng
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <DialogFooter>
+          <Button type="submit">Lưu thay đổi</Button>
+        </DialogFooter>
+      </form>
+    </Form>
+  );
+}
+
+// Form schema và component để đổi mật khẩu
+const passwordFormSchema = z.object({
+  currentPassword: z.string().min(1, {
+    message: "Vui lòng nhập mật khẩu hiện tại",
+  }),
+  newPassword: z.string().min(6, {
+    message: "Mật khẩu mới phải có ít nhất 6 ký tự",
+  }),
+  confirmPassword: z.string().min(6, {
+    message: "Vui lòng xác nhận mật khẩu mới",
+  }),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Mật khẩu xác nhận không khớp",
+  path: ["confirmPassword"],
+});
+
+type PasswordFormValues = z.infer<typeof passwordFormSchema>;
+
+interface PasswordFormProps {
+  onSubmit: (values: PasswordFormValues) => Promise<void>;
+}
+
+function PasswordForm({ onSubmit }: PasswordFormProps) {
+  const form = useForm<PasswordFormValues>({
+    resolver: zodResolver(passwordFormSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
+        <FormField
+          control={form.control}
+          name="currentPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Mật khẩu hiện tại</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="••••••••" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="newPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Mật khẩu mới</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="••••••••" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="confirmPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Xác nhận mật khẩu mới</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="••••••••" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <DialogFooter>
+          <Button type="submit">Đổi mật khẩu</Button>
+        </DialogFooter>
+      </form>
+    </Form>
   );
 }
 
