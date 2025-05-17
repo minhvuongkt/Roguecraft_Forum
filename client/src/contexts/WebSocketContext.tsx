@@ -284,7 +284,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Send a chat message
-  const sendMessage = useCallback((content: string, media?: any, mentions?: string[], replyToMessageId?: number) => {
+  const sendMessage = useCallback((content: string, media?: any, replyToMessageId?: number | null, mentions?: string[]) => {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
       toast({
         title: 'Lỗi kết nối',
@@ -294,13 +294,17 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
     
+    // Kiểm tra xem media có phải là object rỗng hay không
+    const finalMedia = media && typeof media === 'object' && Object.keys(media).length === 0 ? null : media;
+    
+    console.log('Sending message with replyToMessageId:', replyToMessageId);
     socket.send(JSON.stringify({
       type: WebSocketMessageType.CHAT_MESSAGE,
       payload: {
         content,
-        media,
-        mentions,
-        replyToMessageId
+        media: finalMedia,
+        mentions: mentions || [],
+        replyToMessageId: replyToMessageId || null
       }
     }));
   }, [socket, toast]);

@@ -27,6 +27,7 @@ export function MinecraftChatbox({
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [filePreview, setFilePreview] = useState<{ url: string; type: string } | null>(null);
+  const [uploadedMedia, setUploadedMedia] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
@@ -75,11 +76,21 @@ export function MinecraftChatbox({
       // Determine file type
       const fileType = file.type.startsWith('image/') ? 'image' : 'file';
       
-      // Lấy URL từ phản hồi - API trả về dạng {"1": "/chat-images/filename.jpg"}
-      const fileUrl = data["1"]; // Lấy giá trị của khóa "1"
+      // Lấy URL từ phản hồi - API có thể trả về dạng {"1": "/chat-images/filename.jpg"} hoặc {"image": "/chat-images/filename.jpg"}
+      let fileUrl = data["1"]; // Lấy giá trị của khóa "1"
+      
+      // Nếu không có key "1" thì kiểm tra key "image"
+      if (!fileUrl && data["image"]) {
+        fileUrl = data["image"];
+      }
       
       if (fileUrl) {
+        // Thống nhất định dạng cho client - luôn dùng key "image" để lưu ảnh
+        const mediaObj = { image: fileUrl };
         setFilePreview({ url: fileUrl, type: fileType });
+        
+        // Lưu media vào state theo định dạng thống nhất
+        setUploadedMedia(mediaObj);
       } else {
         console.error('Invalid response format:', data);
         toast({
