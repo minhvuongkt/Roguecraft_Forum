@@ -160,11 +160,11 @@ export class WebSocketHandler {
 
   private async handleChatMessage(ws: ExtendedWebSocket, payload: any) {
     try {
-      const { content, media, mentions } = payload;
+      const { content, media, mentions, replyToMessageId } = payload;
 
       if (
         (!content || typeof content !== "string" || content.trim() === "") &&
-        Object.keys(media).length === 0
+        (!media || Object.keys(media).length === 0)
       ) {
         return this.sendToClient(ws, {
           type: WebSocketMessageType.CHAT_MESSAGE,
@@ -241,6 +241,7 @@ export class WebSocketHandler {
         content,
         media: mediaData,
         mentions: mentions || [],
+        replyToMessageId: replyToMessageId || null,
       });
 
       // Log thông tin message sau khi tạo

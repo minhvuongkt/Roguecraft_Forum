@@ -181,10 +181,11 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
     if (!message.media) return null;
 
     try {
-      // Check if media is a JSON format {"1": "path1", "2": "path2"}
+      // Check if media is a JSON format - hỗ trợ cả hai định dạng {"1": "path1"} hoặc {"image": "path1"}
       if (
         typeof message.media === "object" &&
-        Object.keys(message.media).some((key) => /^\d+$/.test(key))
+        (Object.keys(message.media).some((key) => /^\d+$/.test(key)) || 
+         Object.keys(message.media).some((key) => key === "image"))
       ) {
         // Container style for multiple images
         const mediaCount = Object.keys(message.media).length;
