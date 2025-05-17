@@ -2,6 +2,76 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* Minecraft-inspired styles */
+.minecraft-font {
+  font-family: 'VT323', monospace;
+  letter-spacing: 0.5px;
+}
+
+.minecraft-title {
+  font-family: 'Press Start 2P', cursive;
+  text-shadow: 2px 2px 0px #000;
+  letter-spacing: 1px;
+}
+
+.minecraft-border {
+  border: 3px solid #565656;
+  border-left-color: #1e1e1e;
+  border-top-color: #1e1e1e;
+  border-right-color: #8e8e8e;
+  border-bottom-color: #8e8e8e;
+}
+
+.minecraft-button {
+  image-rendering: pixelated;
+  border: 2px solid #000;
+  border-left-color: #6b6b6b;
+  border-top-color: #6b6b6b;
+  border-right-color: #2d2d2d;
+  border-bottom-color: #2d2d2d;
+  background-color: #8b8b8b;
+  box-shadow: inset 2px 2px 0px rgba(255, 255, 255, 0.4), inset -2px -2px 0px rgba(0, 0, 0, 0.4);
+  transition: all 0.1s;
+}
+
+.minecraft-button:hover {
+  filter: brightness(1.1);
+}
+
+.minecraft-button:active {
+  border-left-color: #2d2d2d;
+  border-top-color: #2d2d2d;
+  border-right-color: #6b6b6b;
+  border-bottom-color: #6b6b6b;
+  filter: brightness(0.9);
+  transform: translate(1px, 1px);
+}
+
+.minecraft-item {
+  background-color: #c6c6c6;
+  border: 2px solid #878787;
+  box-shadow: inset -2px -2px 0px #555, inset 2px 2px 0px #fff;
+}
+
+.minecraft-panel {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABl0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMC4yMfEgaZUAAAC/SURBVDhPpdPbDcMgDAVQdyWP4lE8mkdxZ/FIGdivYJ4mlgDJPbGF0vYQkeNIuY6i53nCRgTwNsZ0nVLGcJI5YGYMhUi1NxJCI2JCAOUKEcSmJjYRQQgifmGUkSXVQQYiPiAeEBFyVcSmoY+IoCOQQcTEhj4IUUdgQhToQxB5CoREiL4ugnDH3ooQfV0EYUcEJkRfF0H4wwNSIigZdF0XQmxHhLov9I8RESp/4LMQRJgQ2xEhIkT+w78iQiJvifwmDIjnuQGpL5qRGH/TyAAAAABJRU5ErkJggg==");
+  background-repeat: repeat;
+  image-rendering: pixelated;
+  padding: 8px;
+  border: 3px solid;
+  border-left-color: #6b6b6b;
+  border-top-color: #6b6b6b;
+  border-right-color: #2d2d2d;
+  border-bottom-color: #2d2d2d;
+}
+
+.pixelated {
+  image-rendering: pixelated;
+}
+
 :root {
       --background: 0 0% 100%;
 --foreground: 20 14.3% 4.1%;

@@ -463,10 +463,10 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
             {message.content && (
               <div
                 className={cn(
-                  "p-2 px-3 rounded-2xl mb-1 break-words max-w-full",
+                  "p-2 px-3 mb-1 break-words max-w-full minecraft-font",
                   isCurrentUser
-                    ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-tr-sm border-b-2 border-blue-700 shadow-md"
-                    : "bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 dark:text-white rounded-tl-sm border-b-2 border-gray-400 dark:border-gray-600 shadow-md",
+                    ? "minecraft-panel text-white rounded-tr-sm rounded-bl-sm rounded-br-sm"
+                    : "minecraft-panel text-white rounded-tl-sm rounded-bl-sm rounded-br-sm",
                   isReplyMessage ? "relative pt-5" : "",
                 )}
               >
@@ -474,10 +474,10 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                 {isReplyMessage && originalMessage && (
                   <div 
                     className={cn(
-                      "w-full mb-2 rounded-md cursor-pointer shadow-sm overflow-hidden",
+                      "w-full mb-2 cursor-pointer overflow-hidden minecraft-item rounded-sm pixelated",
                       isSelfReply
-                        ? "bg-gradient-to-r from-blue-100/70 to-blue-50/70 dark:from-blue-900/30 dark:to-blue-950/20 border-l-2 border-blue-400"
-                        : "bg-gradient-to-r from-green-100/70 to-green-50/70 dark:from-green-900/30 dark:to-green-950/20 border-l-2 border-green-400",
+                        ? "minecraft-border"
+                        : "minecraft-border"
                     )}
                     onClick={() => scrollToMessageById(message.replyToMessageId!)}
                     title="Nhấn để xem tin nhắn gốc"
@@ -489,10 +489,10 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                         
                         {/* Game-style username badge */}
                         <div className={cn(
-                          "px-1.5 py-0.5 rounded-sm",
+                          "px-2 py-1 rounded-sm minecraft-button text-white",
                           isSelfReply 
-                            ? "bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200" 
-                            : "bg-green-200 dark:bg-green-900/50 text-green-800 dark:text-green-200"
+                            ? "bg-blue-600" 
+                            : "bg-green-600"
                         )}>
                           {isSelfReply ? "Bạn" : originalMessage.user?.username || "người dùng"}
                         </div>
@@ -502,9 +502,11 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                         </span>
                       </div>
                       
-                      {/* Original message content */}
-                      <div className="text-xs text-gray-600 dark:text-gray-300 pl-4 line-clamp-1 italic">
-                        {originalMessage.content}
+                      {/* Original message content with Minecraft style and ellipsis if too long */}
+                      <div className="text-sm text-white dark:text-white pl-4 minecraft-font p-2 bg-gray-800/80 dark:bg-gray-900/80 rounded pixelated">
+                        {originalMessage.content.length > 30 
+                          ? originalMessage.content.substring(0, 30) + "..."
+                          : originalMessage.content}
                       </div>
                       
                       {/* Show original media thumbnail if exists */}
@@ -530,7 +532,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                 )}
 
                 {/* Message content */}
-                <p className="text-sm leading-relaxed break-words whitespace-pre-line">
+                <p className="text-sm leading-relaxed break-words whitespace-pre-line minecraft-font">
                   {parseMessageContent(message.content)}
                 </p>
               </div>
