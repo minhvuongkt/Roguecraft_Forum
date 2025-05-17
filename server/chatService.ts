@@ -1,6 +1,6 @@
+
 import { storage } from "./storage";
 import { InsertChatMessage, InsertUser, User } from "@shared/schema";
-import * as schedule from "node:timers/promises";
 
 export class ChatService {
   private static instance: ChatService;
@@ -95,33 +95,38 @@ export class ChatService {
 
     console.log('Final processed message media:', JSON.stringify(processedMessage.media, null, 2));
 
-    // Create message in database
-    const newMessage = await storage.createChatMessage(processedMessage);
+    try {
+      // Create message in database
+      const newMessage = await storage.createChatMessage(processedMessage);
 
-    // Get user info
-    const user = newMessage.userId
-      ? await storage.getUser(newMessage.userId)
-      : undefined;
+      // Get user info
+      const user = newMessage.userId
+        ? await storage.getUser(newMessage.userId)
+        : undefined;
 
-    if (newMessage.userId) {
-      await storage.updateUserLastActive(newMessage.userId);
+      if (newMessage.userId) {
+        await storage.updateUserLastActive(newMessage.userId);
+      }
+
+      // Log the created message for debugging
+      console.log('New message created in database:', JSON.stringify({
+        id: newMessage.id,
+        content: newMessage.content,
+        media: newMessage.media
+      }, null, 2));
+
+      return {
+        ...newMessage,
+        user: user ? {
+          id: user.id,
+          username: user.username,
+          avatar: user.avatar
+        } : null
+      };
+    } catch (error) {
+      console.error('Error creating chat message:', error);
+      throw new Error('Failed to create message in database');
     }
-
-    // Log the created message for debugging
-    console.log('New message created in database:', JSON.stringify({
-      id: newMessage.id,
-      content: newMessage.content,
-      media: newMessage.media
-    }, null, 2));
-
-    return {
-      ...newMessage,
-      user: user ? {
-        id: user.id,
-        username: user.username,
-        avatar: user.avatar
-      } : null
-    };
   }
 
   async cleanupOldMessages(): Promise<void> {

@@ -64,54 +64,75 @@ export class DatabaseStorage implements IStorage {
   async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
     console.log("Creating chat message in database with media:", JSON.stringify(message.media, null, 2));
 
-    // Đảm bảo định dạng message đúng trước khi lưu
-    let finalMedia = message.media;
-
-    // Kiểm tra và sửa đường dẫn nếu cần
-    if (finalMedia && typeof finalMedia === 'object') {
-      const hasTopicImage = Object.values(finalMedia).some(
-        path => typeof path === 'string' && path.toString().includes('/topic-images/')
-      );
-
-      if (hasTopicImage) {
-        console.warn("Warning: Found topic-images path in chat message, fixing this");
-
-        const fixedMedia: Record<string, string> = {};
-        Object.entries(finalMedia).forEach(([key, value]) => {
-          if (typeof value === 'string' && value.includes('/topic-images/')) {
-            // Tạo tên file mới trong chat-images
-            const originalFileName = value.split('/').pop() || 'unknown.jpg';
-            const newPath = `/chat-images/chat-${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(originalFileName)}`;
-            fixedMedia[key] = newPath;
-            console.log(`Fixed media path from ${value} to ${newPath}`);
-          } else {
-            fixedMedia[key] = value as string;
-          }
-        });
-        finalMedia = fixedMedia;
-      }
-    }
-
-    // Ensure replyToMessageId is properly handled
-    let finalReplyToMessageId = message.replyToMessageId;
-    if (finalReplyToMessageId === undefined || finalReplyToMessageId === null) {
-      finalReplyToMessageId = null;
-    }
-
-    const messageToInsert = {
-      ...message,
-      // Đảm bảo media có định dạng đúng trước khi lưu
-      media: finalMedia,
-      replyToMessageId: finalReplyToMessageId
-    };
-
     try {
+      // 1. Đảm bảo định dạng message đúng trước khi lưu
+      let finalMedia = message.media;
+
+      // Kiểm tra và sửa đường dẫn nếu cần
+      if (finalMedia && typeof finalMedia === 'object') {
+        const hasTopicImage = Object.values(finalMedia).some(
+          path => typeof path === 'string' && path.toString().includes('/topic-images/')
+        );
+
+        if (hasTopicImage) {
+          console.warn("Warning: Found topic-images path in chat message, fixing this");
+
+          const fixedMedia: Record<string, string> = {};
+          Object.entries(finalMedia).forEach(([key, value]) => {
+            if (typeof value === 'string' && value.includes('/topic-images/')) {
+              // Tạo tên file mới trong chat-images
+              const originalFileName = value.split('/').pop() || 'unknown.jpg';
+              const newPath = `/chat-images/chat-${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(originalFileName)}`;
+              fixedMedia[key] = newPath;
+              console.log(`Fixed media path from ${value} to ${newPath}`);
+            } else {
+              fixedMedia[key] = value as string;
+            }
+          });
+          finalMedia = fixedMedia;
+        }
+      }
+
+      // 2. Xử lý replyToMessageId
+      let finalReplyToMessageId: number | null = null;
+      
+      if (message.replyToMessageId !== undefined && message.replyToMessageId !== null) {
+        // Đảm bảo là số
+        const replyId = Number(message.replyToMessageId);
+        if (!isNaN(replyId)) {
+          finalReplyToMessageId = replyId;
+          
+          // Kiểm tra xem message được trả lời có tồn tại không
+          const [originalMessage] = await db.select()
+            .from(chatMessages)
+            .where(eq(chatMessages.id, finalReplyToMessageId));
+            
+          if (!originalMessage) {
+            console.warn(`Reply to non-existent message ID: ${finalReplyToMessageId}`);
+            finalReplyToMessageId = null;
+          }
+        }
+      }
+
+      // 3. Chuẩn bị message để lưu
+      const messageToInsert = {
+        ...message,
+        content: message.content?.trim() || "",
+        media: finalMedia,
+        replyToMessageId: finalReplyToMessageId,
+        mentions: Array.isArray(message.mentions) ? message.mentions : []
+      };
+
+      // 4. Lưu vào database
       console.log("Inserting message into database:", {
-        content: message.content,
-        userId: message.userId,
-        replyToMessageId: message.replyToMessageId
+        content: messageToInsert.content,
+        userId: messageToInsert.userId,
+        replyToMessageId: messageToInsert.replyToMessageId
       });
-      const [createdMessage] = await db.insert(chatMessages).values(messageToInsert).returning();
+      
+      const [createdMessage] = await db.insert(chatMessages)
+        .values(messageToInsert)
+        .returning();
 
       console.log("Chat message created in database:", JSON.stringify({
         id: createdMessage.id,
@@ -122,7 +143,7 @@ export class DatabaseStorage implements IStorage {
       return createdMessage;
     } catch (error) {
       console.error("Error creating chat message:", error);
-      throw error;
+      throw new Error(`Failed to save chat message: ${error.message}`);
     }
   }
 

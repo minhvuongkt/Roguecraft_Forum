@@ -164,27 +164,55 @@ export class WebSocketHandler {
   ): Promise<void> {
     if (!ws.userId || !ws.username) {
       console.error("WebSocket without user info tried to send a message");
-      return;
+      return this.sendToClient(ws, {
+        type: WebSocketMessageType.CHAT_MESSAGE,
+        payload: { error: "User authentication required" },
+      });
     }
 
     try {
-      // Chuyển đổi payload.content nếu cần
-      let content = payload.content;
-      const media = payload.media || null;
-
-      // Đảm bảo replyToMessageId là số hoặc null
-      let replyId = null;
-      if (payload.replyToMessageId !== undefined && payload.replyToMessageId !== null) {
-        replyId = Number(payload.replyToMessageId);
-        console.log("Processing reply to message ID:", replyId, "Type:", typeof replyId);
+      // Validate required fields
+      if (!payload.content || typeof payload.content !== 'string') {
+        return this.sendToClient(ws, {
+          type: WebSocketMessageType.CHAT_MESSAGE,
+          payload: { error: "Message content is required" },
+        });
       }
 
-      const message = await chatService.createMessage({
+      const content = payload.content.trim();
+      if (content.length === 0) {
+        return this.sendToClient(ws, {
+          type: WebSocketMessageType.CHAT_MESSAGE,
+          payload: { error: "Message content cannot be empty" },
+        });
+      }
+
+      const media = payload.media || null;
+
+      // Parse replyToMessageId safely
+      let replyId = null;
+      if (payload.replyToMessageId !== undefined && payload.replyToMessageId !== null) {
+        try {
+          replyId = Number(payload.replyToMessageId);
+          if (isNaN(replyId)) replyId = null;
+          console.log("Processing reply to message ID:", replyId, "Type:", typeof replyId);
+        } catch (e) {
+          console.warn("Invalid replyToMessageId format:", payload.replyToMessageId);
+          replyId = null;
+        }
+      }
+
+      // Prepare message data
+      const messageData = {
         content,
         media,
         userId: ws.userId,
         replyToMessageId: replyId,
-      });
+        mentions: payload.mentions || [],
+      };
+
+      // Create and save the message
+      const message = await chatService.createMessage(messageData);
 
       // Broadcast message to all clients
       this.broadcast({
