@@ -13,7 +13,6 @@ import TopicDetailPage from "@/pages/TopicDetailPage";
 import ChatPage from "@/pages/ChatPage";
 import UserProfilePage from "@/pages/UserProfilePage";
 import NotFound from "@/pages/not-found";
-
 function Router() {
   return (
     <Switch>
