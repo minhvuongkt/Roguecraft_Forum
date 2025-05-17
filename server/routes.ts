@@ -353,5 +353,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cập nhật thông tin người dùng
+  app.put('/api/users/:id', async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { username } = req.body;
+      
+      // Kiểm tra user có tồn tại không
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Kiểm tra username mới có trùng với người dùng khác không
+      if (username && username !== user.username) {
+        const existingUser = await storage.getUserByUsername(username);
+        if (existingUser && existingUser.id !== userId) {
+          return res.status(400).json({ message: 'Username already exists' });
+        }
+      }
+      
+      // Cập nhật thông tin
+      const updatedUser = await storage.updateUserProfile(userId, {
+        username: username || user.username,
+        isTemporary: false // Sau khi cập nhật, tài khoản không còn là tạm thời
+      });
+      
+      // Không trả về mật khẩu
+      const { password, ...userWithoutPassword } = updatedUser;
+      
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
+  // Đổi mật khẩu người dùng
+  app.put('/api/users/:id/password', async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: 'Current password and new password are required' });
+      }
+      
+      // Kiểm tra user có tồn tại không
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Kiểm tra mật khẩu hiện tại
+      if (user.password !== currentPassword) {
+        return res.status(401).json({ message: 'Current password is incorrect' });
+      }
+      
+      // Cập nhật mật khẩu
+      const success = await storage.updateUserPassword(userId, newPassword);
+      
+      if (success) {
+        res.json({ message: 'Password updated successfully' });
+      } else {
+        res.status(500).json({ message: 'Failed to update password' });
+      }
+    } catch (error) {
+      console.error('Error updating password:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
+  // Cập nhật avatar
+  app.put('/api/users/:id/avatar', async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { avatarUrl } = req.body;
+      
+      if (!avatarUrl) {
+        return res.status(400).json({ message: 'Avatar URL is required' });
+      }
+      
+      // Kiểm tra user có tồn tại không
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Cập nhật avatar
+      const updatedUser = await storage.updateUserAvatar(userId, avatarUrl);
+      
+      // Không trả về mật khẩu
+      const { password, ...userWithoutPassword } = updatedUser;
+      
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error('Error updating avatar:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   return httpServer;
 }
