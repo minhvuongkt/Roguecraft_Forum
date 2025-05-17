@@ -147,21 +147,17 @@ export function MessageInput({
   const charCount = message.length;
   const isOverLimit = charCount > maxLength;
 
-  // Define MentionListComponent
-  const MentionListComponent = () => {
-    return (
-      isMentioning && (
-        <MentionList users={filteredUsers} onSelect={handleSelectUser} />
-      )
-    );
-  };
-
   return (
     <div className="relative">
       <div className="flex items-center space-x-2">
         <div className="flex-1 min-h-[40px]">
           <div className="relative bg-gray-100 dark:bg-gray-800/60 rounded-full pr-10">
             <div className="relative">
+              {isMentioning && filteredUsers.length > 0 && (
+                <div className="absolute bottom-full left-0 mb-1">
+                  <MentionList users={filteredUsers} onSelect={handleSelectUser} />
+                </div>
+              )}
               <Textarea
                 ref={textareaRef}
                 value={message}
