@@ -87,13 +87,17 @@ function UserProfilePage() {
     queryKey: ['/api/users', id],
     enabled: !!id,
     retry: 2,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       try {
+        console.log(`Fetching profile for user ID: ${id}`);
         const response = await fetch(`/api/users/${id}`);
         if (!response.ok) {
           throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
         }
-        return response.json();
+        const result = await response.json();
+        console.log("Profile data received:", result);
+        return result;
       } catch (err) {
         console.error("Error fetching profile:", err);
         throw err;
