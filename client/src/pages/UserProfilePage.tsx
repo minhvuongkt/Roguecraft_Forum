@@ -66,27 +66,49 @@ function UserProfilePage() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { user: currentUser, isAuthenticated, updateProfile, updatePassword, updateAvatar } = useAuth();
+  const { toast } = useToast();
+
+  // Chuyển về trang chủ nếu không có id
+  React.useEffect(() => {
+    if (!id) {
+      navigate('/forum');
+    }
+  }, [id, navigate]);
+  
+  // State hooks
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isChangeAvatarOpen, setIsChangeAvatarOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState('');
-  const { toast } = useToast();
   
+  // Configure fetcher trực tiếp để xử lý lỗi tốt hơn
   const { data, isLoading, error } = useQuery<UserProfile>({
     queryKey: ['/api/users', id],
     enabled: !!id,
-    retry: 1
+    retry: 2,
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/users/${id}`);
+        if (!response.ok) {
+          throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+        throw err;
+      }
+    }
   });
   
   const isOwnProfile = currentUser?.id === parseInt(id);
   
   // Handle not logged in users trying to view profiles
   React.useEffect(() => {
-    if (!isAuthenticated && !isLoading && !error) {
+    if (!isAuthenticated && !isLoading) {
       setIsLoginModalOpen(true);
     }
-  }, [isAuthenticated, isLoading, error]);
+  }, [isAuthenticated, isLoading]);
   
   // Render loading state
   if (isLoading) {
@@ -124,20 +146,21 @@ function UserProfilePage() {
     );
   }
   
-  // Handle error state
+  // Xử lý trạng thái lỗi
   if (error || !data) {
+    console.error("Profile error:", error);
     return (
       <div className="container max-w-5xl mx-auto py-8 px-4">
         <Alert variant="destructive" className="mb-8">
-          <AlertTitle>Error Loading Profile</AlertTitle>
+          <AlertTitle>Lỗi khi tải hồ sơ</AlertTitle>
           <AlertDescription>
-            This user profile couldn't be loaded. The user may not exist or there was a server error.
+            Không thể tải hồ sơ người dùng này. Người dùng có thể không tồn tại hoặc có lỗi máy chủ.
             <Button 
               variant="outline" 
               className="mt-4"
               onClick={() => navigate('/forum')}
             >
-              Return to Forum
+              Quay lại diễn đàn
             </Button>
           </AlertDescription>
         </Alert>
