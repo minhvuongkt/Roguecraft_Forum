@@ -27,16 +27,24 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
 
   // Determine if message is a reply based on replyToMessageId
   const isReplyMessage =
-    message.replyToMessageId !== null && message.replyToMessageId !== undefined;
+    message.replyToMessageId !== null && 
+    message.replyToMessageId !== undefined &&
+    message.replyToMessageId !== 0; // Thêm kiểm tra để tránh ID = 0 (giá trị mặc định sau khi parse thất bại)
 
   // Get original message if replyToMessageId exists
   const originalMessage = isReplyMessage
-    ? findMessageById(message.replyToMessageId!)
+    ? findMessageById(typeof message.replyToMessageId === 'string' 
+        ? parseInt(message.replyToMessageId) 
+        : message.replyToMessageId)
     : undefined;
 
-  // Check if this is a self-reply (replying to own message)
-  const isSelfReply =
-    originalMessage && message.userId === originalMessage.userId;
+  // Trong hàm scrollToMessageById, thêm xử lý ID có thể là string
+  const scrollToMessageById = (messageId: number | string) => {
+    // Convert to string for getElementById
+    const msgId = typeof messageId === 'number' ? messageId : parseInt(messageId);
+
+    // Find the target element
+    const targetElement = document.getElementById(`msg-${msgId}`);
 
   // Add highlight effect when targeted
   useEffect(() => {
@@ -548,6 +556,4 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
     </div>
   );
 }
-
-// Export memoized component to prevent unnecessary re-renders
 export const Message = memo(MessageComponent);

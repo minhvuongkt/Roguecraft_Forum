@@ -162,6 +162,19 @@ export class WebSocketHandler {
     try {
       const { content, media, mentions, replyToMessageId } = payload;
 
+      // Log đầu vào từ client để debug
+      console.log("Chat message payload received:", {
+        content: content
+          ? content.length > 30
+            ? content.substring(0, 30) + "..."
+            : content
+          : null,
+        replyToMessageId,
+        hasMedia: media ? true : false,
+        mediaType: media ? typeof media : null,
+        mentions: mentions ? mentions.length : 0,
+      });
+
       if (
         (!content || typeof content !== "string" || content.trim() === "") &&
         (!media || Object.keys(media).length === 0)
@@ -179,12 +192,6 @@ export class WebSocketHandler {
           payload: { error: "Nếu muốn đặt tên thì dùng lệnh /ten [name]" },
         });
       }
-
-      // Log thông tin media để kiểm tra
-      console.log(
-        "Chat message media received:",
-        JSON.stringify(media, null, 2),
-      );
 
       // Kiểm tra nếu media có dữ liệu
       let mediaData = media;
@@ -225,29 +232,61 @@ export class WebSocketHandler {
             mediaData = fixedMedia;
           }
         }
-
-        console.log(
-          "Creating chat message with media:",
-          JSON.stringify(mediaData, null, 2),
-        );
-      } else {
-        console.log("Creating chat message with media: null");
-        mediaData = null;
       }
 
-      // Đảm bảo replyToMessageId là số nguyên hoặc null
+      // Xử lý replyToMessageId - ĐÂY LÀ PHẦN ĐƯỢC CẬP NHẬT
       let finalReplyId = null;
+
+      // Log chi tiết giá trị replyToMessageId nhận được
+      console.log("Debug replyToMessageId:", {
+        value: replyToMessageId,
+        type: typeof replyToMessageId,
+        isNull: replyToMessageId === null,
+        isUndefined: replyToMessageId === undefined,
+      });
+
       if (replyToMessageId !== undefined && replyToMessageId !== null) {
-        // Kiểm tra và chuyển đổi sang số
-        if (typeof replyToMessageId === 'number') {
+        if (typeof replyToMessageId === "number") {
+          // Nếu là số, sử dụng trực tiếp
           finalReplyId = replyToMessageId;
-        } else if (typeof replyToMessageId === 'string' && !isNaN(parseInt(replyToMessageId))) {
-          finalReplyId = parseInt(replyToMessageId);
+        } else if (typeof replyToMessageId === "string") {
+          // Nếu là chuỗi, thử chuyển đổi
+          // Xóa các ký tự không phải số để đảm bảo đúng định dạng
+          const cleanedId = replyToMessageId.replace(/[^0-9]/g, "");
+          if (cleanedId && !isNaN(parseInt(cleanedId))) {
+            finalReplyId = parseInt(cleanedId);
+          }
+        } else if (
+          typeof replyToMessageId === "object" &&
+          replyToMessageId.id
+        ) {
+          // Trường hợp client gửi object thay vì id trực tiếp
+          if (typeof replyToMessageId.id === "number") {
+            finalReplyId = replyToMessageId.id;
+          } else if (
+            typeof replyToMessageId.id === "string" &&
+            !isNaN(parseInt(replyToMessageId.id))
+          ) {
+            finalReplyId = parseInt(replyToMessageId.id);
+          }
         }
-        console.log('Converted replyToMessageId:', replyToMessageId, ' -> ', finalReplyId);
+      }
+
+      console.log(
+        "Converted replyToMessageId:",
+        replyToMessageId,
+        " -> ",
+        finalReplyId,
+      );
+
+      // Kiểm tra nếu finalReplyId không phải là số
+      if (finalReplyId !== null && typeof finalReplyId !== "number") {
+        console.error("Warning: finalReplyId is not a number:", finalReplyId);
+        finalReplyId = null;
       }
 
       // Create chat message
+      console.log("Creating message with replyToMessageId:", finalReplyId);
       const message = await chatService.createMessage({
         userId: ws.userId,
         content,
@@ -256,8 +295,17 @@ export class WebSocketHandler {
         replyToMessageId: finalReplyId,
       });
 
-      // Log thông tin message sau khi tạo
-      console.log("Chat message created:", JSON.stringify(message, null, 2));
+      // Kiểm tra xem message được tạo có replyToMessageId không
+      console.log("Chat message created:", {
+        id: message.id,
+        content: message.content
+          ? message.content.length > 30
+            ? message.content.substring(0, 30) + "..."
+            : message.content
+          : null,
+        userId: message.userId,
+        replyToMessageId: message.replyToMessageId,
+      });
 
       // Broadcast message to all clients
       this.broadcast({

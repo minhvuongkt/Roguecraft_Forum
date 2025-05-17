@@ -240,8 +240,13 @@ export function ChatBox() {
     searchTerm: "",
     isScrolling: false,
     showScrollButton: false,
-    typingUsers: [] as {id: number, username: string, avatar: string | null}[],
-    userMessageColor: localStorage.getItem('userMessageColor') || 'bg-purple-600',
+    typingUsers: [] as {
+      id: number;
+      username: string;
+      avatar: string | null;
+    }[],
+    userMessageColor:
+      localStorage.getItem("userMessageColor") || "bg-purple-600",
     mentionState: {
       active: false,
       searchTerm: "",
@@ -664,11 +669,21 @@ export function ChatBox() {
       let mentions: string[] = [];
 
       if (state.replyingTo) {
-        // Chuyển đổi ID sang số nếu cần thiết
-        replyToMessageId = typeof state.replyingTo.id === 'string' 
-          ? parseInt(state.replyingTo.id) 
-          : state.replyingTo.id;
-          
+        // Xử lý chặt chẽ hơn để đảm bảo replyToMessageId luôn là số nguyên
+        if (typeof state.replyingTo.id === "string") {
+          // Loại bỏ các ký tự không phải số
+          const cleanId = state.replyingTo.id.replace(/[^0-9]/g, "");
+          replyToMessageId = cleanId ? parseInt(cleanId) : null;
+        } else if (typeof state.replyingTo.id === "number") {
+          replyToMessageId = state.replyingTo.id;
+        }
+
+        // Kiểm tra xem replyToMessageId có phải là số nguyên hợp lệ không
+        if (isNaN(replyToMessageId) || replyToMessageId === null) {
+          console.error("Invalid replyToMessageId:", state.replyingTo.id);
+          replyToMessageId = null;
+        }
+
         if (state.replyingTo.user) {
           const username = state.replyingTo.user.username;
           if (!finalMessage.includes(`@${username}`)) {
@@ -678,20 +693,15 @@ export function ChatBox() {
           }
         }
       }
-      
-      // Tìm các mentions trong tin nhắn
-      const mentionRegex = /@(\S+)/g;
-      let match;
-      while ((match = mentionRegex.exec(finalMessage)) !== null) {
-        const username = match[1];
-        if (!mentions.includes(username)) {
-          mentions.push(username);
-        }
-      }
-      
-      // Đảm bảo replyToMessageId được gửi chính xác như tham số thứ 3
-      console.log('Sending message with replyToMessageId:', replyToMessageId, typeof replyToMessageId);
-      console.log('Sending message with mentions:', mentions);
+
+      // Debug log - có thể giữ lại để kiểm tra
+      console.log(
+        "Sending message with replyToMessageId:",
+        replyToMessageId,
+        typeof replyToMessageId,
+      );
+      console.log("Sending message with mentions:", mentions);
+
       sendMessage(finalMessage, media, replyToMessageId, mentions);
 
       // Reset state and enable auto-scroll
@@ -1063,15 +1073,15 @@ export function ChatBox() {
             </div>
           </div>
         )}
-        
+
         {/* Hiển thị người đang nhập tin nhắn */}
         {state.typingUsers && state.typingUsers.length > 0 && (
           <div className="mb-2">
-            {state.typingUsers.map(typingUser => (
-              <TypingIndicator 
-                key={typingUser.id} 
-                username={typingUser.username} 
-                avatar={typingUser.avatar} 
+            {state.typingUsers.map((typingUser) => (
+              <TypingIndicator
+                key={typingUser.id}
+                username={typingUser.username}
+                avatar={typingUser.avatar}
               />
             ))}
           </div>
@@ -1079,9 +1089,9 @@ export function ChatBox() {
 
         {/* Reply info bar - Using Messenger style reply indicator */}
         {state.replyingTo && (
-          <MessengerReplyIndicator 
-            message={state.replyingTo} 
-            onCancel={handleCancelReply} 
+          <MessengerReplyIndicator
+            message={state.replyingTo}
+            onCancel={handleCancelReply}
           />
         )}
 
@@ -1100,16 +1110,17 @@ export function ChatBox() {
             <MessageColorPicker
               onColorSelect={(color) => {
                 // Lưu màu vào localStorage và cập nhật state
-                localStorage.setItem('userMessageColor', color);
-                setState(prev => ({
+                localStorage.setItem("userMessageColor", color);
+                setState((prev) => ({
                   ...prev,
-                  userMessageColor: color
+                  userMessageColor: color,
                 }));
-                
+
                 // Hiển thị thông báo
                 toast({
                   title: "Đã thay đổi màu tin nhắn",
-                  description: "Màu tin nhắn của bạn sẽ được áp dụng cho các tin nhắn tiếp theo",
+                  description:
+                    "Màu tin nhắn của bạn sẽ được áp dụng cho các tin nhắn tiếp theo",
                   variant: "default",
                 });
               }}
