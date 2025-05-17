@@ -58,23 +58,21 @@ export class ChatService {
       hasMedia: !!message.media
     });
 
-    // Ensure replyToMessageId is a number or null
+    // Validate and process replyToMessageId
     let finalReplyId = null;
-    if (message.replyToMessageId !== undefined && message.replyToMessageId !== null) {
-      // Nếu là chuỗi, chuyển đổi cẩn thận
-      if (typeof message.replyToMessageId === 'string') {
-        const cleanId = message.replyToMessageId.replace(/[^0-9]/g, "");
-        finalReplyId = cleanId ? parseInt(cleanId, 10) : null;
-      } 
-      // Nếu đã là số, kiểm tra tính hợp lệ
-      else if (typeof message.replyToMessageId === 'number') {
-        finalReplyId = Number.isInteger(message.replyToMessageId) ? message.replyToMessageId : null;
+    if (message.replyToMessageId) {
+      const replyId = typeof message.replyToMessageId === 'string' 
+        ? parseInt(message.replyToMessageId, 10)
+        : message.replyToMessageId;
+        
+      if (!isNaN(replyId) && replyId > 0) {
+        // Check if referenced message exists
+        const replyToMessage = await storage.getChatMessageById(replyId);
+        if (replyToMessage) {
+          finalReplyId = replyId;
+        }
       }
-      
-      // Kiểm tra giá trị cuối cùng
-      if (finalReplyId !== null && (isNaN(finalReplyId) || finalReplyId <= 0)) {
-        finalReplyId = null;
-      }
+    }
       
       console.log('Processed replyToMessageId:', {
         original: message.replyToMessageId,

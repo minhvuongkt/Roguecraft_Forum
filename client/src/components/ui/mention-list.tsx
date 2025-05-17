@@ -12,7 +12,7 @@ export function MentionList({ users, onSelect }: MentionListProps) {
   if (users.length === 0) return null;
   
   return (
-    <div className="absolute z-10 bottom-full left-0 mb-1 w-[240px] shadow-lg rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="absolute z-50 bottom-full left-0 mb-1 w-[280px] shadow-lg rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden">
       <div className="p-2 text-xs font-medium text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center">
         <AtSign className="h-3 w-3 mr-1.5" />
         Gợi ý người dùng ({users.length})

@@ -28,13 +28,14 @@ export function MessageInput({
   const [message, setMessage] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [showFileUpload, setShowFileUpload] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploading, setIsUploading] = useState(isUploading);
   const [mentionSearch, setMentionSearch] = useState('');
   const [isMentioning, setIsMentioning] = useState(false);
   const [mentionPosition, setMentionPosition] = useState({ start: 0, end: 0 });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
   const { onlineUsers } = useWebSocket();
+  const [filteredUsers, setFilteredUsers] = useState([]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -52,22 +53,31 @@ export function MessageInput({
     if (match) {
       const searchTerm = match[1].toLowerCase();
       setMentionSearch(searchTerm);
-      setIsMentioning(true);
+      handleMention(searchTerm);
       setMentionPosition({
         start: match.index || 0,
         end: (match.index || 0) + match[0].length
       });
     } else {
       setIsMentioning(false);
+      setFilteredUsers([]);
     }
   }, [message]);
 
-  // Lọc người dùng phù hợp với từ khóa tìm kiếm
-  const filteredUsers = isMentioning 
-    ? onlineUsers.filter(user => 
-        user.username.toLowerCase().includes(mentionSearch.toLowerCase())
-      )
-    : [];
+  const handleMention = (searchTerm: string) => {
+    if (!searchTerm) {
+      setIsMentioning(false);
+      setFilteredUsers([]);
+      return;
+    }
+
+    const filtered = onlineUsers.filter(user => 
+      user.username.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    setFilteredUsers(filtered);
+    setIsMentioning(filtered.length > 0);
+  };
 
   // Chọn một người dùng trong danh sách gợi ý
   const handleSelectUser = (username: string) => {
@@ -75,6 +85,7 @@ export function MessageInput({
     const after = message.substring(mentionPosition.end);
     setMessage(`${before}@${username} ${after}`);
     setIsMentioning(false);
+    setFilteredUsers([]);
 
     // Focus lại vào textarea và đặt con trỏ sau tên người dùng
     setTimeout(() => {
@@ -87,11 +98,15 @@ export function MessageInput({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Nếu đang hiển thị gợi ý và nhấn Tab hoặc Enter, chọn người dùng đầu tiên
-    if (isMentioning && filteredUsers.length > 0 && (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey))) {
-      e.preventDefault();
-      handleSelectUser(filteredUsers[0].username);
-      return;
+    if (isMentioning && filteredUsers.length > 0) {
+      if (e.key === 'Tab' || e.key === 'Enter') {
+        e.preventDefault();
+        handleSelectUser(filteredUsers[0].username);
+      }
+      if (e.key === 'Escape') {
+        setIsMentioning(false);
+        setFilteredUsers([]);
+      }
     }
 
     // Submit on Enter (without Shift)
