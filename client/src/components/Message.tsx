@@ -29,13 +29,11 @@ const MessageComponent = ({
   const messageRef = useRef<HTMLDivElement>(null);
   const [highlightOriginal, setHighlightOriginal] = useState(false);
 
-  // Determine if message is a reply based on replyToMessageId
   const isReplyMessage =
     message.replyToMessageId !== null &&
     message.replyToMessageId !== undefined &&
     message.replyToMessageId !== 0;
 
-  // Get original message if replyToMessageId exists
   const originalMessage = isReplyMessage
     ? findMessageById(
         typeof message.replyToMessageId === "string"
@@ -44,7 +42,6 @@ const MessageComponent = ({
       )
     : undefined;
 
-  // Add highlight effect when targeted
   useEffect(() => {
     if (highlightOriginal) {
       const timer = setTimeout(() => {
@@ -54,7 +51,6 @@ const MessageComponent = ({
     }
   }, [highlightOriginal]);
 
-  // Function to scroll to message with enhanced highlight effect
   const scrollToMessageById = (messageId: number) => {
     const targetElement = document.getElementById(`msg-${messageId}`);
 
@@ -95,16 +91,9 @@ const MessageComponent = ({
     }
   };
 
-  // Handle reply to message
   const handleReply = () => {
     if (onReply && message) {
-      // Trực tiếp lấy ID từ message và chuyển thành số
       const messageId = Number(message.id);
-      
-      // Log để debug
-      console.log('Original message ID:', message.id, 'Type:', typeof message.id);
-      console.log('Converted message ID:', messageId, 'Type:', typeof messageId);
-      
       // Tạo message với ID đã chuyển đổi
       const messageToReply = {
         ...message,
