@@ -33,6 +33,32 @@ export class DatabaseStorage implements IStorage {
       .set({ lastActive: new Date() })
       .where(eq(users.id, id));
   }
+  
+  async updateUserProfile(id: number, updates: Partial<InsertUser>): Promise<User> {
+    const [updatedUser] = await db.update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    
+    return updatedUser;
+  }
+  
+  async updateUserPassword(id: number, newPassword: string): Promise<boolean> {
+    const result = await db.update(users)
+      .set({ password: newPassword })
+      .where(eq(users.id, id));
+    
+    return true; // Phương thức trả về boolean thành công
+  }
+  
+  async updateUserAvatar(id: number, avatarUrl: string): Promise<User> {
+    const [updatedUser] = await db.update(users)
+      .set({ avatar: avatarUrl })
+      .where(eq(users.id, id))
+      .returning();
+    
+    return updatedUser;
+  }
 
   // Chat operations
   async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {

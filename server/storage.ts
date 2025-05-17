@@ -12,6 +12,9 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserLastActive(id: number): Promise<void>;
+  updateUserProfile(id: number, updates: Partial<InsertUser>): Promise<User>;
+  updateUserPassword(id: number, newPassword: string): Promise<boolean>;
+  updateUserAvatar(id: number, avatarUrl: string): Promise<User>;
   
   // Chat operations
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
