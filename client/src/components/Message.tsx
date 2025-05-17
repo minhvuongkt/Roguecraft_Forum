@@ -465,7 +465,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                 className={cn(
                   "p-2 px-3 mb-1 break-words max-w-full text-base",
                   isCurrentUser
-                    ? `discord-my-bubble text-white ${localStorage.getItem('userMessageColor') || 'bg-purple-600'}` 
+                    ? `discord-my-bubble text-white ${isCurrentUser ? (localStorage.getItem('userMessageColor') || 'bg-purple-600') : 'bg-purple-600'}` 
                     : "discord-bubble dark:text-white bg-gray-700",
                   isReplyMessage ? "relative pt-6" : "",
                 )}

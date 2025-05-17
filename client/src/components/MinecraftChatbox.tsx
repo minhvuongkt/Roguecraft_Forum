@@ -75,11 +75,18 @@ export function MinecraftChatbox({
       // Determine file type
       const fileType = file.type.startsWith('image/') ? 'image' : 'file';
       
-      // Show preview if it's an image
-      if (fileType === 'image') {
-        setFilePreview({ url: data.url, type: fileType });
+      // Lấy URL từ phản hồi - API trả về dạng {"1": "/chat-images/filename.jpg"}
+      const fileUrl = data["1"]; // Lấy giá trị của khóa "1"
+      
+      if (fileUrl) {
+        setFilePreview({ url: fileUrl, type: fileType });
       } else {
-        setFilePreview({ url: data.url, type: fileType });
+        console.error('Invalid response format:', data);
+        toast({
+          title: "Lỗi định dạng",
+          description: "Phản hồi từ server không đúng định dạng",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error uploading file:', error);
