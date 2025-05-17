@@ -63,16 +63,9 @@ app.use((req, res, next) => {
   const port = 5000;
   server.listen({
     port,
-    host: "0.0.0.0",
+    host: "0.0.0.0", 
     reusePort: true,
-  }, async () => {
+  }, () => {
     log(`serving on port ${port}`);
-    
-    // Seed database with sample data
-    try {
-      await seedData();
-    } catch (error) {
-      console.error('Error seeding database:', error);
-    }
   });
 })();
