@@ -196,15 +196,30 @@ export class WebSocketHandler {
         console.log("Original message ID:", payload.replyToMessageId, "Type:", typeof payload.replyToMessageId);
         
         try {
-          // Nếu là chuỗi, loại bỏ các ký tự không phải số
+          // Handle string by stripping non-numeric characters
           if (typeof payload.replyToMessageId === 'string') {
             const cleanId = payload.replyToMessageId.replace(/[^0-9]/g, "");
             replyId = cleanId ? parseInt(cleanId, 10) : null;
-          } 
-          // Nếu đã là số, sử dụng trực tiếp
+          }
+          // Use directly if it's already a number
           else if (typeof payload.replyToMessageId === 'number') {
             replyId = payload.replyToMessageId;
           }
+
+          // Validate that it's a valid integer reply ID
+          if (replyId !== null && (!Number.isInteger(replyId) || replyId <= 0)) {
+            replyId = null;
+          } else if (replyId !== null) {
+            const [originalMessage] = await chatService.verifyMessageExists(replyId);
+            if (!originalMessage) {
+              console.warn(`Reply to non-existent message ID: ${replyId}`);
+              replyId = null;
+            }
+          }
+        } catch (e) {
+          console.error("Error processing replyToMessageId:", e);
+          replyId = null;
+        }
           
           // Kiểm tra lại để đảm bảo là số nguyên hợp lệ
           if (replyId !== null && (isNaN(replyId) || !Number.isInteger(replyId) || replyId <= 0)) {
