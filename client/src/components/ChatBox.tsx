@@ -10,6 +10,10 @@ import { useChat } from "@/hooks/useChat";
 import { Message } from "@/components/Message";
 import { MessageInput } from "@/components/ui/message-input";
 import { Button } from "@/components/ui/button";
+import { TypingIndicator } from "./TypingIndicator";
+import { MessageColorPicker } from "./MessageColorPicker";
+import { MessengerReplyIndicator } from "./MessengerReplyIndicator";
+import { MinecraftChatbox } from "./MinecraftChatbox";
 import {
   MoreVertical,
   Send,
@@ -236,6 +240,8 @@ export function ChatBox() {
     searchTerm: "",
     isScrolling: false,
     showScrollButton: false,
+    typingUsers: [] as {id: number, username: string, avatar: string | null}[],
+    userMessageColor: localStorage.getItem('userMessageColor') || 'bg-purple-600',
     mentionState: {
       active: false,
       searchTerm: "",
