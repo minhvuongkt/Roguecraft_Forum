@@ -350,7 +350,7 @@ const MessageComponent = ({
           "bg-yellow-100 dark:bg-yellow-900/30 transition-all duration-300 ease-in-out",
       )}
       style={{ isolation: "isolate" }}
-      data-message-id={message.id}
+      data-message-id={typeof message.id === 'string' ? parseInt(message.id) : message.id}
       id={`msg-${message.id}`}
     >
       <div

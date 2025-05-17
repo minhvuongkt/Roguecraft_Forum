@@ -79,10 +79,9 @@ function UserProfilePage() {
   // Redirect nếu không có quyền truy cập
   React.useEffect(() => {
     if (!isAuthenticated && !isLoading) {
-      navigate('/forum');
-      return;
+      setIsLoginModalOpen(true);
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading]);
   
   // State hooks
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -93,8 +92,8 @@ function UserProfilePage() {
   
   // Configure fetcher trực tiếp để xử lý lỗi tốt hơn
   const { data, isLoading, error } = useQuery<UserProfile>({
-    queryKey: ['/api/users', id],
-    enabled: !!id,
+    queryKey: ['users', id],
+    enabled: !!id && isAuthenticated,
     retry: 2,
     refetchOnWindowFocus: false,
     queryFn: async () => {
