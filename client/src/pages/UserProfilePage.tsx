@@ -54,6 +54,7 @@ interface UserProfile {
     createdAt: string;
     viewCount: number;
     likeCount: number;
+    commentCount?: number;
   }[];
   stats: {
     messageCount: number;
@@ -74,7 +75,8 @@ function UserProfilePage() {
   
   const { data, isLoading, error } = useQuery<UserProfile>({
     queryKey: ['/api/users', id],
-    enabled: !!id
+    enabled: !!id,
+    retry: 1
   });
   
   const isOwnProfile = currentUser?.id === parseInt(id);
