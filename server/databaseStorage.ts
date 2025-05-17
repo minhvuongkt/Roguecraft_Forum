@@ -33,49 +33,49 @@ export class DatabaseStorage implements IStorage {
       .set({ lastActive: new Date() })
       .where(eq(users.id, id));
   }
-  
+
   async updateUserProfile(id: number, updates: Partial<InsertUser>): Promise<User> {
     const [updatedUser] = await db.update(users)
       .set(updates)
       .where(eq(users.id, id))
       .returning();
-    
+
     return updatedUser;
   }
-  
+
   async updateUserPassword(id: number, newPassword: string): Promise<boolean> {
     const result = await db.update(users)
       .set({ password: newPassword })
       .where(eq(users.id, id));
-    
+
     return true; // Phương thức trả về boolean thành công
   }
-  
+
   async updateUserAvatar(id: number, avatarUrl: string): Promise<User> {
     const [updatedUser] = await db.update(users)
       .set({ avatar: avatarUrl })
       .where(eq(users.id, id))
       .returning();
-    
+
     return updatedUser;
   }
 
   // Chat operations
   async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
     console.log("Creating chat message in database with media:", JSON.stringify(message.media, null, 2));
-    
+
     // Đảm bảo định dạng message đúng trước khi lưu
     let finalMedia = message.media;
-    
+
     // Kiểm tra và sửa đường dẫn nếu cần
     if (finalMedia && typeof finalMedia === 'object') {
       const hasTopicImage = Object.values(finalMedia).some(
         path => typeof path === 'string' && path.toString().includes('/topic-images/')
       );
-      
+
       if (hasTopicImage) {
         console.warn("Warning: Found topic-images path in chat message, fixing this");
-        
+
         const fixedMedia: Record<string, string> = {};
         Object.entries(finalMedia).forEach(([key, value]) => {
           if (typeof value === 'string' && value.includes('/topic-images/')) {
@@ -91,22 +91,27 @@ export class DatabaseStorage implements IStorage {
         finalMedia = fixedMedia;
       }
     }
-    
+
     const messageToInsert = {
       ...message,
       // Đảm bảo media có định dạng đúng trước khi lưu
       media: finalMedia
     };
-    
+
     try {
+      console.log("Inserting message into database:", {
+        content: message.content,
+        userId: message.userId,
+        replyToMessageId: message.replyToMessageId
+      });
       const [createdMessage] = await db.insert(chatMessages).values(messageToInsert).returning();
-      
+
       console.log("Chat message created in database:", JSON.stringify({
         id: createdMessage.id,
         content: createdMessage.content,
         media: createdMessage.media
       }, null, 2));
-      
+
       return createdMessage;
     } catch (error) {
       console.error("Error creating chat message:", error);
@@ -149,22 +154,22 @@ export class DatabaseStorage implements IStorage {
   // Forum operations
   async createTopic(topic: InsertTopic): Promise<Topic> {
     console.log("Creating topic with media:", JSON.stringify(topic.media, null, 2));
-    
+
     // Đảm bảo định dạng topic đúng trước khi lưu
     const topicToInsert = {
       ...topic,
       // Đảm bảo media có định dạng đúng
       media: topic.media
     };
-    
+
     const [createdTopic] = await db.insert(topics).values(topicToInsert).returning();
-    
+
     console.log("Topic created in database:", JSON.stringify({
       id: createdTopic.id,
       title: createdTopic.title,
       media: createdTopic.media
     }, null, 2));
-    
+
     return createdTopic;
   }
 
@@ -243,23 +248,23 @@ export class DatabaseStorage implements IStorage {
       if (existingLike) {
         return false; // User already liked this topic
       }
-      
+
       // Add the like
       await db.insert(topicLikes).values({
         topicId,
         userId
       });
-      
+
       // Increment like count
       await this.toggleTopicLike(topicId, true);
-      
+
       return true;
     } catch (error) {
       console.error('Error adding topic like:', error);
       return false;
     }
   }
-  
+
   async removeTopicLike(topicId: number, userId: number): Promise<boolean> {
     try {
       // Check if the like exists
@@ -267,7 +272,7 @@ export class DatabaseStorage implements IStorage {
       if (!existingLike) {
         return false; // User hasn't liked this topic
       }
-      
+
       // Remove the like
       await db.delete(topicLikes)
         .where(
@@ -276,17 +281,17 @@ export class DatabaseStorage implements IStorage {
             eq(topicLikes.userId, userId)
           )
         );
-      
+
       // Decrement like count
       await this.toggleTopicLike(topicId, false);
-      
+
       return true;
     } catch (error) {
       console.error('Error removing topic like:', error);
       return false;
     }
   }
-  
+
   async getTopicLike(topicId: number, userId: number): Promise<boolean> {
     const [like] = await db.select()
       .from(topicLikes)
@@ -296,7 +301,7 @@ export class DatabaseStorage implements IStorage {
           eq(topicLikes.userId, userId)
         )
       );
-    
+
     return !!like;
   }
 
@@ -306,13 +311,13 @@ export class DatabaseStorage implements IStorage {
     return await db.transaction(async (tx) => {
       // Insert the comment
       const [createdComment] = await tx.insert(comments).values(comment).returning();
-      
+
       // Increment the comment count for the topic
       await tx.update(topics)
         .set({ commentCount: sql`${topics.commentCount} + 1` })
         .where(eq(topics.id, comment.topicId))
         .execute();
-      
+
       return createdComment;
     });
   }

@@ -54,7 +54,27 @@ export class ChatService {
       content: message.content,
       userId: message.userId,
       replyToMessageId: message.replyToMessageId,
+      replyToMessageIdType: typeof message.replyToMessageId,
       hasMedia: !!message.media
+    });
+
+    // Đảm bảo replyToMessageId là số nguyên hợp lệ
+    let finalReplyId = null;
+    if (message.replyToMessageId !== undefined && message.replyToMessageId !== null) {
+      if (typeof message.replyToMessageId === 'number') {
+        finalReplyId = message.replyToMessageId;
+      } else if (typeof message.replyToMessageId === 'string') {
+        const numericId = parseInt(message.replyToMessageId);
+        if (!isNaN(numericId)) {
+          finalReplyId = numericId;
+        }
+      }
+    }
+
+    // Log để debug
+    console.log("Processed replyToMessageId:", {
+      original: message.replyToMessageId,
+      final: finalReplyId
     });
     
     // Đảm bảo media đúng định dạng
