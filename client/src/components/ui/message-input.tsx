@@ -168,8 +168,11 @@ export function MessageInput({
         <div className="flex-1 min-h-[40px]">
           <div className="relative bg-gray-100 dark:bg-gray-800/60 rounded-full pr-10">
             <div className="relative">
-              {isMentioning && filteredUsers.length > 0 && (
-                <div className="absolute bottom-full left-0 mb-1">
+              {isMentioning && (
+                <div className="absolute bottom-full left-0 mb-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                  <div className="p-2 text-xs font-medium text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                    Người dùng đang online ({filteredUsers.length})
+                  </div>
                   <MentionList users={filteredUsers} onSelect={handleSelectUser} />
                 </div>
               )}
