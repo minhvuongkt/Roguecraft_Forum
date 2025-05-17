@@ -104,6 +104,9 @@ function UserMentionSelector({
     );
   }, [users, searchTerm, currentUserId]);
 
+  // Calculate user status summary
+  const onlineCount = filteredUsers.length;
+
   // Reset focused index when filtered users change
   useEffect(() => {
     setFocusedIndex(0);
@@ -160,34 +163,44 @@ function UserMentionSelector({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
 
-  if (!position || filteredUsers.length === 0) return null;
+  if (!position) return null;
 
   return (
     <div
       ref={ref}
-      className="absolute z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg overflow-y-auto max-h-[200px] w-[200px]"
+      className="absolute z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden w-[280px]"
       style={{
         top: `${position.top}px`,
         left: `${position.left}px`,
       }}
     >
-      <div className="p-1 text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-700">
-        Người dùng
+      <div className="p-2 flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-700">
+        <div className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-green-500"></span>
+          {onlineCount} người dùng online
+        </div>
       </div>
-      <div className="py-1">
-        {filteredUsers.length > 0 ? (
-          filteredUsers.map((user, index) => (
-            <div
-              key={user.id}
-              className={cn(
-                "px-3 py-2 flex items-center gap-2 cursor-pointer",
-                focusedIndex === index
-                  ? "bg-blue-50 dark:bg-blue-900/20"
-                  : "hover:bg-gray-100 dark:hover:bg-gray-700",
-              )}
-              onClick={() => onSelect(user)}
-            >
-              <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center flex-shrink-0">
+      {filteredUsers.length === 0 ? (
+        <div className="p-4 text-center">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            Không tìm thấy người dùng
+          </div>
+        </div>
+      ) : (
+      <div className="py-2 max-h-[240px] overflow-y-auto">
+        {filteredUsers.map((user, index) => (
+          <div
+            key={user.id}
+            className={cn(
+              "px-3 py-2 flex items-center gap-3 cursor-pointer group transition-colors",
+              focusedIndex === index
+                ? "bg-blue-50 dark:bg-blue-900/20"
+                : "hover:bg-gray-50 dark:hover:bg-gray-800/50",
+            )}
+            onClick={() => onSelect(user)}
+          >
+            <div className="relative">
+              <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center flex-shrink-0 border-2 border-white dark:border-gray-900">
                 {user.avatar ? (
                   <img
                     src={user.avatar}
@@ -195,22 +208,31 @@ function UserMentionSelector({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
                     {user.username.substring(0, 2).toUpperCase()}
                   </span>
                 )}
               </div>
-              <span className="text-sm text-gray-800 dark:text-gray-200">
-                {user.username}
-              </span>
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-white dark:border-gray-900"></span>
             </div>
-          ))
-        ) : (
-          <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-            Không tìm thấy người dùng
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                  {user.username}
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded group-hover:bg-gray-200 dark:group-hover:bg-gray-700">
+                  @{user.username}
+                </span>
+              </div>
+              <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 mt-0.5">
+                <span className="w-1 h-1 rounded-full bg-green-500"></span>
+                Đang hoạt động
+              </p>
+            </div>
           </div>
-        )}
+        ))}
       </div>
+      )}
     </div>
   );
 }
