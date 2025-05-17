@@ -235,13 +235,25 @@ export class WebSocketHandler {
         mediaData = null;
       }
 
+      // Đảm bảo replyToMessageId là số nguyên hoặc null
+      let finalReplyId = null;
+      if (replyToMessageId !== undefined && replyToMessageId !== null) {
+        // Kiểm tra và chuyển đổi sang số
+        if (typeof replyToMessageId === 'number') {
+          finalReplyId = replyToMessageId;
+        } else if (typeof replyToMessageId === 'string' && !isNaN(parseInt(replyToMessageId))) {
+          finalReplyId = parseInt(replyToMessageId);
+        }
+        console.log('Converted replyToMessageId:', replyToMessageId, ' -> ', finalReplyId);
+      }
+
       // Create chat message
       const message = await chatService.createMessage({
         userId: ws.userId,
         content,
         media: mediaData,
         mentions: mentions || [],
-        replyToMessageId: replyToMessageId || null,
+        replyToMessageId: finalReplyId,
       });
 
       // Log thông tin message sau khi tạo
