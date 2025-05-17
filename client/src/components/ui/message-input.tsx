@@ -171,7 +171,11 @@ export function MessageInput({
                   overflowY: 'auto'
                 }}
               />
-              <MentionListComponent />
+              {isMentioning && filteredUsers.length > 0 && (
+                <div className="absolute bottom-full left-0 mb-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+                  <MentionList users={filteredUsers} onSelect={handleSelectUser} />
+                </div>
+              )}
             </div>
 
             <div className="absolute bottom-1.5 right-3 flex items-center gap-1">
