@@ -63,116 +63,37 @@ export class DatabaseStorage implements IStorage {
 
   // Chat operations
   async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
-    console.log("Creating chat message in database with media:", JSON.stringify(message.media, null, 2));
-
-    try {
-      // 1. Đảm bảo định dạng message đúng trước khi lưu
-      let finalMedia = message.media;
-
-      // Kiểm tra và sửa đường dẫn nếu cần
-      if (finalMedia && typeof finalMedia === 'object' && !Array.isArray(finalMedia)) {
-        const mediaString = JSON.stringify(finalMedia);
-        if (mediaString.includes('/topic-images/')) {
-          console.warn("Warning: Found topic-images path in chat message, fixing this");
-          const fixedMedia: Record<string, any> = {};
-          Object.entries(finalMedia as Record<string, any>).forEach(([key, value]) => {
-            if (typeof value === 'string' && value.includes('/topic-images/')) {
-              const originalFileName = value.split('/').pop() || 'unknown.jpg';
-              const timestamp = Date.now();
-              const randomPart = Math.round(Math.random() * 1E9);
-              const extension = path.extname(originalFileName);
-              const newPath = `/chat-images/chat-${timestamp}-${randomPart}${extension}`;
-              fixedMedia[key] = newPath;
-              console.log(`Fixed media path from ${value} to ${newPath}`);
-            } else {
-              fixedMedia[key] = value;
-            }
-          });
-          finalMedia = fixedMedia;
-        }
-      }
-
-      // 2. Xử lý replyToMessageId
-      let finalReplyToMessageId: number | null = null;
-
-      if (message.replyToMessageId !== undefined && message.replyToMessageId !== null) {
-        // Log chi tiết để debug
-        console.log(`Processing replyToMessageId in database: ${message.replyToMessageId} (type: ${typeof message.replyToMessageId})`);
-
-        try {
-          // Xử lý khác nhau dựa trên kiểu dữ liệu
-          if (typeof message.replyToMessageId === 'string') {
-            const cleanId = (message.replyToMessageId as string).replace(/[^0-9]/g, "");
-            finalReplyToMessageId = cleanId ? parseInt(cleanId, 10) : null;
-          } else if (typeof message.replyToMessageId === 'number') {
-            finalReplyToMessageId = Number.isInteger(message.replyToMessageId) ? message.replyToMessageId : null;
-          }
-
-          if (finalReplyToMessageId !== null) {
-            const [originalMessage] = await db.select()
-              .from(chatMessages)
-              .where(eq(chatMessages.id, finalReplyToMessageId));
-            if (!originalMessage) {
-              console.warn(`Reply to non-existent message ID: ${finalReplyToMessageId}`);
-              finalReplyToMessageId = null;
-            }
-          }
-          // Kiểm tra xem số đã chuyển đổi có hợp lệ không
-          if (finalReplyToMessageId !== null && (isNaN(finalReplyToMessageId) || finalReplyToMessageId <= 0)) {
-            console.warn(`Invalid replyToMessageId after conversion: ${finalReplyToMessageId}`);
-            finalReplyToMessageId = null;
-          } else if (finalReplyToMessageId !== null) {
-            // Kiểm tra xem message được trả lời có tồn tại không
-            const [originalMessage] = await db.select()
-              .from(chatMessages)
-              .where(eq(chatMessages.id, finalReplyToMessageId));
-
-            if (!originalMessage) {
-              console.warn(`Reply to non-existent message ID: ${finalReplyToMessageId}`);
-              finalReplyToMessageId = null;
-            } else {
-              console.log(`Valid reply to message ID: ${finalReplyToMessageId}`);
-            }
-          }
-        } catch (error) {
-          console.error(`Error processing replyToMessageId: ${error instanceof Error ? error.message : error}`);
-          finalReplyToMessageId = null;
-        }
-      }
-
-      // 3. Chuẩn bị message để lưu
-      const messageToInsert = {
-        ...message,
-        content: message.content?.trim() || "",
-        media: finalMedia as Record<string, any> | null,
-        replyToMessageId: finalReplyToMessageId,
-        mentions: Array.isArray(message.mentions) ? message.mentions.map(String) : []
-      };
-
-      // 4. Lưu vào database
-      console.log("Inserting message into database:", {
-        content: messageToInsert.content,
-        userId: messageToInsert.userId,
-        replyToMessageId: messageToInsert.replyToMessageId
-      });
-
-      // Drizzle MySQL does not support .returning(), so insert and then select
-      const result = await db.insert(chatMessages).values(messageToInsert);
-      const insertId = Number(result[0]?.insertId);
-      const [createdMessage] = await db.select().from(chatMessages).where(eq(chatMessages.id, insertId));
-
-      console.log("Chat message created in database:", JSON.stringify({
-        id: createdMessage.id,
-        content: createdMessage.content,
-        media: createdMessage.media
-      }, null, 2));
-
-      return createdMessage;
-    } catch (error) {
-      const errMsg = error instanceof Error ? error.message : String(error);
-      console.error("Error creating chat message:", errMsg);
-      throw new Error(`Failed to save chat message: ${errMsg}`);
+    // Parse and validate replyToMessageId
+    let finalReplyToMessageId: number | null = null;
+    if (message.replyToMessageId !== undefined && message.replyToMessageId !== null) {
+      const parsed = Number(message.replyToMessageId);
+      finalReplyToMessageId = Number.isInteger(parsed) && parsed > 0 ? parsed : null;
     }
+    // Ensure mentions is string[] or null
+    let mentions: string[] | null = null;
+    if (Array.isArray(message.mentions)) {
+      mentions = message.mentions.map(String);
+    } else if (typeof message.mentions === 'string') {
+      mentions = [message.mentions];
+    }
+    // Prepare message for DB insert
+    const messageToInsert = {
+      ...message,
+      replyToMessageId: finalReplyToMessageId,
+      content: message.content?.trim() || "",
+      media: message.media ?? null,
+      mentions,
+    };
+    // Insert into DB (MySQL2/Drizzle)
+    const result = await db.insert(chatMessages).values(messageToInsert);
+    const insertId = Number(result[0]?.insertId);
+    const [createdMessage] = await db.select().from(chatMessages).where(eq(chatMessages.id, insertId));
+    // Join user info
+    const user = createdMessage.userId ? await this.getUser(createdMessage.userId) : null;
+    return {
+      ...createdMessage,
+      user: user ? { id: user.id, username: user.username, avatar: user.avatar } : null
+    } as ChatMessage;
   }
 
   async getChatMessagesByDateRange(days: number): Promise<ChatMessage[]> {

@@ -56,72 +56,19 @@ export class ChatService {
       replyToMessageIdType: typeof message.replyToMessageId,
       hasMedia: !!message.media
     });
-
-    // Validate and process replyToMessageId
-    let finalReplyId = null;
-    if (message.replyToMessageId) {
-      try {
-        let tempReplyId: number | null = null;
-
-        // Convert to number if string
-        if (typeof message.replyToMessageId === 'string') {
-          const cleanId = (message.replyToMessageId as string).replace(/[^0-9]/g, "");
-          if (cleanId) {
-            tempReplyId = parseInt(cleanId, 10);
-          }
-        } else if (typeof message.replyToMessageId === 'number') {
-          tempReplyId = message.replyToMessageId;
-        }
-
-        // Validate the ID
-        if (tempReplyId !== null && !isNaN(tempReplyId) && tempReplyId > 0) {
-          // Check if original message exists
-          const [originalMessage] = await storage.getChatMessageById(tempReplyId);
-
-          if (originalMessage) {
-            finalReplyId = tempReplyId;
-            console.log(`Valid reply to message ID: ${finalReplyId}`);
-          } else {
-            console.warn(`Reply to non-existent message ID: ${tempReplyId}`);
-          }
-        } else {
-          console.warn(`Invalid replyToMessageId value: ${message.replyToMessageId}`);
-        }
-      } catch (error) {
-        console.error(`Error processing replyToMessageId:`, error);
-      }
-    }
-
-    console.log('Processed replyToMessageId:', {
-      original: message.replyToMessageId,
-      final: finalReplyId,
-      type: typeof finalReplyId
-    });
-
-    // Ensure media is in correct format
-    let mediaData = message.media;
-
-    if (message.media) {
-      // If media is a string, convert to JSON
-      if (typeof message.media === 'string') {
-        try {
-          mediaData = JSON.parse(message.media);
-          console.log('Converted string media to JSON:', mediaData);
-        } catch (e) {
-          console.error('Failed to parse media string:', e);
-          // Keep as is if parsing fails
-        }
+    let processedMessage: InsertChatMessage;
+    if (message.replyToMessageId !== undefined && message.replyToMessageId !== null) {
+      const parsed = Number(message.replyToMessageId);
+      if (Number.isInteger(parsed) && parsed > 0) {
+        processedMessage = { ...message, replyToMessageId: parsed };
       } else {
-        console.log('Media is already an object:', mediaData);
+        processedMessage = { ...message };
+        delete processedMessage.replyToMessageId;
       }
+    } else {
+      processedMessage = { ...message };
+      delete processedMessage.replyToMessageId;
     }
-
-    // Make sure message has the right format
-    const processedMessage: InsertChatMessage = {
-      ...message,
-      media: mediaData,
-      replyToMessageId: finalReplyId
-    };
 
     console.log('Final processed message media:', JSON.stringify(processedMessage.media, null, 2));
 

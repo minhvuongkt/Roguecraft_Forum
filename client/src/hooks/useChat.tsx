@@ -1,16 +1,16 @@
 import { useState, useCallback, useEffect } from "react";
-import { useWebSocket, ChatMessage } from "@/contexts/WebSocketContext";
+import { useWebSocket } from "@/contexts/WebSocketContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { ChatMessage } from "@/types";
 import React from "react";
+import { number } from "zod";
 
 export function useChat() {
   const {
     messages,
     sendMessage: wsSendMessage,
-    replyToMessageId,
     setUsername,
-    setReplyToMessageId,
   } = useWebSocket();
   const { user, setTemporaryUser } = useAuth();
   const [filteredMessages, setFilteredMessages] = useState<ChatMessage[]>([]);
@@ -144,30 +144,21 @@ export function useChat() {
         !input.includes(`@${replyTo.user.username}`)
       ) {
         finalMessage = `@${replyTo.user.username} ${input}`;
-      }
-
-      // Set the replyToMessageId in the WebSocket context
-      if (replyToId) {
-        setReplyToMessageId(replyToId);
+        // Add the username to mentions if not already included
+        if (!mentions.includes(replyTo.user.username)) {
+          mentions.push(replyTo.user.username);
+        }
       }
 
       // Send the message with any media attachment and replyToId
       wsSendMessage(
         finalMessage,
         media,
-        mentions.length > 0 ? mentions : undefined,
-        replyToId,
+        mentions.length > 0 ? mentions.join(',') : undefined,
+        replyToId ? [String(replyToId)] : undefined,
       );
     },
-    [
-      user,
-      wsSendMessage,
-      setUsername,
-      setTemporaryUser,
-      toast,
-      extractMentions,
-      setReplyToMessageId,
-    ],
+    [user, wsSendMessage, setUsername, setTemporaryUser, toast, extractMentions],
   );
 
   // Parse message content to highlight mentions

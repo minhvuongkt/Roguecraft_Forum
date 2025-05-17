@@ -32,14 +32,12 @@ const MessageComponent = ({
   const isReplyMessage =
     message.replyToMessageId !== null &&
     message.replyToMessageId !== undefined &&
-    message.replyToMessageId !== 0;
+    Number(message.replyToMessageId) !== 0;
 
-  const originalMessage = isReplyMessage
-    ? findMessageById(
-        typeof message.replyToMessageId === "string"
-          ? parseInt(message.replyToMessageId)
-          : (message.replyToMessageId ?? 0), // fallback to 0 if undefined
-      )
+  // Always parse replyToMessageId as number for lookup
+  const replyToId = isReplyMessage ? Number(message.replyToMessageId) : undefined;
+  const originalMessage = isReplyMessage && replyToId && !isNaN(replyToId)
+    ? findMessageById(replyToId)
     : undefined;
 
   useEffect(() => {
@@ -94,7 +92,6 @@ const MessageComponent = ({
   const handleReply = () => {
     if (onReply && message) {
       const messageId = Number(message.id);
-      // Tạo message với ID đã chuyển đổi
       const messageToReply = {
         ...message,
         id: messageId
@@ -458,9 +455,17 @@ const MessageComponent = ({
                   <div
                     className="absolute top-0 left-0 flex items-center gap-1 text-xs px-3 pt-1 text-gray-300 cursor-pointer w-full overflow-hidden hover:bg-gray-800/30 rounded-t-md transition-colors duration-200"
                     onClick={() =>
-                      scrollToMessageById(message.replyToMessageId!)
+                      replyToId && scrollToMessageById(replyToId)
                     }
                     title="Nhấn để xem tin nhắn gốc"
+                    tabIndex={0}
+                    role="button"
+                    aria-label="Xem tin nhắn gốc được trả lời"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        replyToId && scrollToMessageById(replyToId);
+                      }
+                    }}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"

@@ -9,13 +9,16 @@ import { uploadMultipleFiles } from '@/lib/uploadAPI';
 import { useToast } from '@/hooks/use-toast';
 import { useWebSocket } from '@/contexts/WebSocketContext';
 import { MentionList } from './mention-list';
+import { OnlineUser } from '@/types';
 
 interface MessageInputProps {
-  onSend: (message: string, media?: any) => void;
+  onSend: (message: string, media?: any, replyToMessageId?: number | null) => void;
   placeholder?: string;
   maxLength?: number;
   disabled?: boolean;
   type?: 'chat' | 'topic';
+  replyToMessage?: { id: number | string; user?: { username: string } } | null;
+  onCancelReply?: () => void;
 }
 
 export function MessageInput({ 
@@ -23,19 +26,21 @@ export function MessageInput({
   placeholder = 'Nhập tin nhắn...', 
   maxLength = 1000,
   disabled = false,
-  type = 'chat'
+  type = 'chat',
+  replyToMessage = null,
+  onCancelReply
 }: MessageInputProps) {
   const [message, setMessage] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [showFileUpload, setShowFileUpload] = useState(false);
-  const [isUploading, setIsUploading] = useState(isUploading);
+  const [isUploading, setIsUploading] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
   const [isMentioning, setIsMentioning] = useState(false);
   const [mentionPosition, setMentionPosition] = useState({ start: 0, end: 0 });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
   const { onlineUsers } = useWebSocket();
-  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState<OnlineUser[]>([]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -125,29 +130,31 @@ export function MessageInput({
     setFiles(selectedFiles);
   };
 
+  // Add replyToMessageId logic
+  const replyToMessageId = replyToMessage
+    ? typeof replyToMessage.id === 'string'
+      ? parseInt(replyToMessage.id)
+      : replyToMessage.id
+    : null;
+
   const handleSend = async () => {
     const trimmedMessage = message.trim();
-
     if (!trimmedMessage && files.length === 0) return;
-
     try {
       let media = undefined;
-
-      // Nếu có file, upload trước khi gửi tin nhắn
       if (files.length > 0) {
         setIsUploading(true);
         media = await uploadMultipleFiles(files, type);
         setIsUploading(false);
       }
-
-      // Gửi tin nhắn với media đã upload
-      onSend(trimmedMessage, media);
-
-      // Reset form
+      // Gửi tin nhắn với media đã upload và replyToMessageId nếu có
+      onSend(trimmedMessage, media, replyToMessageId);
       setMessage('');
       setFiles([]);
       setShowFileUpload(false);
       textareaRef.current?.focus();
+      // Reset reply state if needed
+      if (onCancelReply) onCancelReply();
     } catch (error) {
       console.error('Lỗi upload file:', error);
       setIsUploading(false);
@@ -164,6 +171,22 @@ export function MessageInput({
 
   return (
     <div className="relative">
+      {/* Reply preview bar */}
+      {replyToMessage && (
+        <div className="flex items-center mb-2 bg-purple-50 dark:bg-purple-900/30 rounded px-3 py-1 text-xs text-purple-700 dark:text-purple-200">
+          <span className="mr-2 font-semibold">Trả lời</span>
+          <span className="truncate max-w-[120px] font-medium text-purple-800 dark:text-purple-100">@{replyToMessage.user?.username || 'người dùng'}</span>
+          <button
+            className="ml-auto text-purple-400 hover:text-purple-700 dark:hover:text-white px-1"
+            onClick={onCancelReply}
+            aria-label="Hủy trả lời"
+            type="button"
+          >
+            &times;
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center space-x-2">
         <div className="flex-1 min-h-[40px]">
           <div className="relative bg-gray-100 dark:bg-gray-800/60 rounded-full pr-10">

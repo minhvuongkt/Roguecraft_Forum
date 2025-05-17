@@ -693,21 +693,21 @@ export function ChatBox() {
       let mentions: string[] = [];
 
       if (state.replyingTo) {
-        // Xử lý chặt chẽ hơn để đảm bảo replyToMessageId luôn là số nguyên
-        if (typeof state.replyingTo.id === "string") {
-          // Loại bỏ các ký tự không phải số
-          const cleanId = String(state.replyingTo.id).replace(/[^0-9]/g, "");
-          replyToMessageId = cleanId ? parseInt(cleanId) : null;
-        } else if (typeof state.replyingTo.id === "number") {
-          replyToMessageId = state.replyingTo.id;
-        }
+        // // Xử lý chặt chẽ hơn để đảm bảo replyToMessageId luôn là số nguyên
+        // if (typeof state.replyingTo.id === "string") {
+        //   // Loại bỏ các ký tự không phải số
+        //   const cleanId = String(state.replyingTo.id).replace(/[^0-9]/g, "");
+        //   replyToMessageId = cleanId ? parseInt(cleanId) : null;
+        // } else if (typeof state.replyingTo.id === "number") {
+        //   replyToMessageId = state.replyingTo.id;
+        // }
 
-        // Kiểm tra xem replyToMessageId có phải là số nguyên hợp lệ không
-        if (replyToMessageId === null || isNaN(replyToMessageId)) {
-          console.error("Invalid replyToMessageId:", state.replyingTo.id);
-          replyToMessageId = null;
-        }
-
+        // // Kiểm tra xem replyToMessageId có phải là số nguyên hợp lệ không
+        // if (replyToMessageId === null || isNaN(replyToMessageId)) {
+        //   console.error("Invalid replyToMessageId:", state.replyingTo.id);
+        //   replyToMessageId = null;
+        // }
+        replyToMessageId = state.replyingTo.id;
         if (state.replyingTo.user) {
           const username = state.replyingTo.user.username;
           if (!finalMessage.includes(`@${username}`)) {
@@ -717,17 +717,7 @@ export function ChatBox() {
           }
         }
       }
-
-      // Debug log - có thể giữ lại để kiểm tra
-      console.log(
-        "Sending message with replyToMessageId:",
-        replyToMessageId,
-        typeof replyToMessageId,
-      );
-      console.log("Sending message with mentions:", mentions);
-
-      // Only pass up to 3 arguments (see sendMessage signature)
-      sendMessage(finalMessage, media, replyToMessageId);
+      sendMessage(finalMessage, media, state.replyingTo);
 
       // Reset state and enable auto-scroll
       setState((prev) => ({
@@ -979,13 +969,14 @@ export function ChatBox() {
       <div ref={containerRef} className="flex-1 relative overflow-hidden">
         {/* Thông báo người dùng chưa đăng nhập */}
         {!user && (
-          <div className="absolute top-0 left-0 right-0 bg-amber-50 dark:bg-amber-950/30 p-3 text-center z-10 flex items-center justify-center border-b border-amber-100 dark:border-amber-800/50 backdrop-blur-sm">
-            <AlertCircle className="h-4 w-4 text-amber-500 mr-2 flex-shrink-0" />
+          <div className="absolute top-0 left-0 right-0 bg-amber-50 dark:bg-amber-950/30 p-3 text-center z-10 flex items-center justify-center border-b border-amber-100 dark:border-amber-800/50 backdrop-blur-sm" role="alert" aria-live="polite">
+            <AlertCircle className="h-4 w-4 text-amber-500 mr-2 flex-shrink-0" aria-hidden="true" />
             <span className="text-sm text-amber-800 dark:text-amber-200">
               Vui lòng{" "}
               <button
                 onClick={() => toggleUsernameDialog(true)}
-                className="font-bold underline hover:text-amber-900 dark:hover:text-amber-100"
+                className="font-bold underline hover:text-amber-900 dark:hover:text-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-400 rounded"
+                aria-label="Đặt tên hiển thị để tham gia trò chuyện"
               >
                 đặt tên hiển thị
               </button>{" "}
@@ -995,27 +986,34 @@ export function ChatBox() {
         )}
 
         {/* Thanh thời gian hiển thị */}
-        <div className="sticky top-0 z-10 flex items-center justify-center pt-3 pb-2" id="chatHistoryNotice">
+        <div className="sticky top-0 z-10 flex items-center justify-center pt-3 pb-2" id="chatHistoryNotice" aria-live="polite">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="relative px-3 py-1 bg-white/80 dark:bg-gray-900/80 text-xs text-gray-500 dark:text-gray-400 rounded-full border border-gray-200 dark:border-gray-700 backdrop-blur-sm flex items-center gap-1.5 shadow-sm hover:bg-white dark:hover:bg-gray-800 transition-colors cursor-default">
-                  <Clock className="h-3 w-3" />
+                <div
+                  className="relative px-3 py-1 bg-white/80 dark:bg-gray-900/80 text-xs text-gray-500 dark:text-gray-400 rounded-full border border-gray-200 dark:border-gray-700 backdrop-blur-sm flex items-center gap-1.5 shadow-sm hover:bg-white dark:hover:bg-gray-800 transition-colors cursor-default fade-in"
+                  tabIndex={0}
+                  aria-label="Thông báo lịch sử chat"
+                >
+                  <Clock className="h-3 w-3" aria-hidden="true" />
                   <span>Tin nhắn trong 3 ngày gần đây</span>
-                  {/* Add close button with TypeScript-safe implementation */}
+                  {/* Add close button with fade-out animation and accessibility */}
                   <button
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent tooltip from triggering
+                      e.stopPropagation();
                       const notice = typeof document !== 'undefined' ?
                         document.getElementById('chatHistoryNotice') : null;
                       if (notice) {
-                        notice.style.display = 'none';
+                        notice.classList.add('fade-out');
+                        setTimeout(() => {
+                          notice.style.display = 'none';
+                        }, 250);
                       }
                     }}
-                    className="ml-1.5 p-0.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
-                    aria-label="Ẩn thông báo"
+                    className="ml-1.5 p-0.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                    aria-label="Ẩn thông báo lịch sử chat"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-3 w-3" aria-hidden="true" />
                   </button>
                 </div>
               </TooltipTrigger>
@@ -1259,6 +1257,24 @@ export function ChatBox() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Fade-in/fade-out animation for chatHistoryNotice */}
+      <style id="chatbox-fade-style">{`
+        #chatHistoryNotice.fade-in {
+          animation: fadeIn 0.25s;
+        }
+        #chatHistoryNotice.fade-out {
+          animation: fadeOut 0.25s forwards;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes fadeOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }

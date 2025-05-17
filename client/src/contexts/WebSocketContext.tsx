@@ -23,8 +23,8 @@ interface WebSocketContextType {
   sendMessage: (
     content: string,
     media?: any,
-    replyToMessageId?: number | null,
     mentions?: string[],
+    replyToMessageId?: number | string | null,
   ) => void;
   setUsername: (username: string) => void;
   findMessagesByUsername: (username: string) => ChatMessage[];
@@ -199,7 +199,6 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Handle incoming WebSocket messages
   const handleWebSocketMessage = (data: any) => {
     console.log("Received WebSocket message:", data);
     switch (data.type) {
@@ -211,7 +210,6 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
             variant: "destructive",
           });
         } else {
-          // Add new message to the list
           setMessages((prev) => [
             ...prev,
             {
@@ -219,10 +217,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
               createdAt: new Date(data.payload.createdAt),
             },
           ]);
-
-          // Show notification if message is from someone else
           if (data.payload.userId !== user?.id) {
-            // Import hook không hoạt động ở đây, nên chúng ta vẫn phải dùng Notification API trực tiếp
             if (Notification.permission === "granted") {
               const username = data.payload.user?.username || "Người dùng";
               try {
@@ -244,8 +239,6 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
         //   title: 'Thông báo',
         //   description: `${data.payload.username} đã tham gia chat`,
         // });
-
-        // Add user to online users if not already present
         if (data.payload.user) {
           setOnlineUsers((prevUsers) => {
             // Check if user already exists
@@ -312,8 +305,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const sendMessage = (
     content: string,
     media?: any,
-    replyToMessageId?: number | null,
     mentions?: string[],
+    replyToMessageId?: number | string | null,
   ) => {
     if (!socket || !isConnected) {
       toast({
@@ -323,19 +316,18 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       });
       return;
     }
-
-    // Đảm bảo replyToMessageId là số hoặc null
-    let processedReplyId = null;
-    if (replyToMessageId !== undefined && replyToMessageId !== null) {
-      processedReplyId = Number(replyToMessageId);
-
-      // Log để debug
-      console.log("Sending message with replyToMessageId:", {
-        original: replyToMessageId,
-        processed: processedReplyId,
-        type: typeof processedReplyId,
-      });
-    }
+    console.log("Sending message with reply ?", replyToMessageId);
+    // let processedReplyId: number | string | null = null;
+    // if (replyToMessageId !== undefined && replyToMessageId !== null) {
+    //   const parsed = Number(replyToMessageId);
+    //   processedReplyId = Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+    //   // Log để debug
+    //   console.log("Sending message with replyToMessageId:", {
+    //     original: replyToMessageId,
+    //     processed: processedReplyId,
+    //     type: typeof processedReplyId,
+    //   });
+    // }
 
     const message = {
       type: WebSocketMessageType.CHAT_MESSAGE,
@@ -343,7 +335,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
         content,
         media,
         mentions,
-        replyToMessageId: processedReplyId,
+        replyToMessageId: replyToMessageId,
       },
     };
 

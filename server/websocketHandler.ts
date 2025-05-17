@@ -169,9 +169,9 @@ export class WebSocketHandler {
         type: WebSocketMessageType.CHAT_MESSAGE,
         payload: { error: "User authentication required" },
       });
-    }
+    } try {
+      console.log("Received chat message payload:", payload);
 
-    try {
       // Xử lý nội dung tin nhắn
       const content = payload.content ? payload.content.trim() : "";
 
@@ -188,68 +188,77 @@ export class WebSocketHandler {
         });
       }
 
-      // Xử lý replyToMessageId - Đã cải tiến để xử lý nhiều trường hợp
-      let replyId = null;
+      let replyId = payload.replyToMessageId;
+      console.log("Initial replyId:", replyId);
+      // if (
+      //   payload.replyToMessageId !== undefined &&
+      //   payload.replyToMessageId !== null
+      // ) {
+      //   try {
+      //     console.log("Processing replyToMessageId:", {
+      //       value: payload.replyToMessageId,
+      //       type: typeof payload.replyToMessageId
+      //     });
 
-      if (
-        payload.replyToMessageId !== undefined &&
-        payload.replyToMessageId !== null
-      ) {
-        try {
-          if (typeof payload.replyToMessageId === "string") {
-            // Xử lý replyToMessageId là string
-            const cleanId = payload.replyToMessageId.replace(/[^0-9]/g, "");
-            replyId = cleanId ? parseInt(cleanId, 10) : null;
-          } else if (typeof payload.replyToMessageId === "number") {
-            // Xử lý replyToMessageId là number
-            replyId = payload.replyToMessageId;
-          } else if (typeof payload.replyToMessageId === "object") {
-            // Xử lý trường hợp client gửi toàn bộ message object
-            if (payload.replyToMessageId.id !== undefined) {
-              const idValue = payload.replyToMessageId.id;
-              if (typeof idValue === "number") {
-                replyId = idValue;
-              } else if (typeof idValue === "string") {
-                const cleanId = idValue.replace(/[^0-9]/g, "");
-                replyId = cleanId ? parseInt(cleanId, 10) : null;
-              }
-            }
-          }
+      //     if (typeof payload.replyToMessageId === "string") {
+      //       // Xử lý replyToMessageId là string
+      //       const cleanId = payload.replyToMessageId.replace(/[^0-9]/g, "");
+      //       replyId = cleanId ? parseInt(cleanId, 10) : null;
+      //       console.log("Processed string replyId:", { cleanId, replyId });
+      //     } else if (typeof payload.replyToMessageId === "number") {
+      //       // Xử lý replyToMessageId là number
+      //       replyId = payload.replyToMessageId;
+      //       console.log("Processed number replyId:", replyId);
+      //     } else if (typeof payload.replyToMessageId === "object") {
+      //       // Xử lý trường hợp client gửi toàn bộ message object
+      //       console.log("Processing object replyToMessageId:", payload.replyToMessageId);
+      //       if (payload.replyToMessageId.id !== undefined) {
+      //         const idValue = payload.replyToMessageId.id;
+      //         if (typeof idValue === "number") {
+      //           replyId = idValue;
+      //         } else if (typeof idValue === "string") {
+      //           const cleanId = idValue.replace(/[^0-9]/g, "");
+      //           replyId = cleanId ? parseInt(cleanId, 10) : null;
+      //         }
+      //         console.log("Processed object replyId:", { idValue, replyId });
+      //       }
+      //     }          // Kiểm tra tính hợp lệ của ID sau khi chuyển đổi
+      //     if (
+      //       replyId !== null &&
+      //       (!Number.isInteger(replyId) || replyId <= 0)
+      //     ) {
+      //       console.warn(
+      //         "Invalid replyToMessageId after conversion:",
+      //         replyId,
+      //         "Original value:",
+      //         payload.replyToMessageId,
+      //       );
+      //       replyId = null;
+      //     }
 
-          // Kiểm tra tính hợp lệ của ID sau khi chuyển đổi
-          if (
-            replyId !== null &&
-            (!Number.isInteger(replyId) || replyId <= 0)
-          ) {
-            if (this.DEBUG_MODE) {
-              console.warn(
-                "Invalid replyToMessageId after conversion:",
-                replyId,
-                "Original value:",
-                payload.replyToMessageId,
-              );
-            }
-            replyId = null;
-          }
+      //     // Xác minh message tồn tại trong database
+      //     if (replyId !== null) {
+      //       console.log("Verifying reply message exists:", replyId);
+      //       // MySQL2/Drizzle: Use storage.getChatMessageById instead of chatService.verifyMessageExists
+      //       const [originalMessage] = await storage.getChatMessageById(replyId);
+      //       console.log("Original message lookup result:", originalMessage);
 
-          // Xác minh message tồn tại trong database
-          if (replyId !== null) {
-            // MySQL2/Drizzle: Use storage.getChatMessageById instead of chatService.verifyMessageExists
-            const [originalMessage] = await storage.getChatMessageById(replyId);
-            if (!originalMessage) {
-              if (this.DEBUG_MODE) {
-                console.warn(`Reply to non-existent message ID: ${replyId}`);
-              }
-              replyId = null;
-            } else if (this.DEBUG_MODE) {
-              console.log(`Verified reply to message ID ${replyId} exists`);
-            }
-          }
-        } catch (e) {
-          console.error("Error processing replyToMessageId:", e);
-          replyId = null;
-        }
-      }
+      //       if (!originalMessage) {
+      //         console.warn(`Reply to non-existent message ID: ${replyId}`);
+      //         replyId = null;
+      //       } else {
+      //         console.log(`Verified reply to message:`, {
+      //           id: replyId,
+      //           content: originalMessage.content.substring(0, 50),
+      //           from: originalMessage.userId
+      //         });
+      //       }
+      //     }
+      //   } catch (e) {
+      //     console.error("Error processing replyToMessageId:", e);
+      //     replyId = null;
+      //   }
+      // }
 
       // Trích xuất mentions từ nội dung
       let mentions: string[] = [];
@@ -264,25 +273,11 @@ export class WebSocketHandler {
           }
         }
       }
-
-      // Kết hợp với mentions được cung cấp rõ ràng từ client nếu có
       if (Array.isArray(payload.mentions) && payload.mentions.length > 0) {
-        // Thêm mentions từ payload nếu chưa được trích xuất từ nội dung
         payload.mentions.forEach((mention: string) => {
           if (!mentions.includes(mention)) {
             mentions.push(mention);
           }
-        });
-      }
-
-      if (this.DEBUG_MODE) {
-        console.log("Message data prepared:", {
-          content:
-            content.length > 30 ? content.substring(0, 30) + "..." : content,
-          mediaPresent: hasMedia,
-          replyToMessageId: replyId,
-          mentions,
-          userId: ws.userId,
         });
       }
 

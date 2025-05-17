@@ -80,9 +80,6 @@ export function OnlineUsers({ currentUser }: OnlineUsersProps) {
       <div className="flex items-center gap-2 mb-3">
         <Users className="h-4 w-4 text-gray-500" />
         <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">Người dùng đang online ({sortedUsers.length})</h3>
-        <Badge variant="outline" className="text-[10px] ml-auto py-0 h-5 bg-green-50 text-green-600 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
-          Live
-        </Badge>
       </div>
       
       <ScrollArea className="h-[calc(100vh-350px)] pr-3">
