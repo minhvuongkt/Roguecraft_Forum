@@ -1092,11 +1092,19 @@ export function ChatBox() {
           colorPicker={
             <MessageColorPicker
               onColorSelect={(color) => {
-                // Lưu màu vào state để áp dụng cho tin nhắn mới
+                // Lưu màu vào localStorage và cập nhật state
+                localStorage.setItem('userMessageColor', color);
                 setState(prev => ({
                   ...prev,
                   userMessageColor: color
                 }));
+                
+                // Hiển thị thông báo
+                toast({
+                  title: "Đã thay đổi màu tin nhắn",
+                  description: "Màu tin nhắn của bạn sẽ được áp dụng cho các tin nhắn tiếp theo",
+                  variant: "default",
+                });
               }}
             />
           }

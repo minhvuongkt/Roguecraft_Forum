@@ -1,36 +1,36 @@
-import React, { useState } from 'react';
-import { useLocation } from 'wouter';
-import { Topic } from '@/components/Topic';
-import { CreateTopicModal } from '@/components/CreateTopicModal';
-import { Button } from '@/components/ui/button';
-import { useForum } from '@/hooks/useForum';
-import { useAuth } from '@/contexts/AuthContext';
-import { PlusIcon } from 'lucide-react';
-import { LoginModal } from '@/components/LoginModal';
+import React, { useState } from "react";
+import { useLocation } from "wouter";
+import { Topic } from "@/components/Topic";
+import { CreateTopicModal } from "@/components/CreateTopicModal";
+import { Button } from "@/components/ui/button";
+import { useForum } from "@/hooks/useForum";
+import { useAuth } from "@/contexts/AuthContext";
+import { PlusIcon } from "lucide-react";
+import { LoginModal } from "@/components/LoginModal";
 
 export function Forum() {
   const [isCreateTopicModalOpen, setIsCreateTopicModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const { 
-    topics, 
-    isTopicsLoading, 
-    selectedCategory, 
+  const {
+    topics,
+    isTopicsLoading,
+    selectedCategory,
     setSelectedCategory,
     page,
     setPage,
-    refetchTopics 
+    refetchTopics,
   } = useForum();
   const [, navigate] = useLocation();
   const { isAuthenticated } = useAuth();
 
   const categories = [
-    { id: 'all', name: 'Tất cả' },
-    { id: 'survival', name: 'Survival' },
-    { id: 'creative', name: 'Creative' },
-    { id: 'mods', name: 'Mods' },
-    { id: 'redstone', name: 'Redstone' },
-    { id: 'pvp', name: 'PvP' },
-    { id: 'servers', name: 'Servers' }
+    { id: "all", name: "Tất cả" },
+    { id: "survival", name: "Survival" },
+    { id: "creative", name: "Creative" },
+    { id: "mods", name: "Mods" },
+    { id: "redstone", name: "Redstone" },
+    { id: "pvp", name: "PvP" },
+    { id: "servers", name: "Servers" },
   ];
 
   const handleCreateTopicClick = () => {
@@ -48,7 +48,7 @@ export function Forum() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Forum Minecraft</h1>
+        {/* <h1 className="text-2xl font-bold">Forum Minecraft</h1> */}
         <Button
           onClick={handleCreateTopicClick}
           className="bg-primary hover:bg-primary/90 text-white"
@@ -88,9 +88,9 @@ export function Forum() {
           </div>
         ) : topics.length > 0 ? (
           topics.map((topic) => (
-            <Topic 
-              key={topic.id} 
-              topic={topic} 
+            <Topic
+              key={topic.id}
+              topic={topic}
               onClick={() => handleTopicClick(topic.id)}
             />
           ))
@@ -117,16 +117,15 @@ export function Forum() {
             >
               Trang trước
             </Button>
-            
-            <span className="text-sm text-muted-foreground">
-              Trang {page}
-            </span>
-            
+
+            <span className="text-sm text-muted-foreground">Trang {page}</span>
+
             <Button
               variant="outline"
               size="sm"
               onClick={() => {
-                if (topics.length === 10) { // If we have 10 topics, there might be more
+                if (topics.length === 10) {
+                  // If we have 10 topics, there might be more
                   setPage(page + 1);
                   window.scrollTo(0, 0);
                 }
