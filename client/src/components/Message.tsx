@@ -1,4 +1,3 @@
-
 import React, { memo, useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,7 +14,11 @@ interface MessageProps {
   onReply?: (message: ChatMessage) => void;
 }
 
-const MessageComponent = ({ message, showUser = true, onReply }: MessageProps) => {
+const MessageComponent = ({
+  message,
+  showUser = true,
+  onReply,
+}: MessageProps) => {
   const { user: currentUser } = useAuth();
   const { findMessagesByUsername, findMessageById } = useWebSocket();
   const [, navigate] = useLocation();
@@ -28,15 +31,17 @@ const MessageComponent = ({ message, showUser = true, onReply }: MessageProps) =
 
   // Determine if message is a reply based on replyToMessageId
   const isReplyMessage =
-    message.replyToMessageId !== null && 
+    message.replyToMessageId !== null &&
     message.replyToMessageId !== undefined &&
     message.replyToMessageId !== 0;
 
   // Get original message if replyToMessageId exists
   const originalMessage = isReplyMessage
-    ? findMessageById(typeof message.replyToMessageId === 'string' 
-        ? parseInt(message.replyToMessageId) 
-        : message.replyToMessageId)
+    ? findMessageById(
+        typeof message.replyToMessageId === "string"
+          ? parseInt(message.replyToMessageId)
+          : message.replyToMessageId,
+      )
     : undefined;
 
   // Add highlight effect when targeted
@@ -59,14 +64,14 @@ const MessageComponent = ({ message, showUser = true, onReply }: MessageProps) =
       targetElement.classList.add("scale-[1.02]");
       targetElement.classList.add("shadow-md", "z-10", "relative");
       targetElement.style.transition = "all 0.3s ease";
-      
+
       let pulseCount = 0;
       const maxPulses = 3;
       const pulseInterval = setInterval(() => {
         if (pulseCount >= maxPulses) {
           clearInterval(pulseInterval);
           targetElement.style.transition = "all 0.5s ease-out";
-          
+
           setTimeout(() => {
             targetElement.classList.remove(
               "bg-yellow-100",
@@ -74,13 +79,13 @@ const MessageComponent = ({ message, showUser = true, onReply }: MessageProps) =
               "scale-[1.02]",
               "shadow-md",
               "z-10",
-              "relative"
+              "relative",
             );
           }, 500);
-          
+
           return;
         }
-        
+
         targetElement.classList.toggle("bg-yellow-200");
         targetElement.classList.toggle("bg-yellow-100");
         pulseCount++;
@@ -167,8 +172,8 @@ const MessageComponent = ({ message, showUser = true, onReply }: MessageProps) =
     try {
       if (
         typeof message.media === "object" &&
-        (Object.keys(message.media).some((key) => /^\d+$/.test(key)) || 
-         Object.keys(message.media).some((key) => key === "image"))
+        (Object.keys(message.media).some((key) => /^\d+$/.test(key)) ||
+          Object.keys(message.media).some((key) => key === "image"))
       ) {
         const mediaCount = Object.keys(message.media).length;
         const gridCols = mediaCount > 1 ? "grid-cols-2" : "";
@@ -439,18 +444,31 @@ const MessageComponent = ({ message, showUser = true, onReply }: MessageProps) =
                 className={cn(
                   "p-2 px-3 mb-1 break-words max-w-full text-base",
                   isCurrentUser
-                    ? `discord-my-bubble text-white ${isCurrentUser ? (localStorage.getItem('userMessageColor') || 'bg-purple-600') : 'bg-purple-600'}` 
+                    ? `discord-my-bubble text-white ${isCurrentUser ? localStorage.getItem("userMessageColor") || "bg-purple-600" : "bg-purple-600"}`
                     : "discord-bubble dark:text-white bg-gray-700",
                   isReplyMessage ? "relative pt-6 mt-2" : "",
                 )}
               >
                 {isReplyMessage && (
-                  <div 
+                  <div
                     className="absolute top-0 left-0 flex items-center gap-1 text-xs px-3 pt-1 text-gray-300 cursor-pointer w-full overflow-hidden hover:bg-gray-800/30 rounded-t-md transition-colors duration-200"
-                    onClick={() => scrollToMessageById(message.replyToMessageId!)}
+                    onClick={() =>
+                      scrollToMessageById(message.replyToMessageId!)
+                    }
                     title="Nhấn để xem tin nhắn gốc"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400 flex-shrink-0">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-purple-400 flex-shrink-0"
+                    >
                       <polyline points="9 14 4 9 9 4"></polyline>
                       <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
                     </svg>
@@ -458,21 +476,28 @@ const MessageComponent = ({ message, showUser = true, onReply }: MessageProps) =
                       <span className="text-purple-400 hover:underline">
                         {originalMessage?.user?.username || "Unknown User"}
                       </span>
-                      <span className="opacity-80"> {originalMessage?.content && originalMessage.content.length > 0 
-                        ? (originalMessage.content.length > 20 
-                           ? originalMessage.content.substring(0, 20) + "..."
-                           : originalMessage.content)
-                        : "Tin nhắn gốc không có sẵn"}
+                      <span className="opacity-80">
+                        {" "}
+                        {originalMessage?.content &&
+                        originalMessage.content.length > 0
+                          ? originalMessage.content.length > 20
+                            ? originalMessage.content.substring(0, 20) + "..."
+                            : originalMessage.content
+                          : "Tin nhắn gốc không có sẵn"}
                       </span>
                     </span>
                   </div>
                 )}
-                
-                {isReplyMessage && originalMessage?.user?.username && !message.content.includes(`@${originalMessage.user.username}`) && (
-                  <span className="text-purple-400 font-semibold mr-1">
-                    @{originalMessage.user.username} 
-                  </span>
-                )}
+
+                {isReplyMessage &&
+                  originalMessage?.user?.username &&
+                  !message.content.includes(
+                    `@${originalMessage.user.username}`,
+                  ) && (
+                    <span className="text-purple-400 font-semibold mr-1">
+                      @{originalMessage.user.username}
+                    </span>
+                  )}
 
                 {isReplyMessage && !originalMessage && (
                   <div className="absolute -top-3 left-2 text-xs px-2 py-1 rounded bg-amber-100 dark:bg-amber-800/60 text-amber-700 dark:text-amber-300">
