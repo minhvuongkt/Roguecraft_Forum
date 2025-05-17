@@ -92,20 +92,36 @@ const MessageComponent = ({
   };
 
   const handleReply = () => {
-    if (onReply && message && message.id) {
-      // Đảm bảo ID là số
-      const messageId = typeof message.id === 'string' ? parseInt(message.id, 10) : message.id;
-      
-      if (!isNaN(messageId) && messageId > 0) {
-        console.log('Replying to message with ID:', messageId);
-        onReply({
-          ...message,
-          id: messageId
-        });
-      } else {
-        console.error('Invalid message ID for reply:', message.id);
-      }
+    if (!onReply || !message) return;
+
+    let messageId: number | null = null;
+
+    // Xử lý và validate ID
+    if (typeof message.id === 'string') {
+      const cleanId = message.id.replace(/[^0-9]/g, '');
+      messageId = cleanId ? parseInt(cleanId, 10) : null;
+    } else if (typeof message.id === 'number') {
+      messageId = message.id;
     }
+
+    // Validate sau khi chuyển đổi
+    if (messageId === null || isNaN(messageId) || messageId <= 0) {
+      console.error('Invalid message ID for reply:', message.id, typeof message.id);
+      return;
+    }
+
+    // Log để debug
+    console.log('Replying to message:', {
+      id: messageId,
+      originalId: message.id,
+      originalType: typeof message.id
+    });
+
+    // Gửi message với ID đã được validate
+    onReply({
+      ...message,
+      id: messageId
+    });
   };
 
   // Format time
