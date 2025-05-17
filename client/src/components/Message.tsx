@@ -465,8 +465,8 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                 className={cn(
                   "p-2 px-3 rounded-2xl mb-1 break-words max-w-full",
                   isCurrentUser
-                    ? "bg-blue-500 text-white rounded-tr-sm"
-                    : "bg-gray-200 dark:bg-gray-700 dark:text-white rounded-tl-sm",
+                    ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-tr-sm border-b-2 border-blue-700 shadow-md"
+                    : "bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 dark:text-white rounded-tl-sm border-b-2 border-gray-400 dark:border-gray-600 shadow-md",
                   isReplyMessage ? "relative pt-5" : "",
                 )}
               >
