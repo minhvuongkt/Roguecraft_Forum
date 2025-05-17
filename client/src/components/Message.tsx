@@ -92,16 +92,19 @@ const MessageComponent = ({
   };
 
   const handleReply = () => {
-    if (onReply && message) {
-      const messageId = Number(message.id);
-      // Tạo message với ID đã chuyển đổi
-      const messageToReply = {
-        ...message,
-        id: messageId
-      };
+    if (onReply && message && message.id) {
+      // Đảm bảo ID là số
+      const messageId = typeof message.id === 'string' ? parseInt(message.id, 10) : message.id;
       
-      console.log('Replying to message with ID:', messageId);
-      onReply(messageToReply);
+      if (!isNaN(messageId) && messageId > 0) {
+        console.log('Replying to message with ID:', messageId);
+        onReply({
+          ...message,
+          id: messageId
+        });
+      } else {
+        console.error('Invalid message ID for reply:', message.id);
+      }
     }
   };
 

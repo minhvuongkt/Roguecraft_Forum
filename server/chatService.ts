@@ -59,38 +59,37 @@ export class ChatService {
 
     // Validate and process replyToMessageId
     let finalReplyId = null;
-    if (message.replyToMessageId) {
+    if (message.replyToMessageId !== undefined && message.replyToMessageId !== null) {
       try {
-        let tempReplyId: number | null = null;
+        // Convert to number regardless of input type
+        const tempReplyId = typeof message.replyToMessageId === 'string' 
+          ? parseInt(message.replyToMessageId.replace(/[^0-9]/g, ""), 10)
+          : Number(message.replyToMessageId);
 
-        // Convert to number if string
-        if (typeof message.replyToMessageId === 'string') {
-          const cleanId = message.replyToMessageId.replace(/[^0-9]/g, "");
-          if (cleanId) {
-            tempReplyId = parseInt(cleanId, 10);
-          }
-        } else if (typeof message.replyToMessageId === 'number') {
-          tempReplyId = message.replyToMessageId;
-        }
-
-        // Validate the ID
-        if (tempReplyId !== null && !isNaN(tempReplyId) && tempReplyId > 0) {
-          // Check if original message exists
-          const [originalMessage] = await storage.getChatMessageById(tempReplyId);
-
-          if (originalMessage) {
+        // Validate the converted ID
+        if (!isNaN(tempReplyId) && tempReplyId > 0) {
+          // Verify message exists in database
+          const originalMessage = await storage.getChatMessageById(tempReplyId);
+          
+          if (originalMessage && originalMessage.length > 0) {
             finalReplyId = tempReplyId;
-            console.log(`Valid reply to message ID: ${finalReplyId}`);
+            console.log(`Verified reply to message ID ${finalReplyId}`);
           } else {
-            console.warn(`Reply to non-existent message ID: ${tempReplyId}`);
+            console.warn(`Cannot reply to non-existent message ID: ${tempReplyId}`);
           }
         } else {
-          console.warn(`Invalid replyToMessageId value: ${message.replyToMessageId}`);
+          console.warn(`Invalid replyToMessageId after conversion: ${tempReplyId}`);
         }
       } catch (error) {
         console.error(`Error processing replyToMessageId:`, error);
       }
     }
+
+    console.log('Final reply ID:', {
+      original: message.replyToMessageId,
+      processed: finalReplyId,
+      type: typeof finalReplyId
+    });
 
     console.log('Processed replyToMessageId:', {
       original: message.replyToMessageId,
