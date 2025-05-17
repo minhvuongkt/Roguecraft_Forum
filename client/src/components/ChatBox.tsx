@@ -5,6 +5,7 @@ import React, {
   useMemo,
   useCallback,
 } from "react";
+import { ReplyPreview } from "./ReplyPreview";
 import { useChat } from "@/hooks/useChat";
 import { Message } from "@/components/Message";
 import { MessageInput } from "@/components/ui/message-input";
