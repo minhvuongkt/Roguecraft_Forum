@@ -97,8 +97,13 @@ const MessageComponent = ({
 
   // Handle reply to message
   const handleReply = () => {
-    if (onReply) {
-      onReply(message);
+    if (onReply && message?.id) {
+      // Ensure we pass the numeric id
+      const messageWithNumericId = {
+        ...message,
+        id: Number(message.id)
+      };
+      onReply(messageWithNumericId);
     }
   };
 

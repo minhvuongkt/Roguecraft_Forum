@@ -68,12 +68,21 @@ function UserProfilePage() {
   const { user: currentUser, isAuthenticated, updateProfile, updatePassword, updateAvatar } = useAuth();
   const { toast } = useToast();
 
-  // Chuyển về trang chủ nếu không có id
+  // Kiểm tra id và chuyển hướng
   React.useEffect(() => {
-    if (!id) {
+    if (!id || isNaN(Number(id))) {
       navigate('/forum');
+      return;
     }
   }, [id, navigate]);
+
+  // Redirect nếu không có quyền truy cập
+  React.useEffect(() => {
+    if (!isAuthenticated && !isLoading) {
+      navigate('/forum');
+      return;
+    }
+  }, [isAuthenticated, isLoading, navigate]);
   
   // State hooks
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
