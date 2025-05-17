@@ -1092,9 +1092,7 @@ export function ChatBox() {
           colorPicker={
             <MessageColorPicker
               onColorSelect={(color) => {
-                // Lưu màu vào localStorage để nhớ lựa chọn của người dùng
-                localStorage.setItem('userMessageColor', color);
-                // Cập nhật state
+                // Lưu màu vào state để áp dụng cho tin nhắn mới
                 setState(prev => ({
                   ...prev,
                   userMessageColor: color

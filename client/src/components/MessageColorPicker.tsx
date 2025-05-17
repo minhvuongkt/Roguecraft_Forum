@@ -7,14 +7,14 @@ interface MessageColorPickerProps {
 export function MessageColorPicker({ onColorSelect }: MessageColorPickerProps) {
   // Danh sách các màu có thể chọn
   const colors = [
-    { name: 'Tím', value: 'bg-purple-600' },
-    { name: 'Xanh dương', value: 'bg-blue-600' },
-    { name: 'Xanh lá', value: 'bg-green-600' },
-    { name: 'Đỏ', value: 'bg-red-600' },
-    { name: 'Cam', value: 'bg-orange-600' },
-    { name: 'Hồng', value: 'bg-pink-600' },
-    { name: 'Vàng', value: 'bg-yellow-500' },
-    { name: 'Xám', value: 'bg-gray-600' },
+    { name: 'Tím', value: 'msg-color-purple' },
+    { name: 'Xanh dương', value: 'msg-color-blue' },
+    { name: 'Xanh lá', value: 'msg-color-green' },
+    { name: 'Đỏ', value: 'msg-color-red' },
+    { name: 'Cam', value: 'msg-color-orange' },
+    { name: 'Hồng', value: 'msg-color-pink' },
+    { name: 'Vàng', value: 'msg-color-yellow' },
+    { name: 'Xám', value: 'msg-color-gray' },
   ];
 
   return (

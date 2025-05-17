@@ -78,6 +78,39 @@
   line-height: 1.25;
 }
 
+/* Message color classes */
+.msg-color-purple {
+  background-color: rgb(124, 58, 237) !important;
+}
+
+.msg-color-blue {
+  background-color: rgb(37, 99, 235) !important;
+}
+
+.msg-color-green {
+  background-color: rgb(22, 163, 74) !important;
+}
+
+.msg-color-red {
+  background-color: rgb(220, 38, 38) !important;
+}
+
+.msg-color-orange {
+  background-color: rgb(234, 88, 12) !important;
+}
+
+.msg-color-pink {
+  background-color: rgb(219, 39, 119) !important;
+}
+
+.msg-color-yellow {
+  background-color: rgb(234, 179, 8) !important;
+}
+
+.msg-color-gray {
+  background-color: rgb(75, 85, 99) !important;
+}
+
 .messenger-reply-animation {
   animation: bounce-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
