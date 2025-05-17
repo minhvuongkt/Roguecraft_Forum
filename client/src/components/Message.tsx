@@ -48,7 +48,7 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
     }
   }, [highlightOriginal]);
 
-  // Function to scroll to message with highlight effect
+  // Function to scroll to message with enhanced highlight effect
   const scrollToMessageById = (messageId: number) => {
     // Find the target element
     const targetElement = document.getElementById(`msg-${messageId}`);
@@ -57,20 +57,41 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
       // Scroll to the element with smooth behavior
       targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
 
-      // Apply a highlight effect with animation
+      // Apply highlight effect with animation
       targetElement.classList.add("bg-yellow-100", "dark:bg-yellow-900/30");
       targetElement.classList.add("scale-[1.02]");
-      targetElement.classList.add("shadow-md");
-
-      // Remove the highlight effect after animation completes
-      setTimeout(() => {
-        targetElement.classList.remove(
-          "bg-yellow-100",
-          "dark:bg-yellow-900/30",
-        );
-        targetElement.classList.remove("scale-[1.02]");
-        targetElement.classList.remove("shadow-md");
-      }, 2000);
+      targetElement.classList.add("shadow-md", "z-10", "relative");
+      targetElement.style.transition = "all 0.3s ease";
+      
+      // Thêm hiệu ứng pulse animation
+      let pulseCount = 0;
+      const maxPulses = 3;
+      const pulseInterval = setInterval(() => {
+        if (pulseCount >= maxPulses) {
+          clearInterval(pulseInterval);
+          
+          // Sau khi kết thúc pulse, làm mờ hiệu ứng dần
+          targetElement.style.transition = "all 0.5s ease-out";
+          
+          setTimeout(() => {
+            targetElement.classList.remove(
+              "bg-yellow-100",
+              "dark:bg-yellow-900/30",
+              "scale-[1.02]",
+              "shadow-md",
+              "z-10",
+              "relative"
+            );
+          }, 500);
+          
+          return;
+        }
+        
+        // Tạo hiệu ứng pulse
+        targetElement.classList.toggle("bg-yellow-200");
+        targetElement.classList.toggle("bg-yellow-100");
+        pulseCount++;
+      }, 400);
     } else {
       console.log("Message not found or not in view:", messageId);
     }
