@@ -44,7 +44,7 @@ export function MinecraftChatbox({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    
+
     const file = files[0];
     if (file.size > 5 * 1024 * 1024) {
       toast({
@@ -75,20 +75,20 @@ export function MinecraftChatbox({
 
       // Determine file type
       const fileType = file.type.startsWith('image/') ? 'image' : 'file';
-      
+
       // Lấy URL từ phản hồi - API có thể trả về dạng {"1": "/chat-images/filename.jpg"} hoặc {"image": "/chat-images/filename.jpg"}
       let fileUrl = data["1"]; // Lấy giá trị của khóa "1"
-      
+
       // Nếu không có key "1" thì kiểm tra key "image"
       if (!fileUrl && data["image"]) {
         fileUrl = data["image"];
       }
-      
+
       if (fileUrl) {
         // Thống nhất định dạng cho client - luôn dùng key "image" để lưu ảnh
         const mediaObj = { image: fileUrl };
         setFilePreview({ url: fileUrl, type: fileType });
-        
+
         // Lưu media vào state theo định dạng thống nhất
         setUploadedMedia(mediaObj);
       } else {
@@ -147,13 +147,15 @@ export function MinecraftChatbox({
   return (
     <div className={cn("relative w-full", className)}>
       {replyPreview && (
-        <div className="mb-2">{replyPreview}</div>
+        <div className="mb-2" data-reply-id={replyPreview.props.message?.id}>
+          {replyPreview}
+        </div>
       )}
-      
+
       {typingIndicator && (
         <div className="mb-1">{typingIndicator}</div>
       )}
-      
+
       <div className="flex flex-col bg-gray-800 border-2 border-gray-700 rounded-md overflow-hidden">
         {filePreview && (
           <div className="relative p-2 bg-gray-900">
@@ -184,7 +186,7 @@ export function MinecraftChatbox({
             )}
           </div>
         )}
-        
+
         <div className="flex items-end p-2">
           <div className="flex-1 relative">
             <textarea
@@ -198,7 +200,7 @@ export function MinecraftChatbox({
                          focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[40px] max-h-[120px] minecraft-font"
               rows={1}
             />
-            
+
             <label className="absolute bottom-2 right-2 cursor-pointer">
               <Paperclip 
                 size={18} 
@@ -214,7 +216,7 @@ export function MinecraftChatbox({
               />
             </label>
           </div>
-          
+
           <Button
             size="sm"
             onClick={handleSendMessage}
@@ -225,7 +227,7 @@ export function MinecraftChatbox({
           </Button>
         </div>
       </div>
-      
+
       {colorPicker && (
         <div className="mt-2">
           <button 
@@ -234,7 +236,7 @@ export function MinecraftChatbox({
           >
             {showColorPicker ? 'Ẩn bảng màu' : 'Chọn màu tin nhắn'}
           </button>
-          
+
           {showColorPicker && (
             <div className="p-2 bg-gray-800 border border-gray-700 rounded-md">
               {colorPicker}

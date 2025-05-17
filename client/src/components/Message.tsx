@@ -97,13 +97,19 @@ const MessageComponent = ({
 
   // Handle reply to message
   const handleReply = () => {
-    if (onReply && message?.id) {
-      // Ensure we pass the numeric id
-      const messageWithNumericId = {
-        ...message,
-        id: Number(message.id)
-      };
-      onReply(messageWithNumericId);
+    if (onReply && message) {
+      // Đảm bảo id là số và hợp lệ
+      const messageId = typeof message.id === 'string' ? parseInt(message.id) : message.id;
+      if (!isNaN(messageId) && messageId > 0) {
+        const messageToReply = {
+          ...message,
+          id: messageId
+        };
+        console.log('Replying to message:', messageId);
+        onReply(messageToReply);
+      } else {
+        console.error('Invalid message ID for reply:', message.id);
+      }
     }
   };
 
