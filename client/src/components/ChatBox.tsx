@@ -1056,18 +1056,32 @@ export function ChatBox() {
             </div>
           </div>
         )}
+        
+        {/* Hiển thị người đang nhập tin nhắn */}
+        {state.typingUsers && state.typingUsers.length > 0 && (
+          <div className="mb-2">
+            {state.typingUsers.map(typingUser => (
+              <TypingIndicator 
+                key={typingUser.id} 
+                username={typingUser.username} 
+                avatar={typingUser.avatar} 
+              />
+            ))}
+          </div>
+        )}
 
-        {/* Reply info bar - Using ReplyPreview component */}
+        {/* Reply info bar - Using Messenger style reply indicator */}
         {state.replyingTo && (
-          <ReplyPreview 
+          <MessengerReplyIndicator 
             message={state.replyingTo} 
             onCancel={handleCancelReply} 
           />
         )}
 
-        {/* Add ref to MessageInput for mention system */}
-        <MessageInput
+        {/* Minecraft style chatbox */}
+        <MinecraftChatbox
           onSend={handleSendMessage}
+          disabled={!user}
           placeholder={
             user
               ? state.replyingTo
@@ -1075,9 +1089,19 @@ export function ChatBox() {
                 : "Nhập tin nhắn... (Gõ @ để tag người dùng)"
               : "Nhập /ten [tên của bạn] để đặt tên"
           }
-          type="chat"
-          disabled={!user}
-          ref={inputRef}
+          colorPicker={
+            <MessageColorPicker
+              onColorSelect={(color) => {
+                // Lưu màu vào localStorage để nhớ lựa chọn của người dùng
+                localStorage.setItem('userMessageColor', color);
+                // Cập nhật state
+                setState(prev => ({
+                  ...prev,
+                  userMessageColor: color
+                }));
+              }}
+            />
+          }
         />
 
         {/* @ mention selector - Pass current user ID to filter themselves out */}
