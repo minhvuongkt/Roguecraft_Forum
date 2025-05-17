@@ -158,122 +158,32 @@ export class WebSocketHandler {
     }
   }
 
-  private async handleChatMessage(ws: ExtendedWebSocket, payload: any) {
+  private async handleChatMessage(
+    ws: ExtendedWebSocket,
+    payload: any,
+  ): Promise<void> {
+    if (!ws.userId || !ws.username) {
+      console.error("WebSocket without user info tried to send a message");
+      return;
+    }
+
     try {
-      const { content, media, mentions, replyToMessageId } = payload;
+      // Chuyển đổi payload.content nếu cần
+      let content = payload.content;
+      const media = payload.media || null;
 
-      // Log đầu vào từ client để debug
-      console.log("Chat message payload received:", {
-        content: content
-          ? content.length > 30
-            ? content.substring(0, 30) + "..."
-            : content
-          : null,
-        replyToMessageId,
-        hasMedia: media ? true : false,
-        mediaType: media ? typeof media : null,
-        mentions: mentions ? mentions.length : 0,
-      });
-
-      if (
-        (!content || typeof content !== "string" || content.trim() === "") &&
-        (!media || Object.keys(media).length === 0)
-      ) {
-        return this.sendToClient(ws, {
-          type: WebSocketMessageType.CHAT_MESSAGE,
-          payload: { error: "Không được để trống tin nhắn" },
-        });
+      // Đảm bảo replyToMessageId là số hoặc null
+      let replyId = null;
+      if (payload.replyToMessageId !== undefined && payload.replyToMessageId !== null) {
+        replyId = Number(payload.replyToMessageId);
+        console.log("Processing reply to message ID:", replyId, "Type:", typeof replyId);
       }
 
-      // Make sure user is identified before allowing messages
-      if (!ws.userId) {
-        return this.sendToClient(ws, {
-          type: WebSocketMessageType.CHAT_MESSAGE,
-          payload: { error: "Nếu muốn đặt tên thì dùng lệnh /ten [name]" },
-        });
-      }
-
-      // Kiểm tra nếu media có dữ liệu
-      let mediaData = media;
-      if (media) {
-        // Đảm bảo đường dẫn ảnh là từ thư mục chat-images
-        if (
-          typeof media === "object" &&
-          Object.keys(media).some((key) => /^\d+$/.test(key))
-        ) {
-          // Kiểm tra xem có đường dẫn nào từ topic-images không
-          const hasTopicImage = Object.values(media).some(
-            (path) =>
-              typeof path === "string" &&
-              path.toString().includes("/topic-images/"),
-          );
-
-          if (hasTopicImage) {
-            console.warn(
-              "Warning: Found topic-images path in chat message, fixing paths",
-            );
-
-            // Tự động sửa đường dẫn để đảm bảo ảnh lưu đúng thư mục
-            const fixedMedia: Record<string, string> = {};
-            Object.entries(media).forEach(([key, value]) => {
-              if (
-                typeof value === "string" &&
-                value.includes("/topic-images/")
-              ) {
-                const originalFileName =
-                  value.split("/").pop() || "unknown.jpg";
-                const newPath = `/chat-images/chat-${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(originalFileName)}`;
-                fixedMedia[key] = newPath;
-                console.log(`Fixed media path from ${value} to ${newPath}`);
-              } else {
-                fixedMedia[key] = value as string;
-              }
-            });
-            mediaData = fixedMedia;
-          }
-        }
-      }
-
-      // Xử lý replyToMessageId
-      let finalReplyId: number | null = null;
-
-      if (replyToMessageId !== undefined && replyToMessageId !== null) {
-        // Đảm bảo chuyển đổi thành số nguyên
-        const numericId = typeof replyToMessageId === 'string' 
-          ? parseInt(replyToMessageId) 
-          : Number(replyToMessageId);
-
-        if (!isNaN(numericId) && Number.isInteger(numericId) && numericId > 0) {
-          finalReplyId = numericId;
-        }
-      }
-
-      console.log("Processing replyToMessageId:", {
-        original: replyToMessageId,
-        type: typeof replyToMessageId,
-        final: finalReplyId
-      });
-
-      // Create chat message
-      console.log("Creating message with replyToMessageId:", finalReplyId);
-      const message = await chatService.createMessage({
-        userId: ws.userId,
+      const message = await chatService.createChatMessage({
         content,
-        media: mediaData,
-        mentions: mentions || [],
-        replyToMessageId: finalReplyId,
-      });
-
-      // Kiểm tra xem message được tạo có replyToMessageId không
-      console.log("Chat message created:", {
-        id: message.id,
-        content: message.content
-          ? message.content.length > 30
-            ? message.content.substring(0, 30) + "..."
-            : message.content
-          : null,
-        userId: message.userId,
-        replyToMessageId: message.replyToMessageId,
+        media,
+        userId: ws.userId,
+        replyToMessageId: replyId,
       });
 
       // Broadcast message to all clients

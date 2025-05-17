@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { useLocation, useRoute, useParams } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -47,7 +46,7 @@ export default function UserProfilePage() {
   const [, navigate] = useLocation();
   const [, params] = useRoute("/user/:id");
   const id = params?.id;
-  
+
   const { user: currentUser, isAuthenticated, updateProfile, updatePassword, updateAvatar } = useAuth();
   const { toast } = useToast();
 
@@ -87,10 +86,10 @@ export default function UserProfilePage() {
     if (currentUser && Number(id) === currentUser.id) {
       return;
     }
-    
+
     // Xem profile người khác không cần đăng nhập
   }, [currentUser, id, navigate]);
-  
+
   // Configure fetcher trực tiếp để xử lý lỗi tốt hơn
   const { data, isLoading: isDataLoading, error } = useQuery<UserProfile>({
     queryKey: ['users', id],
@@ -127,7 +126,7 @@ export default function UserProfilePage() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     // Check file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast({
@@ -137,7 +136,7 @@ export default function UserProfilePage() {
       });
       return;
     }
-    
+
     // Preview the avatar
     setAvatarFile(file);
     const reader = new FileReader();
@@ -150,29 +149,29 @@ export default function UserProfilePage() {
   // Upload avatar
   const handleAvatarUpload = async () => {
     if (!avatarFile) return;
-    
+
     setIsAvatarUploading(true);
     try {
       const formData = new FormData();
       formData.append('avatar', avatarFile);
-      
+
       const response = await fetch('/api/users/avatar', {
         method: 'POST',
         body: formData,
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to upload avatar');
       }
-      
+
       const data = await response.json();
       updateAvatar(data.avatar);
-      
+
       toast({
         title: "Avatar updated",
         description: "Your profile picture has been updated successfully",
       });
-      
+
       // Reset states
       setAvatarFile(null);
     } catch (error) {
@@ -203,7 +202,7 @@ export default function UserProfilePage() {
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error when typing
     setPasswordError("");
   };
@@ -219,12 +218,12 @@ export default function UserProfilePage() {
         email: formData.email,
         birthday: formData.birthday,
       });
-      
+
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully",
       });
-      
+
       setIsEditing(false);
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -245,22 +244,22 @@ export default function UserProfilePage() {
       setPasswordError("Passwords don't match");
       return;
     }
-    
+
     if (passwordData.newPassword.length < 6) {
       setPasswordError("Password must be at least 6 characters");
       return;
     }
-    
+
     setIsPasswordUpdating(true);
     try {
       // Call API to update password
       await updatePassword(passwordData.currentPassword, passwordData.newPassword);
-      
+
       toast({
         title: "Password updated",
         description: "Your password has been updated successfully",
       });
-      
+
       // Reset form
       setPasswordData({
         currentPassword: "",
@@ -361,7 +360,7 @@ export default function UserProfilePage() {
                 </AvatarFallback>
               )}
             </Avatar>
-            
+
             {/* Avatar upload overlay - only for current user */}
             {isCurrentUserProfile && !avatarPreview && (
               <label className="absolute inset-0 bg-black bg-opacity-40 rounded-full flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity">
@@ -375,7 +374,7 @@ export default function UserProfilePage() {
               </label>
             )}
           </div>
-          
+
           {/* Avatar preview and upload controls */}
           {avatarPreview && (
             <div className="absolute -top-12 left-6 border-4 border-white dark:border-gray-800 rounded-full">
@@ -411,7 +410,7 @@ export default function UserProfilePage() {
               </div>
             </div>
           )}
-          
+
           <div className="mt-12">
             <div className="flex items-center justify-between">
               <div>
@@ -427,7 +426,7 @@ export default function UserProfilePage() {
                   Tham gia từ {formatDate(data.joinDate)}
                 </p>
               </div>
-              
+
               {isCurrentUserProfile && !isEditing && (
                 <Button onClick={() => setIsEditing(true)}>
                   Chỉnh sửa hồ sơ
@@ -455,7 +454,7 @@ export default function UserProfilePage() {
               )}
             </TabsList>
           </div>
-          
+
           <TabsContent value="profile" className="p-6">
             {isEditing ? (
               /* Editing mode */
@@ -470,7 +469,7 @@ export default function UserProfilePage() {
                     placeholder="Hãy chia sẻ đôi điều về bạn..."
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -482,7 +481,7 @@ export default function UserProfilePage() {
                     placeholder="Email của bạn"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="location">Địa điểm</Label>
                   <Input
@@ -493,7 +492,7 @@ export default function UserProfilePage() {
                     placeholder="Bạn đến từ đâu?"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="birthday">Ngày sinh</Label>
                   <Input
@@ -504,7 +503,7 @@ export default function UserProfilePage() {
                     onChange={handleInputChange}
                   />
                 </div>
-                
+
                 <div className="flex justify-end space-x-2 pt-4">
                   <Button variant="outline" onClick={handleCancelEdit}>
                     Hủy
@@ -555,9 +554,9 @@ export default function UserProfilePage() {
                     </p>
                   </div>
                 )}
-                
+
                 <Separator />
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {data.email && (
                     <div className="flex items-center">
@@ -566,7 +565,7 @@ export default function UserProfilePage() {
                       <span>{data.email}</span>
                     </div>
                   )}
-                  
+
                   {data.location && (
                     <div className="flex items-center">
                       <MapPin className="h-4 w-4 mr-2 text-gray-500" />
@@ -574,7 +573,7 @@ export default function UserProfilePage() {
                       <span>{data.location}</span>
                     </div>
                   )}
-                  
+
                   {data.birthday && (
                     <div className="flex items-center">
                       <Cake className="h-4 w-4 mr-2 text-gray-500" />
@@ -582,13 +581,13 @@ export default function UserProfilePage() {
                       <span>{formatDate(data.birthday)}</span>
                     </div>
                   )}
-                  
+
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-2 text-gray-500" />
                     <span className="text-sm text-gray-500 mr-2">Ngày tham gia:</span>
                     <span>{formatDate(data.joinDate)}</span>
                   </div>
-                  
+
                   <div className="flex items-center">
                     <User className="h-4 w-4 mr-2 text-gray-500" />
                     <span className="text-sm text-gray-500 mr-2">Trạng thái:</span>
@@ -601,9 +600,9 @@ export default function UserProfilePage() {
                     </span>
                   </div>
                 </div>
-                
+
                 <Separator />
-                
+
                 {/* Stats */}
                 <div>
                   <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
@@ -623,11 +622,11 @@ export default function UserProfilePage() {
               </div>
             )}
           </TabsContent>
-          
+
           {isCurrentUserProfile && (
             <TabsContent value="settings" className="p-6">
               <h2 className="text-lg font-semibold mb-4">Cài đặt bảo mật</h2>
-              
+
               {data.isTemporary ? (
                 <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 p-4 rounded-md mb-6">
                   <h3 className="font-medium text-amber-800 dark:text-amber-200">Tài khoản tạm thời</h3>
@@ -654,7 +653,7 @@ export default function UserProfilePage() {
                       onChange={handlePasswordChange}
                     />
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="newPassword">Mật khẩu mới</Label>
                     <Input
@@ -665,7 +664,7 @@ export default function UserProfilePage() {
                       onChange={handlePasswordChange}
                     />
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="confirmPassword">Xác nhận mật khẩu mới</Label>
                     <Input
@@ -676,11 +675,11 @@ export default function UserProfilePage() {
                       onChange={handlePasswordChange}
                     />
                   </div>
-                  
+
                   {passwordError && (
                     <div className="text-red-500 text-sm">{passwordError}</div>
                   )}
-                  
+
                   <div className="pt-4">
                     <Button 
                       onClick={handleUpdatePassword}
