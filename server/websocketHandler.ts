@@ -242,7 +242,7 @@ export class WebSocketHandler {
         const numericId = typeof replyToMessageId === 'string' 
           ? parseInt(replyToMessageId) 
           : Number(replyToMessageId);
-          
+
         if (!isNaN(numericId) && Number.isInteger(numericId) && numericId > 0) {
           finalReplyId = numericId;
         }
