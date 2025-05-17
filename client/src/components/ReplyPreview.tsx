@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { X } from 'lucide-react';
-import { ChatMessage } from '@/types';
-import { motion, AnimatePresence } from 'framer-motion';
+import { X } from "lucide-react";
+import { ChatMessage } from "@/types";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ReplyPreviewProps {
   message: ChatMessage;
@@ -12,20 +12,21 @@ interface ReplyPreviewProps {
 export function ReplyPreview({ message, onCancel }: ReplyPreviewProps) {
   // Reference để có thể scroll tới element này khi cần
   const previewRef = useRef<HTMLDivElement>(null);
-  
+
   // Lấy nội dung trích dẫn từ tin nhắn gốc, tối đa 20 ký tự
-  const quoteContent = message.content.length > 20
-    ? message.content.substring(0, 20) + '...'
-    : message.content;
+  const quoteContent =
+    message.content.length > 20
+      ? message.content.substring(0, 20) + "..."
+      : message.content;
 
   // Hiệu ứng khi component được mounted
   useEffect(() => {
     // Flash animation cho element khi xuất hiện
     if (previewRef.current) {
-      previewRef.current.classList.add('bg-purple-500/20');
+      previewRef.current.classList.add("bg-purple-500/20");
       setTimeout(() => {
         if (previewRef.current) {
-          previewRef.current.classList.remove('bg-purple-500/20');
+          previewRef.current.classList.remove("bg-purple-500/20");
         }
       }, 500);
     }
@@ -33,10 +34,10 @@ export function ReplyPreview({ message, onCancel }: ReplyPreviewProps) {
 
   return (
     <AnimatePresence>
-      <motion.div 
+      <motion.div
         ref={previewRef}
         initial={{ opacity: 0, y: -10, height: 0 }}
-        animate={{ opacity: 1, y: 0, height: 'auto' }}
+        animate={{ opacity: 1, y: 0, height: "auto" }}
         exit={{ opacity: 0, height: 0 }}
         transition={{ duration: 0.2 }}
         className="px-3 py-2 border-l-4 border-purple-500 bg-[#36393f] flex items-center gap-2 mb-2 transition-colors duration-300"
@@ -50,29 +51,43 @@ export function ReplyPreview({ message, onCancel }: ReplyPreviewProps) {
           >
             <Avatar className="h-6 w-6">
               {message.user?.avatar ? (
-                <AvatarImage src={message.user.avatar} alt={message.user?.username || 'User'} />
+                <AvatarImage
+                  src={message.user.avatar}
+                  alt={message.user?.username || "User"}
+                />
               ) : (
                 <AvatarFallback className="text-xs bg-purple-600 text-white">
-                  {message.user?.username?.substring(0, 2).toUpperCase() || 'U'}
+                  {message.user?.username?.substring(0, 2).toUpperCase() || "U"}
                 </AvatarFallback>
               )}
             </Avatar>
           </motion.div>
-          
+
           <div className="flex flex-col">
-            <motion.span 
+            <motion.span
               initial={{ opacity: 0, x: -5 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3, delay: 0.2 }}
               className="text-xs text-gray-300 flex items-center gap-1"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-corner-up-left">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-corner-up-left"
+              >
                 <polyline points="9 14 4 9 9 4"></polyline>
                 <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
               </svg>
-              <span className="text-white">Bạn đã trả lời</span>
+              <span className="text-white">Bạn đang trả lời</span>
             </motion.span>
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3, delay: 0.3 }}
@@ -82,11 +97,16 @@ export function ReplyPreview({ message, onCancel }: ReplyPreviewProps) {
             </motion.div>
           </div>
         </div>
-        
-        <motion.button 
+
+        <motion.button
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.4 }}
+          transition={{
+            type: "spring",
+            stiffness: 300,
+            damping: 15,
+            delay: 0.4,
+          }}
           onClick={onCancel}
           className="h-5 w-5 rounded-full bg-purple-700 text-white flex items-center justify-center hover:bg-purple-600"
           whileHover={{ scale: 1.1 }}
