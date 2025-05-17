@@ -463,65 +463,41 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
             {message.content && (
               <div
                 className={cn(
-                  "p-2 px-3 mb-1 break-words max-w-full",
+                  "p-2 px-3 mb-1 break-words max-w-full text-base",
                   isCurrentUser
-                    ? "discord-my-bubble text-white"
-                    : "discord-bubble dark:text-white",
-                  isReplyMessage ? "relative pt-5" : "",
+                    ? "discord-my-bubble text-white bg-purple-600" 
+                    : "discord-bubble dark:text-white bg-gray-700",
+                  isReplyMessage ? "relative pt-6" : "",
                 )}
               >
-                {/* Reply reference section - GAME STYLE FACEBOOK-LIKE */}
+                {/* Phụ đề hiển thị trên tin nhắn - Discord style */}
                 {isReplyMessage && originalMessage && (
                   <div 
-                    className={cn(
-                      "w-full mb-2 cursor-pointer overflow-hidden discord-reply-bubble",
-                      isSelfReply
-                        ? "border-l-4 border-purple-500"
-                        : "border-l-4 border-purple-500"
-                    )}
+                    className="absolute top-0 left-0 flex items-center gap-1 text-xs px-3 pt-1 text-gray-300 cursor-pointer"
                     onClick={() => scrollToMessageById(message.replyToMessageId!)}
                     title="Nhấn để xem tin nhắn gốc"
                   >
-                    <div className="flex flex-col w-full p-1.5 relative hover:brightness-105 transition-all">
-                      {/* Header with username */}
-                      <div className="flex items-center gap-1 text-xs mb-1">
-                        <MessageSquare className="h-3 w-3 text-blue-500 dark:text-blue-400" />
-                        
-                        {/* Game-style username badge */}
-                        <div className={cn(
-                          "px-2 py-1 rounded-sm minecraft-button text-white",
-                          isSelfReply 
-                            ? "bg-blue-600" 
-                            : "bg-green-600"
-                        )}>
-                          {isSelfReply ? "Bạn" : originalMessage.user?.username || "người dùng"}
-                        </div>
-                        
-                        <span className="text-gray-500 dark:text-gray-400 flex-1 text-right text-[10px]">
-                          {formatTime(new Date(originalMessage.createdAt))}
-                        </span>
-                      </div>
-                      
-                      {/* Original message content like Discord with ellipsis if too long */}
-                      <div className="text-sm text-white p-2 pl-3 discord-reply-reference">
-                        <span className="font-medium">{isSelfReply ? "Bạn đã trả lời" : "Bạn đã trả lời " + (originalMessage.user?.username || "người dùng")}:</span> {originalMessage.content.length > 20 
-                          ? originalMessage.content.substring(0, 20) + "..."
-                          : originalMessage.content}
-                      </div>
-                      
-                      {/* Show original media thumbnail if exists */}
-                      {originalMessage.media && (
-                        <div className="flex items-center mt-1 pl-4 text-[10px] text-gray-500 dark:text-gray-400">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                            <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-                            <circle cx="9" cy="9" r="2" />
-                            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                          </svg>
-                          <span>Hình ảnh đính kèm</span>
-                        </div>
-                      )}
-                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400">
+                      <polyline points="9 14 4 9 9 4"></polyline>
+                      <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
+                    </svg>
+                    <span>
+                      <span className="text-purple-400 hover:underline">
+                        {originalMessage.user?.username || "Unknown User"}
+                      </span>
+                      <span> {originalMessage.content.length > 20 
+                        ? originalMessage.content.substring(0, 20) + "..."
+                        : originalMessage.content}
+                      </span>
+                    </span>
                   </div>
+                )}
+                
+                {/* Thêm @ username vào đầu tin nhắn trả lời nếu chưa có */}
+                {isReplyMessage && originalMessage && !message.content.includes(`@${originalMessage.user?.username}`) && (
+                  <span className="text-purple-400 font-semibold mr-1">
+                    @{originalMessage.user?.username} 
+                  </span>
                 )}
 
                 {/* Display warning if reply target doesn't exist */}
