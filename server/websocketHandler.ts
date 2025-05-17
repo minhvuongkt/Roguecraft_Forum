@@ -1,3 +1,4 @@
+
 import { WebSocket, WebSocketServer } from "ws";
 import { IncomingMessage } from "http";
 import { chatService } from "./chatService";
@@ -171,7 +172,6 @@ export class WebSocketHandler {
     }
 
     try {
-      // Validate required fields
       if (!payload.content || typeof payload.content !== 'string') {
         return this.sendToClient(ws, {
           type: WebSocketMessageType.CHAT_MESSAGE,
@@ -189,44 +189,27 @@ export class WebSocketHandler {
 
       const media = payload.media || null;
       let replyId = null;
-      
-      // Xử lý cẩn thận replyToMessageId
+
       if (payload.replyToMessageId !== undefined && payload.replyToMessageId !== null) {
-        // Ghi log ban đầu để debug
-        console.log("Original message ID:", payload.replyToMessageId, "Type:", typeof payload.replyToMessageId);
-        
         try {
-          // Handle string by stripping non-numeric characters
           if (typeof payload.replyToMessageId === 'string') {
             const cleanId = payload.replyToMessageId.replace(/[^0-9]/g, "");
             replyId = cleanId ? parseInt(cleanId, 10) : null;
-          }
-          // Use directly if it's already a number
-          else if (typeof payload.replyToMessageId === 'number') {
+          } else if (typeof payload.replyToMessageId === 'number') {
             replyId = payload.replyToMessageId;
           }
 
-          // Validate that it's a valid integer reply ID
           if (replyId !== null && (!Number.isInteger(replyId) || replyId <= 0)) {
+            console.warn("Invalid replyToMessageId after conversion:", replyId);
             replyId = null;
-          } else if (replyId !== null) {
+          }
+
+          if (replyId !== null) {
             const [originalMessage] = await chatService.verifyMessageExists(replyId);
             if (!originalMessage) {
               console.warn(`Reply to non-existent message ID: ${replyId}`);
               replyId = null;
             }
-          }
-        } catch (e) {
-          console.error("Error processing replyToMessageId:", e);
-          replyId = null;
-        }
-          
-          // Kiểm tra lại để đảm bảo là số nguyên hợp lệ
-          if (replyId !== null && (isNaN(replyId) || !Number.isInteger(replyId) || replyId <= 0)) {
-            console.warn("Invalid replyToMessageId after conversion:", replyId);
-            replyId = null;
-          } else {
-            console.log("Final replyToMessageId:", replyId, "Type:", typeof replyId);
           }
         } catch (e) {
           console.error("Error processing replyToMessageId:", e);
@@ -242,10 +225,8 @@ export class WebSocketHandler {
         mentions: payload.mentions || [],
       };
 
-      // Create and save the message
       const message = await chatService.createMessage(messageData);
 
-      // Broadcast message to all clients
       this.broadcast({
         type: WebSocketMessageType.CHAT_MESSAGE,
         payload: message,
@@ -260,11 +241,9 @@ export class WebSocketHandler {
   }
 
   private async handleUserStatus(ws: ExtendedWebSocket, payload: any) {
-    // Broadcast current online users to all clients
     await this.broadcastOnlineUsers();
   }
 
-  // Send list of online users to all connected clients
   private async broadcastOnlineUsers() {
     const onlineUsers = await this.getOnlineUsers();
 
@@ -276,7 +255,6 @@ export class WebSocketHandler {
     });
   }
 
-  // Get list of online users with their basic information
   private async getOnlineUsers() {
     const users: {
       id: number;
@@ -286,17 +264,14 @@ export class WebSocketHandler {
     }[] = [];
 
     try {
-      // Create a Set of unique userIds from connected clients
       const userIds = new Set<number>();
 
-      // First collect all user IDs
       Array.from(this.clients).forEach((client) => {
         if (client.userId && client.readyState === WebSocket.OPEN) {
           userIds.add(client.userId);
         }
       });
 
-      // Now batch update last active status for all online users
       const updatePromises: Promise<void>[] = [];
       for (const userId of userIds) {
         updatePromises.push(
@@ -309,10 +284,8 @@ export class WebSocketHandler {
         );
       }
 
-      // Wait for all updates to complete
       await Promise.allSettled(updatePromises);
 
-      // Now fetch all user data
       const fetchPromises = Array.from(userIds).map((userId) =>
         storage
           .getUser(userId)
@@ -331,7 +304,6 @@ export class WebSocketHandler {
           }),
       );
 
-      // Wait for all fetches to complete
       await Promise.allSettled(fetchPromises);
     } catch (error) {
       console.error("Error getting online users:", error);
@@ -346,7 +318,6 @@ export class WebSocketHandler {
     }
   }
 
-  // Helper method for non-async broadcasts (without user status)
   private broadcastMessage(
     message: WebSocketMessage,
     excludeClient: ExtendedWebSocket | null = null,
@@ -366,8 +337,6 @@ export class WebSocketHandler {
             sentCount++;
           } catch (error) {
             console.error("Error sending message to client:", error);
-            // If we encounter an error while sending, mark the client as not alive
-            // so it will be cleaned up in the next ping cycle
             client.isAlive = false;
           }
         }
@@ -381,13 +350,11 @@ export class WebSocketHandler {
     }
   }
 
-  // Make this method accessible from outside (for periodic broadcasts)
   public async broadcast(
     message: WebSocketMessage,
     excludeClient: ExtendedWebSocket | null = null,
   ) {
     try {
-      // If this is a user status message, fetch the actual users from the database
       if (message.type === WebSocketMessageType.USER_STATUS) {
         const users = await this.getOnlineUsers();
         message.payload.users = users;
@@ -397,7 +364,6 @@ export class WebSocketHandler {
       this.broadcastMessage(message, excludeClient);
     } catch (error) {
       console.error("Error in broadcast:", error);
-      // Even if we have an error, try to send a minimal message
       if (message.type === WebSocketMessageType.USER_STATUS) {
         message.payload.users = [];
         this.broadcastMessage(message, excludeClient);
