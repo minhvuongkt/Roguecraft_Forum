@@ -1,4 +1,3 @@
-
 import { WebSocket, WebSocketServer } from "ws";
 import { IncomingMessage } from "http";
 import { chatService } from "./chatService";
@@ -16,6 +15,7 @@ interface ExtendedWebSocket extends WebSocket {
 export class WebSocketHandler {
   private wss: WebSocketServer;
   private clients: Set<ExtendedWebSocket> = new Set();
+  private readonly DEBUG_MODE: boolean = process.env.NODE_ENV !== "production";
 
   constructor(server: any) {
     this.wss = new WebSocketServer({ server, path: "/ws" });
@@ -172,43 +172,77 @@ export class WebSocketHandler {
     }
 
     try {
-      if (!payload.content || typeof payload.content !== 'string') {
-        return this.sendToClient(ws, {
-          type: WebSocketMessageType.CHAT_MESSAGE,
-          payload: { error: "Message content is required" },
-        });
-      }
+      // Xử lý nội dung tin nhắn
+      const content = payload.content ? payload.content.trim() : "";
 
-      const content = payload.content.trim();
-      if (content.length === 0) {
-        return this.sendToClient(ws, {
-          type: WebSocketMessageType.CHAT_MESSAGE,
-          payload: { error: "Message content cannot be empty" },
-        });
-      }
-
+      // Xử lý media
       const media = payload.media || null;
+      const hasMedia =
+        media && typeof media === "object" && Object.keys(media).length > 0;
+
+      // Yêu cầu hoặc nội dung văn bản hoặc media
+      if (!content && !hasMedia) {
+        return this.sendToClient(ws, {
+          type: WebSocketMessageType.CHAT_MESSAGE,
+          payload: { error: "Message must contain text or media" },
+        });
+      }
+
+      // Xử lý replyToMessageId - Đã cải tiến để xử lý nhiều trường hợp
       let replyId = null;
 
-      if (payload.replyToMessageId !== undefined && payload.replyToMessageId !== null) {
+      if (
+        payload.replyToMessageId !== undefined &&
+        payload.replyToMessageId !== null
+      ) {
         try {
-          if (typeof payload.replyToMessageId === 'string') {
+          if (typeof payload.replyToMessageId === "string") {
+            // Xử lý replyToMessageId là string
             const cleanId = payload.replyToMessageId.replace(/[^0-9]/g, "");
             replyId = cleanId ? parseInt(cleanId, 10) : null;
-          } else if (typeof payload.replyToMessageId === 'number') {
+          } else if (typeof payload.replyToMessageId === "number") {
+            // Xử lý replyToMessageId là number
             replyId = payload.replyToMessageId;
+          } else if (typeof payload.replyToMessageId === "object") {
+            // Xử lý trường hợp client gửi toàn bộ message object
+            if (payload.replyToMessageId.id !== undefined) {
+              const idValue = payload.replyToMessageId.id;
+              if (typeof idValue === "number") {
+                replyId = idValue;
+              } else if (typeof idValue === "string") {
+                const cleanId = idValue.replace(/[^0-9]/g, "");
+                replyId = cleanId ? parseInt(cleanId, 10) : null;
+              }
+            }
           }
 
-          if (replyId !== null && (!Number.isInteger(replyId) || replyId <= 0)) {
-            console.warn("Invalid replyToMessageId after conversion:", replyId);
+          // Kiểm tra tính hợp lệ của ID sau khi chuyển đổi
+          if (
+            replyId !== null &&
+            (!Number.isInteger(replyId) || replyId <= 0)
+          ) {
+            if (this.DEBUG_MODE) {
+              console.warn(
+                "Invalid replyToMessageId after conversion:",
+                replyId,
+                "Original value:",
+                payload.replyToMessageId,
+              );
+            }
             replyId = null;
           }
 
+          // Xác minh message tồn tại trong database
           if (replyId !== null) {
-            const [originalMessage] = await chatService.verifyMessageExists(replyId);
+            const [originalMessage] =
+              await chatService.verifyMessageExists(replyId);
             if (!originalMessage) {
-              console.warn(`Reply to non-existent message ID: ${replyId}`);
+              if (this.DEBUG_MODE) {
+                console.warn(`Reply to non-existent message ID: ${replyId}`);
+              }
               replyId = null;
+            } else if (this.DEBUG_MODE) {
+              console.log(`Verified reply to message ID ${replyId} exists`);
             }
           }
         } catch (e) {
@@ -217,33 +251,62 @@ export class WebSocketHandler {
         }
       }
 
-      // Extract mentions from content
-      const mentionRegex = /@(\w+)/g;
-      const mentions = [];
-      let match;
-      while ((match = mentionRegex.exec(content)) !== null) {
-        mentions.push(match[1]);
+      // Trích xuất mentions từ nội dung
+      let mentions: string[] = [];
+
+      // Trích xuất từ nội dung nếu có
+      if (content) {
+        const mentionRegex = /@(\w+)/g;
+        let match;
+        while ((match = mentionRegex.exec(content)) !== null) {
+          if (!mentions.includes(match[1])) {
+            mentions.push(match[1]);
+          }
+        }
       }
 
+      // Kết hợp với mentions được cung cấp rõ ràng từ client nếu có
+      if (Array.isArray(payload.mentions) && payload.mentions.length > 0) {
+        // Thêm mentions từ payload nếu chưa được trích xuất từ nội dung
+        payload.mentions.forEach((mention: string) => {
+          if (!mentions.includes(mention)) {
+            mentions.push(mention);
+          }
+        });
+      }
+
+      if (this.DEBUG_MODE) {
+        console.log("Message data prepared:", {
+          content:
+            content.length > 30 ? content.substring(0, 30) + "..." : content,
+          mediaPresent: hasMedia,
+          replyToMessageId: replyId,
+          mentions,
+          userId: ws.userId,
+        });
+      }
+
+      // Tạo message thông qua chatService
       const messageData = {
         content,
         media,
         userId: ws.userId,
         replyToMessageId: replyId,
-        mentions: mentions.length > 0 ? mentions : (payload.mentions || []),
+        mentions: mentions.length > 0 ? mentions : [],
       };
 
       const message = await chatService.createMessage(messageData);
-      
-      // Add user info to message payload
+
+      // Thêm thông tin người dùng vào message payload để client hiển thị ngay
       const messageWithUser = {
         ...message,
         user: {
           id: ws.userId,
           username: ws.username,
-        }
+        },
       };
 
+      // Broadcast tin nhắn tới tất cả clients
       this.broadcast({
         type: WebSocketMessageType.CHAT_MESSAGE,
         payload: messageWithUser,
@@ -252,7 +315,7 @@ export class WebSocketHandler {
       console.error("Error handling chat message:", error);
       this.sendToClient(ws, {
         type: WebSocketMessageType.CHAT_MESSAGE,
-        payload: { error: "Failed to send message" },
+        payload: { error: "Failed to send message. Please try again." },
       });
     }
   }
