@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useLocation, useRoute, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -43,9 +43,11 @@ interface UserProfile {
 }
 
 export default function UserProfilePage() {
-  // URL params
-  const { id } = useParams();
-  const navigate = useNavigate();
+  // URL params - sử dụng wouter thay vì react-router-dom
+  const [, navigate] = useLocation();
+  const [, params] = useRoute("/user/:id");
+  const id = params?.id;
+  
   const { user: currentUser, isAuthenticated, updateProfile, updatePassword, updateAvatar } = useAuth();
   const { toast } = useToast();
 
