@@ -97,20 +97,40 @@ export class DatabaseStorage implements IStorage {
       let finalReplyToMessageId: number | null = null;
       
       if (message.replyToMessageId !== undefined && message.replyToMessageId !== null) {
-        // Đảm bảo là số
-        const replyId = Number(message.replyToMessageId);
-        if (!isNaN(replyId)) {
-          finalReplyToMessageId = replyId;
-          
-          // Kiểm tra xem message được trả lời có tồn tại không
-          const [originalMessage] = await db.select()
-            .from(chatMessages)
-            .where(eq(chatMessages.id, finalReplyToMessageId));
-            
-          if (!originalMessage) {
-            console.warn(`Reply to non-existent message ID: ${finalReplyToMessageId}`);
-            finalReplyToMessageId = null;
+        // Log chi tiết để debug
+        console.log(`Processing replyToMessageId in database: ${message.replyToMessageId} (type: ${typeof message.replyToMessageId})`);
+        
+        try {
+          // Xử lý khác nhau dựa trên kiểu dữ liệu
+          if (typeof message.replyToMessageId === 'string') {
+            // Loại bỏ các ký tự không phải số và chuyển đổi
+            const cleanId = message.replyToMessageId.replace(/[^0-9]/g, "");
+            finalReplyToMessageId = cleanId ? parseInt(cleanId, 10) : null;
+          } else if (typeof message.replyToMessageId === 'number') {
+            // Nếu đã là số, kiểm tra tính hợp lệ
+            finalReplyToMessageId = Number.isInteger(message.replyToMessageId) ? message.replyToMessageId : null;
           }
+          
+          // Kiểm tra xem số đã chuyển đổi có hợp lệ không
+          if (finalReplyToMessageId !== null && (isNaN(finalReplyToMessageId) || finalReplyToMessageId <= 0)) {
+            console.warn(`Invalid replyToMessageId after conversion: ${finalReplyToMessageId}`);
+            finalReplyToMessageId = null;
+          } else if (finalReplyToMessageId !== null) {
+            // Kiểm tra xem message được trả lời có tồn tại không
+            const [originalMessage] = await db.select()
+              .from(chatMessages)
+              .where(eq(chatMessages.id, finalReplyToMessageId));
+              
+            if (!originalMessage) {
+              console.warn(`Reply to non-existent message ID: ${finalReplyToMessageId}`);
+              finalReplyToMessageId = null;
+            } else {
+              console.log(`Valid reply to message ID: ${finalReplyToMessageId}`);
+            }
+          }
+        } catch (error) {
+          console.error(`Error processing replyToMessageId: ${error}`);
+          finalReplyToMessageId = null;
         }
       }
 

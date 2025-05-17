@@ -189,13 +189,32 @@ export class WebSocketHandler {
 
       const media = payload.media || null;
       let replyId = null;
+      
+      // Xử lý cẩn thận replyToMessageId
       if (payload.replyToMessageId !== undefined && payload.replyToMessageId !== null) {
+        // Ghi log ban đầu để debug
+        console.log("Original message ID:", payload.replyToMessageId, "Type:", typeof payload.replyToMessageId);
+        
         try {
-          replyId = Number(payload.replyToMessageId);
-          if (isNaN(replyId)) replyId = null;
-          console.log("Processing reply to message ID:", replyId, "Type:", typeof replyId);
+          // Nếu là chuỗi, loại bỏ các ký tự không phải số
+          if (typeof payload.replyToMessageId === 'string') {
+            const cleanId = payload.replyToMessageId.replace(/[^0-9]/g, "");
+            replyId = cleanId ? parseInt(cleanId, 10) : null;
+          } 
+          // Nếu đã là số, sử dụng trực tiếp
+          else if (typeof payload.replyToMessageId === 'number') {
+            replyId = payload.replyToMessageId;
+          }
+          
+          // Kiểm tra lại để đảm bảo là số nguyên hợp lệ
+          if (replyId !== null && (isNaN(replyId) || !Number.isInteger(replyId) || replyId <= 0)) {
+            console.warn("Invalid replyToMessageId after conversion:", replyId);
+            replyId = null;
+          } else {
+            console.log("Final replyToMessageId:", replyId, "Type:", typeof replyId);
+          }
         } catch (e) {
-          console.warn("Invalid replyToMessageId format:", payload.replyToMessageId);
+          console.error("Error processing replyToMessageId:", e);
           replyId = null;
         }
       }
