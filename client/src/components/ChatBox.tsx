@@ -1051,36 +1051,12 @@ export function ChatBox() {
           </div>
         )}
 
-        {/* Reply info bar - Enhanced UI */}
+        {/* Reply info bar - Using ReplyPreview component */}
         {state.replyingTo && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 dark:border-blue-700 rounded-md p-2 mb-3 flex items-center justify-between">
-            <div className="flex items-center overflow-hidden">
-              <div className="flex-shrink-0 mr-2">
-                <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center">
-                  <CornerUpLeft className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                </div>
-              </div>
-              <div className="overflow-hidden">
-                <div className="text-xs text-blue-700 dark:text-blue-300 font-medium flex items-center">
-                  Đang trả lời{" "}
-                  <span className="font-semibold ml-1">
-                    {state.replyingTo.user?.username || "Người dùng ẩn danh"}
-                  </span>
-                </div>
-                <div className="text-xs text-blue-600/70 dark:text-blue-400/70 truncate max-w-[200px] md:max-w-[300px] lg:max-w-[400px]">
-                  {state.replyingTo.content}
-                </div>
-              </div>
-            </div>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={handleCancelReply}
-              className="h-6 w-6 rounded-full hover:bg-blue-200/50 dark:hover:bg-blue-800/50"
-            >
-              <X className="h-3 w-3 text-blue-700 dark:text-blue-300" />
-            </Button>
-          </div>
+          <ReplyPreview 
+            message={state.replyingTo} 
+            onCancel={handleCancelReply} 
+          />
         )}
 
         {/* Add ref to MessageInput for mention system */}
