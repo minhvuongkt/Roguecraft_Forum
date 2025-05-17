@@ -640,14 +640,10 @@ export function ChatBox() {
           return;
         }
       }
-
-      // Kiểm tra người dùng đã đăng nhập chưa
       if (!user) {
         setState((prev) => ({ ...prev, isUsernameDialogOpen: true }));
         return;
       }
-
-      // Kiểm tra tính hợp lệ của media
       if (media) {
         if (typeof media !== "object") {
           console.error("Media không hợp lệ:", media);
@@ -658,23 +654,16 @@ export function ChatBox() {
           });
           return;
         }
-
-        // Kiểm tra xem media có phải là object rỗng không
         if (Object.keys(media).length === 0) {
-          // Gửi tin nhắn không kèm media
           media = undefined;
         }
       }
 
-      // Nếu đang trả lời, thêm mention
       let finalMessage = message;
       let replyToMessageId = null;
 
       if (state.replyingTo) {
-        // Always set replyToMessageId when replying
         replyToMessageId = state.replyingTo.id;
-
-        // Add @mention for readability if not already included
         if (state.replyingTo.user) {
           const username = state.replyingTo.user.username;
           if (!finalMessage.includes(`@${username}`)) {
@@ -682,9 +671,6 @@ export function ChatBox() {
           }
         }
       }
-
-      // Gửi tin nhắn với replyToMessageId
-      // Make sure your sendMessage function accepts replyToMessageId parameter
       sendMessage(finalMessage, media, replyToMessageId);
 
       // Reset state and enable auto-scroll
