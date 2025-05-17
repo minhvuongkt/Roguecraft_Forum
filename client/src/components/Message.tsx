@@ -472,32 +472,32 @@ function MessageComponent({ message, showUser = true, onReply }: MessageProps) {
                 )}
               >
                 {/* Phụ đề hiển thị trên tin nhắn - Discord style */}
-                {isReplyMessage && originalMessage && (
+                {isReplyMessage && (
                   <div 
-                    className="absolute top-0 left-0 flex items-center gap-1 text-xs px-3 pt-1 text-gray-300 cursor-pointer"
+                    className="absolute top-0 left-0 flex items-center gap-1 text-xs px-3 pt-1 text-gray-300 cursor-pointer w-full overflow-hidden"
                     onClick={() => scrollToMessageById(message.replyToMessageId!)}
                     title="Nhấn để xem tin nhắn gốc"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400 flex-shrink-0">
                       <polyline points="9 14 4 9 9 4"></polyline>
                       <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
                     </svg>
-                    <span>
+                    <span className="truncate">
                       <span className="text-purple-400 hover:underline">
-                        {originalMessage.user?.username || "Unknown User"}
+                        {originalMessage?.user?.username || "Unknown User"}
                       </span>
-                      <span> {originalMessage.content.length > 20 
+                      <span className="opacity-80"> {originalMessage?.content && originalMessage.content.length > 20 
                         ? originalMessage.content.substring(0, 20) + "..."
-                        : originalMessage.content}
+                        : originalMessage?.content || "Tin nhắn gốc không có sẵn"}
                       </span>
                     </span>
                   </div>
                 )}
                 
                 {/* Thêm @ username vào đầu tin nhắn trả lời nếu chưa có */}
-                {isReplyMessage && originalMessage && !message.content.includes(`@${originalMessage.user?.username}`) && (
+                {isReplyMessage && originalMessage?.user?.username && !message.content.includes(`@${originalMessage.user.username}`) && (
                   <span className="text-purple-400 font-semibold mr-1">
-                    @{originalMessage.user?.username} 
+                    @{originalMessage.user.username} 
                   </span>
                 )}
 

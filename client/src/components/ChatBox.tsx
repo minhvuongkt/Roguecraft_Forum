@@ -663,7 +663,11 @@ export function ChatBox() {
       let replyToMessageId = null;
 
       if (state.replyingTo) {
-        replyToMessageId = state.replyingTo.id;
+        // Chuyển đổi ID sang số nếu cần thiết
+        replyToMessageId = typeof state.replyingTo.id === 'string' 
+          ? parseInt(state.replyingTo.id) 
+          : state.replyingTo.id;
+          
         if (state.replyingTo.user) {
           const username = state.replyingTo.user.username;
           if (!finalMessage.includes(`@${username}`)) {
@@ -672,7 +676,7 @@ export function ChatBox() {
         }
       }
       // Đảm bảo replyToMessageId được gửi chính xác như tham số thứ 3
-      console.log('Sending message with replyToMessageId:', replyToMessageId);
+      console.log('Sending message with replyToMessageId:', replyToMessageId, typeof replyToMessageId);
       sendMessage(finalMessage, media, replyToMessageId);
 
       // Reset state and enable auto-scroll
