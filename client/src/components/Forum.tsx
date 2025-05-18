@@ -7,6 +7,7 @@ import { useForum } from "@/hooks/useForum";
 import { useAuth } from "@/contexts/AuthContext";
 import { PlusIcon } from "lucide-react";
 import { LoginModal } from "@/components/LoginModal";
+import "../assets/minecraft-styles.css";
 
 export function Forum() {
   const [isCreateTopicModalOpen, setIsCreateTopicModalOpen] = useState(false);
@@ -48,13 +49,14 @@ export function Forum() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        {/* <h1 className="text-2xl font-bold">Forum Minecraft</h1> */}
+        <h1 className="minecraft-title text-2xl">Diễn Đàn</h1>
         <Button
           onClick={handleCreateTopicClick}
-          className="bg-primary hover:bg-primary/90 text-white"
+          variant="minecraft"
+          className="text-white"
         >
           <PlusIcon className="mr-2 h-4 w-4" />
-          Tạo Topic Mới
+          <span className="font-['VT323'] text-lg">Tạo Topic Mới</span>
         </Button>
       </div>
 
@@ -63,16 +65,14 @@ export function Forum() {
         {categories.map((category) => (
           <Button
             key={category.id}
-            variant={selectedCategory === category.name ? "default" : "outline"}
+            variant="minecraft"
             size="sm"
-            className={`rounded-full ${
-              selectedCategory === category.name
-                ? "bg-primary hover:bg-primary/90 text-white"
-                : "bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700"
+            className={`${
+              selectedCategory === category.name ? "border-[#ffff55]" : ""
             }`}
             onClick={() => setSelectedCategory(category.name)}
           >
-            {category.name}
+            <span className="font-['VT323'] text-base">{category.name}</span>
           </Button>
         ))}
       </div>
@@ -81,8 +81,8 @@ export function Forum() {
       <div className="space-y-4">
         {isTopicsLoading ? (
           <div className="text-center py-8">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#ffff55] border-r-transparent"></div>
+            <p className="mt-2 text-sm minecraft-text">
               Đang tải bài viết...
             </p>
           </div>
@@ -95,52 +95,41 @@ export function Forum() {
             />
           ))
         ) : (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">
-              Không có bài viết nào trong danh mục này
+          <div className="text-center py-8 minecraft-card">
+            <p className="minecraft-text">
+              Không có bài viết nào. Hãy tạo một bài viết mới để bắt đầu thảo luận!
             </p>
-          </div>
-        )}
-
-        {topics.length > 0 && (
-          <div className="flex justify-between items-center mt-6">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (page > 1) {
-                  setPage(page - 1);
-                  window.scrollTo(0, 0);
-                }
-              }}
-              disabled={page <= 1 || isTopicsLoading}
-            >
-              Trang trước
-            </Button>
-
-            <span className="text-sm text-muted-foreground">Trang {page}</span>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (topics.length === 10) {
-                  // If we have 10 topics, there might be more
-                  setPage(page + 1);
-                  window.scrollTo(0, 0);
-                }
-              }}
-              disabled={topics.length < 10 || isTopicsLoading}
-            >
-              Trang sau
-            </Button>
           </div>
         )}
       </div>
 
+      {/* Pagination */}
+      <div className="flex justify-center mt-6 gap-2">
+        <Button
+          variant="minecraft"
+          size="sm"
+          onClick={() => setPage(page > 1 ? page - 1 : 1)}
+          disabled={page === 1}
+        >
+          <span className="font-['VT323'] text-base">Trang trước</span>
+        </Button>
+        <Button
+          variant="minecraft"
+          size="sm"
+          onClick={() => setPage(page + 1)}
+          disabled={topics.length < 10}
+        >
+          <span className="font-['VT323'] text-base">Trang sau</span>
+        </Button>
+      </div>
+
+      {/* Modals */}
       <CreateTopicModal
         isOpen={isCreateTopicModalOpen}
-        onClose={() => setIsCreateTopicModalOpen(false)}
+        onClose={() => {
+          setIsCreateTopicModalOpen(false);
+          refetchTopics();
+        }}
       />
 
       <LoginModal

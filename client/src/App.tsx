@@ -31,9 +31,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light" storageKey="forum-chat-theme">
         <AuthProvider>
-          <WebSocketProvider>
-            <TooltipProvider>
-              <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+          <WebSocketProvider>            <TooltipProvider>
+              <div className="min-h-screen flex flex-col minecraft-background bg-gray-900/90 text-gray-900 dark:text-gray-100">
                 <Header />
                 <main className="flex-1">
                   <Router />

@@ -127,30 +127,92 @@ export class DatabaseStorage implements IStorage {
     await db.delete(chatMessages)
       .where(and(lt(chatMessages.createdAt, date)));
   }
-
   // Forum operations
   async createTopic(topic: InsertTopic): Promise<Topic> {
-    console.log("Creating topic with media:", JSON.stringify(topic.media, null, 2));
+    try {
+      console.log("Creating topic with data:", JSON.stringify({
+        userId: topic.userId,
+        title: topic.title?.substring(0, 30) + (topic.title?.length > 30 ? "..." : ""),
+        content: topic.content?.substring(0, 50) + (topic.content?.length > 50 ? "..." : ""),
+        category: topic.category,
+        isAnonymous: topic.isAnonymous,
+        mediaType: topic.media ? typeof topic.media : 'null'
+      }, null, 2));
 
-    // Đảm bảo định dạng topic đúng trước khi lưu
-    const topicToInsert = {
-      ...topic,
-      // Đảm bảo media có định dạng đúng
-      media: topic.media
-    };
+      // Check for any missing required fields
+      if (!topic.userId) {
+        throw new Error("Missing required userId in topic creation");
+      }
+      if (!topic.title) {
+        throw new Error("Missing required title in topic creation");
+      }
+      if (!topic.content) {
+        throw new Error("Missing required content in topic creation");
+      }
+      
+      // Use default category if not provided
+      if (!topic.category) {
+        console.warn("Missing category in topic creation, using default");
+        topic.category = 'Tất cả';
+      }
 
-    // Drizzle MySQL does not support .returning(), so insert and then select
-    const result = await db.insert(topics).values(topicToInsert);
-    const insertId = Number(result[0]?.insertId);
-    const [createdTopic] = await db.select().from(topics).where(eq(topics.id, insertId));
+      // Ensure all fields have correct types and are properly sanitized
+      const topicToInsert = {
+        userId: Number(topic.userId),
+        title: String(topic.title || "").trim().substring(0, 255), // Enforce DB limits
+        content: String(topic.content || "").trim().substring(0, 10000), // Enforce DB limits
+        category: String(topic.category || "Tất cả"),
+        isAnonymous: Boolean(topic.isAnonymous),
+        media: topic.media || null
+      };
+      
+      // Drizzle MySQL does not support .returning(), so insert and then select
+      console.log("Attempting to insert topic into database...");
+      
+      // Validate media format if present to prevent database errors
+      if (topicToInsert.media) {
+        if (typeof topicToInsert.media !== 'object') {
+          console.warn("Converting media to null as it's not an object");
+          topicToInsert.media = null;
+        } else {
+          // Ensure media is JSON serializable
+          try {
+            JSON.parse(JSON.stringify(topicToInsert.media));
+          } catch (error) {
+            console.error("Media is not serializable, setting to null:", error);
+            topicToInsert.media = null;
+          }
+        }
+      }
+      
+      const result = await db.insert(topics).values(topicToInsert);
+      
+      if (!result || !Array.isArray(result) || !result[0]?.insertId) {
+        throw new Error("Failed to get insert ID from database: " + JSON.stringify(result));
+      }
+      
+      const insertId = Number(result[0].insertId);
+      console.log(`Topic inserted with ID: ${insertId}`);
+      
+      // Fetch the created topic
+      const [createdTopic] = await db.select().from(topics).where(eq(topics.id, insertId));
+      
+      if (!createdTopic) {
+        throw new Error(`Failed to retrieve created topic with ID: ${insertId}`);
+      }
 
-    console.log("Topic created in database:", JSON.stringify({
-      id: createdTopic.id,
-      title: createdTopic.title,
-      media: createdTopic.media
-    }, null, 2));
-
-    return createdTopic;
+      console.log("Topic created in database:", JSON.stringify({
+        id: createdTopic.id,
+        title: createdTopic.title,
+        category: createdTopic.category,
+        isAnonymous: createdTopic.isAnonymous
+      }, null, 2));
+      
+      return createdTopic;
+    } catch (error) {
+      console.error("Database error during topic creation:", error);
+      throw new Error(`Failed to create topic in database: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   async getTopics(limit: number = 10, offset: number = 0, category?: string): Promise<Topic[]> {

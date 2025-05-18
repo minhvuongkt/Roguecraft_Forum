@@ -61,13 +61,23 @@ export const topics = mysqlTable("topics", {
   commentCount: int("comment_count").default(0),
 });
 
-export const insertTopicSchema = createInsertSchema(topics).pick({
-  userId: true,
-  title: true,
-  content: true,
-  media: true,
-  category: true,
-  isAnonymous: true,
+export const insertTopicSchema = z.object({
+  userId: z.number().int().positive("User ID phải là một số nguyên dương"),
+  title: z.string()
+    .min(1, "Tiêu đề không được để trống")
+    .max(255, "Tiêu đề không được quá 255 ký tự")
+    .transform(val => val.trim()),
+  content: z.string()
+    .min(1, "Nội dung không được để trống")
+    .max(10000, "Nội dung không được quá 10000 ký tự")
+    .transform(val => val.trim()),
+  // Cho phép media là null, object hoặc không có
+  media: z.union([
+    z.record(z.string(), z.string()),
+    z.null(),
+  ]).nullable().optional(),
+  category: z.string().default("Tất cả"),
+  isAnonymous: z.boolean().default(false)
 });
 
 // Comments schema (self-referencing foreign key cannot be enforced in Drizzle+TS, see comment)

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { MessageSquare, ThumbsUp, Share } from 'lucide-react';
 import type { Topic as TopicType } from '@/types/index';
 import { useForum } from '@/hooks/useForum';
+import "../assets/minecraft-styles.css";
 
 interface TopicProps {
   topic: TopicType;
@@ -23,7 +24,7 @@ function TopicComponent({ topic, onClick }: TopicProps) {
   const renderContent = () => {
     return (
       <div
-        className="text-gray-700 dark:text-gray-300 mb-3"
+        className="text-gray-100 dark:text-gray-200 mb-3 minecraft-text"
         dangerouslySetInnerHTML={{ __html: topic.content }}
       />
     );
@@ -62,7 +63,7 @@ function TopicComponent({ topic, onClick }: TopicProps) {
             <img
               src={imagePath}
               alt="Topic attachment"
-              className="rounded-lg mb-3 w-full max-h-80 object-cover"
+              className="rounded-none mb-3 w-full max-h-80 object-cover border-2 border-[#555]"
               onError={(e) => {
                 console.error("Failed to load image:", imagePath);
                 const target = e.currentTarget;
@@ -88,7 +89,7 @@ function TopicComponent({ topic, onClick }: TopicProps) {
                     key={idx}
                     src={imagePath}
                     alt={`Image ${idx + 1}`}
-                    className="rounded-lg w-full max-h-60 object-cover"
+                    className="rounded-none w-full max-h-60 object-cover border-2 border-[#555]"
                     onError={(e) => {
                       console.error("Failed to load image:", imagePath);
                       const target = e.currentTarget;
@@ -105,128 +106,118 @@ function TopicComponent({ topic, onClick }: TopicProps) {
         }
       }
 
-      // Old format: { url, type, name... }
-      if (mediaObj.url) {
-        let mediaUrl = mediaObj.url;
-        if (mediaUrl.startsWith("public/")) mediaUrl = mediaUrl.replace(/^public/, '');
-        if (!mediaUrl.startsWith("http") && !mediaUrl.startsWith("/")) {
-          mediaUrl = "/" + mediaUrl;
+      // Legacy: simple string
+      if (typeof mediaObj === 'string') {
+        let imagePath = mediaObj;
+        if (imagePath.startsWith("public/")) imagePath = imagePath.replace(/^public/, '');
+        if (!imagePath.startsWith("http") && !imagePath.startsWith("/")) {
+          imagePath = "/" + imagePath;
         }
-
-        if (mediaObj.type?.startsWith('image/')) {
-          return (
-            <img
-              src={mediaUrl}
-              alt="Topic attachment"
-              className="rounded-lg mb-3 w-full max-h-80 object-cover"
-              onError={(e) => {
-                console.error("Failed to load image:", mediaUrl);
-                const target = e.currentTarget;
-                target.src = "";
-                target.alt = "Image load failed";
-                target.style.height = "80px";
-                target.style.opacity = "0.5";
-              }}
-            />
-          );
-        }
-        if (mediaObj.type?.startsWith('video/')) {
-          return (
-            <video
-              src={mediaUrl}
-              controls
-              className="rounded-lg mb-3 w-full max-h-80"
-            />
-          );
-        }
+        return (
+          <img
+            src={imagePath}
+            alt="Topic attachment"
+            className="rounded-none mb-3 w-full max-h-80 object-cover border-2 border-[#555]"
+            onError={(e) => {
+              console.error("Failed to load image:", imagePath);
+              const target = e.currentTarget;
+              target.src = "";
+              target.alt = "Image load failed";
+              target.style.height = "80px";
+              target.style.opacity = "0.5";
+            }}
+          />
+        );
       }
-    } catch (err) {
-      console.error("Error rendering topic media:", err, topic.media);
-    }
 
-    return null;
+      // Previous format: {url: "path"}
+      if (mediaObj?.url) {
+        let imagePath = mediaObj.url;
+        if (imagePath.startsWith("public/")) imagePath = imagePath.replace(/^public/, '');
+        if (!imagePath.startsWith("http") && !imagePath.startsWith("/")) {
+          imagePath = "/" + imagePath;
+        }
+        return (
+          <img
+            src={imagePath}
+            alt="Topic attachment"
+            className="rounded-none mb-3 w-full max-h-80 object-cover border-2 border-[#555]"
+            onError={(e) => {
+              console.error("Failed to load image:", imagePath);
+              const target = e.currentTarget;
+              target.src = "";
+              target.alt = "Image load failed";
+              target.style.height = "80px";
+              target.style.opacity = "0.5";
+            }}
+          />
+        );
+      }
+      return null;
+    } catch (e) {
+      console.error("Error rendering media:", e);
+      return null;
+    }
   };
 
   return (
-    <Card className="hover:shadow-md transition cursor-pointer minecraft-panel border-2 border-gray-600" onClick={onClick}>
-      <CardContent className="p-4">
-        <div className="flex items-start space-x-3">
-          {topic.isAnonymous ? (
-            <div className="w-10 h-10 minecraft-button flex items-center justify-center">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-5 h-5 text-gray-300"
-              >
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-              </svg>
-            </div>
-          ) : (
-            <div className="w-10 h-10 minecraft-button flex items-center justify-center overflow-hidden">
-              {topic.user?.avatar ? (
-                <img src={topic.user.avatar} alt={topic.user.username} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-white font-bold text-sm">
-                  {topic.user?.username?.substring(0, 2).toUpperCase() || 'U'}
-                </span>
-              )}
-            </div>
-          )}
-
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center">
-                <h3 className="font-medium minecraft-font text-white">
-                  {topic.isAnonymous ? 'Ẩn danh' : topic.user?.username}
-                </h3>
-                {!topic.isAnonymous && (
-                  <Badge variant="outline" className="ml-2 px-2 py-0 border-green-500 text-green-400">
-                    Online
-                  </Badge>
-                )}
-              </div>
-              <span className="text-xs text-gray-400 minecraft-font">
-                {formatDate(topic.createdAt)}
-              </span>
-            </div>
-
-            <h2 className="text-lg font-semibold mb-2 minecraft-font text-yellow-300">{topic.title}</h2>
-
-            <div className="text-gray-300 mb-3 minecraft-font" dangerouslySetInnerHTML={{ __html: topic.content }} />
-            {renderMedia()}
-
-            <div className="flex items-center text-sm text-gray-400 space-x-4 mt-2 pt-2 border-t border-gray-700">
-              <Button variant="ghost" size="sm" className="space-x-1 h-8 minecraft-button">
-                <MessageSquare className="h-4 w-4" />
-                <span className="minecraft-font">{topic.commentCount || 0}</span>
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="space-x-1 h-8 minecraft-button"
-                onClick={handleLikeClick}
-              >
-                <ThumbsUp className="h-4 w-4" />
-                <span className="minecraft-font">{topic.likeCount}</span>
-              </Button>
-
-              <Button variant="ghost" size="sm" className="space-x-1 h-8 minecraft-button">
-                <Share className="h-4 w-4" />
-                <span className="minecraft-font">Chia sẻ</span>
-              </Button>
-            </div>
+    <div 
+      className="minecraft-topic cursor-pointer" 
+      onClick={onClick}
+    >
+      <div className="flex items-center mb-2">
+        <Avatar className="h-8 w-8 mr-2">
+          <AvatarImage
+            src={
+              topic.user?.avatar ||
+              `https://api.dicebear.com/7.x/adventurer/svg?seed=${topic.user?.id}&backgroundColor=b6e3f4`
+            }
+            alt={topic.user?.username || "Anonymous"}
+          />
+          <AvatarFallback>
+            {topic.user?.username?.charAt(0).toUpperCase() || "A"}
+          </AvatarFallback>
+        </Avatar>
+        <div>
+          <div className="font-['VT323'] text-lg text-[#ffff55]">{topic.title}</div>
+          <div className="text-xs text-gray-300 flex items-center gap-1">
+            <span className="font-['VT323']">
+              {topic.user?.username || "Anonymous"} • {formatDate(topic.createdAt)}
+            </span>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Content preview */}
+      {renderContent()}
+
+      {/* Media if available */}
+      {renderMedia()}
+
+      {/* Actions */}
+      <div className="flex items-center justify-between mt-2">
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="minecraft"
+            size="sm"
+            className="gap-1 py-0 px-2 h-7"
+            onClick={handleLikeClick}
+          >
+            <ThumbsUp className="h-3 w-3" />
+            <span className="font-['VT323'] text-sm">{topic.likeCount || 0}</span>
+          </Button>
+          <Button
+            variant="minecraft"
+            size="sm"
+            className="gap-1 py-0 px-2 h-7"
+            onClick={onClick}
+          >
+            <MessageSquare className="h-3 w-3" />
+            <span className="font-['VT323'] text-sm">{topic.commentCount || 0}</span>
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 

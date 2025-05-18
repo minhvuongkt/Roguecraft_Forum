@@ -18,6 +18,8 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        minecraft: 
+          "bg-[#434343] font-[VT323] text-white border-2 border-t-[#6b6b6b] border-l-[#6b6b6b] border-r-[#2d2d2d] border-b-[#2d2d2d] hover:bg-[#535353] active:bg-[#333333] active:translate-y-px active:border-t-[#2d2d2d] active:border-l-[#2d2d2d] active:border-r-[#6b6b6b] active:border-b-[#6b6b6b] transition-none",
       },
       size: {
         default: "h-10 px-4 py-2",

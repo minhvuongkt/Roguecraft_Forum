@@ -15,7 +15,25 @@ export async function apiRequest(
   data?: unknown | undefined,
 ): Promise<Response> {
   try {
-    console.log(`Making API request: ${method} ${url}`, data);
+    // Log the request with truncated data for large objects
+    let logData: any;
+    if (data) {
+      if (typeof data === 'object') {
+        const safeData: Record<string, any> = { ...data as object };
+        
+        // Truncate long string fields for logging
+        Object.entries(safeData).forEach(([key, value]) => {
+          if (typeof value === 'string' && value.length > 200) {
+            safeData[key] = value.substring(0, 200) + '... [truncated]';
+          }
+        });
+        
+        logData = safeData;
+      } else {
+        logData = data;
+      }
+    }
+      logWithGroup(`API Request: ${method} ${url}`, logData || 'No data');
     
     // Fix URL handling to ensure proper API paths
     let fullUrl = url;
@@ -30,32 +48,117 @@ export async function apiRequest(
     
     console.log(`Full URL: ${fullUrl}`);
     
-    const res = await fetch(fullUrl, {
+    // Prepare fetch options
+    const fetchOptions: RequestInit = {
       method,
       headers: {
         ...(data ? { "Content-Type": "application/json" } : {}),
         "Accept": "application/json"
       },
-      body: data ? JSON.stringify(data) : undefined,
       credentials: "include",
-    });
+    };
+      // Handle data serialization safely
+    if (data) {
+      try {
+        // Pre-process data for better serialization
+        const processedData = structuredClone(data);
+        
+        // Special handling for media objects to ensure they're serializable
+        if (processedData && typeof processedData === 'object' && 'media' in processedData) {
+          const media = (processedData as any).media;
+          if (media !== null && typeof media !== 'object') {
+            console.warn('Converting non-object media to null');
+            (processedData as any).media = null;
+          }
+        }
+        
+        fetchOptions.body = JSON.stringify(processedData);
+        console.log('Request payload serialized successfully');
+      } catch (error) {
+        console.error("Error serializing request data:", error);
+        throw new Error("Failed to serialize request data: " + (error instanceof Error ? error.message : 'Unknown error'));
+      }
+    }
+    
+    // Execute fetch with timeout and better error handling
+    let res: Response;
+    try {
+      res = await Promise.race([
+        fetch(fullUrl, fetchOptions),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
+        )
+      ]) as Response;
+    } catch (error) {
+      console.error(`Network error when fetching ${method} ${url}:`, error);
+      throw new Error(`Network request failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
     
     console.log(`Response received: ${res.status} ${res.statusText}`);
+      // Check if the response is successful first
+    if (!res.ok) {
+      const contentType = res.headers.get("content-type");
+      let errorDetail;
+      
+      if (contentType && contentType.includes("application/json")) {
+        try {
+          const errorJson = await res.json();
+          logWithGroup("API Error Response (JSON)", {
+            url: fullUrl,
+            status: res.status,
+            error: errorJson
+          }, true);
+          
+          // Handle structured error response
+          if (typeof errorJson === 'object' && errorJson !== null) {
+            if (errorJson.message) {
+              errorDetail = errorJson.message;
+            } else if (errorJson.error) {
+              errorDetail = errorJson.error;
+            } else if (errorJson.details) {
+              errorDetail = errorJson.details;
+            } else {
+              errorDetail = JSON.stringify(errorJson);
+            }
+          } else {
+            errorDetail = JSON.stringify(errorJson);
+          }
+        } catch (e) {
+          const text = await res.text();
+          logWithGroup("API Error Response (Parse Error)", {
+            url: fullUrl,
+            status: res.status,
+            text,
+            parseError: e
+          }, true);
+          errorDetail = text;
+        }
+      } else {
+        const text = await res.text();
+        logWithGroup("API Error Response (Non-JSON)", {
+          url: fullUrl,
+          status: res.status,
+          contentType,
+          text
+        }, true);
+        errorDetail = text;
+      }
+      
+      throw new Error(`${res.status}: ${errorDetail || res.statusText}`);
+    }
     
-    // Check and handle non-JSON responses early
+    // For successful responses, verify JSON content type
     const contentType = res.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
       const text = await res.text();
-      console.error("Invalid JSON response:", {
+      console.warn("Response is not JSON but request was successful:", {
         url: fullUrl,
         status: res.status,
         contentType,
-        responseText: text
+        responseText: text.slice(0, 100)
       });
-      throw new Error(`Expected JSON response but got ${contentType || 'no content type'}. Status: ${res.status}. Response: ${text.slice(0, 100)}...`);
     }
 
-    await throwIfResNotOk(res);
     return res;
   } catch (error) {
     console.error("API request error:", error);
@@ -95,6 +198,26 @@ export const getQueryFn: <T>(options: {
       throw error;
     }
   };
+
+// Enhanced logging helper
+function logWithGroup(title: string, data: any, isError = false) {
+  if (isError) {
+    console.group(`🛑 ${title}`);
+  } else {
+    console.group(`🔍 ${title}`);
+  }
+  
+  if (data instanceof Error) {
+    console.error(data);
+  } else if (typeof data === 'object' && data !== null) {
+    console.log(JSON.stringify(data, null, 2));
+  } else {
+    console.log(data);
+  }
+  
+  console.trace('Call stack');
+  console.groupEnd();
+}
 
 export const queryClient = new QueryClient({
   defaultOptions: {

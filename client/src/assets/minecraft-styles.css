@@ -1,3 +1,88 @@
+/* Minecraft Font Imports */
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+/* Minecraft Background Styles */
+.minecraft-background {
+  background-image: url('./images/anh1.png');
+  background-repeat: repeat;
+  image-rendering: pixelated;
+  background-size: cover;
+  background-position: center;
+}
+
+.minecraft-dirt-background {
+  /* background-image: url('./images/anh2.png'); */
+  background-repeat: repeat;
+  image-rendering: pixelated;
+}
+
+/* Minecraft UI Components */
+.minecraft-navbar {
+  background-color: rgba(21, 21, 21, 0.9);
+  border: 4px solid;
+  border-left-color: #6b6b6b;
+  border-top-color: #6b6b6b;
+  border-right-color: #2d2d2d;
+  border-bottom-color: #2d2d2d;
+  image-rendering: pixelated;
+  font-family: 'VT323', monospace;
+}
+
+.minecraft-card {
+  background-color: rgba(21, 21, 21, 0.8);
+  border: 4px solid;
+  border-left-color: #6b6b6b;
+  border-top-color: #6b6b6b;
+  border-right-color: #2d2d2d;
+  border-bottom-color: #2d2d2d;
+  image-rendering: pixelated;
+  font-family: 'VT323', monospace;
+  font-size: 1.2rem;
+  padding: 16px;
+  margin: 8px 0;
+  color: #ffffff;
+}
+
+.minecraft-topic {
+  background-color: rgba(60, 60, 60, 0.8);
+  border: 3px solid;
+  border-left-color: #8b8b8b;
+  border-top-color: #8b8b8b;
+  border-right-color: #3d3d3d;
+  border-bottom-color: #3d3d3d;
+  image-rendering: pixelated;
+  font-family: 'VT323', monospace;
+  padding: 12px;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.minecraft-topic:hover {
+  transform: scale(1.01);
+}
+
+.minecraft-topic:active {
+  border-left-color: #3d3d3d;
+  border-top-color: #3d3d3d;
+  border-right-color: #8b8b8b;
+  border-bottom-color: #8b8b8b;
+  transform: translate(2px, 2px);
+}
+
+.minecraft-title {
+  font-family: 'VT323', monospace;
+  font-size: 2rem;
+  color: #ffff55;
+  text-shadow: 2px 2px 0px #3f3f00;
+  letter-spacing: 1px;
+}
+
+.minecraft-text {
+  font-family: 'VT323', monospace;
+  font-size: 1.2rem;
+  color: #ffffff;
+}
+
 /* Minecraft Chat Styles */
 .minecraft-chat-container {
   background-color: rgba(0, 0, 0, 0.85);

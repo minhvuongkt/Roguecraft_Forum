@@ -46,15 +46,111 @@ export function useForum() {
       media?: any;
     }) => {
       if (!user) {
-        throw new Error('You must be logged in to create a topic');
+        throw new Error('Bạn phải đăng nhập để tạo topic');
       }
+      console.log('Preparing topic data for API request');
       
-      const response = await apiRequest('POST', '/api/forum/topics', {
-        ...topicData,
-        userId: user.id,
-      });
-      
-      return response.json();
+      try {
+        if (!user || !user.id) {
+          throw new Error('Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.');
+        }
+        
+        // Chuẩn bị data với xác thực cẩn thận
+        const validatedTopicData: {
+          userId: number;
+          title: string;
+          content: string;
+          category: string;
+          isAnonymous: boolean;
+          media: Record<string, string> | null;
+        } = {
+          userId: Number(user.id),
+          title: String(topicData.title || "").trim(),
+          content: String(topicData.content || "").trim(),
+          category: String(topicData.category || 'Tất cả'),
+          isAnonymous: Boolean(topicData.isAnonymous),
+          media: null // Mặc định là null
+        };
+        
+        // Kiểm tra dữ liệu hợp lệ
+        if (!validatedTopicData.title) {
+          throw new Error('Tiêu đề không được để trống');
+        }
+        
+        if (validatedTopicData.title.length > 255) {
+          throw new Error('Tiêu đề không được quá 255 ký tự');
+        }
+        
+        if (!validatedTopicData.content) {
+          throw new Error('Nội dung không được để trống');
+        }
+        
+        if (validatedTopicData.content.length > 10000) {
+          throw new Error('Nội dung không được quá 10000 ký tự');
+        }
+        
+        // Xử lý media một cách cẩn thận
+        if (topicData.media) {
+          try {
+            if (typeof topicData.media === 'object' && topicData.media !== null) {
+              const safeMedia: Record<string, string> = {};
+              
+              Object.entries(topicData.media).forEach(([key, value]) => {
+                if (typeof value === 'string') {
+                  safeMedia[key] = value;
+                } else if (value !== null && value !== undefined) {
+                  safeMedia[key] = String(value);
+                }
+              });
+              
+              if (Object.keys(safeMedia).length > 0) {
+                validatedTopicData.media = safeMedia;
+                console.log('Media processed successfully:', Object.keys(safeMedia).length, 'items');
+              }
+            }
+          } catch (mediaError) {
+            console.error('Error processing media:', mediaError);
+            // Giữ media là null nếu có lỗi
+          }
+        }
+        
+        console.log('Sending request with data:', {
+          ...validatedTopicData,
+          content: validatedTopicData.content.substring(0, 30) + '...'
+        });
+        
+        try {
+          const response = await apiRequest('POST', '/api/forum/topics', validatedTopicData);
+          
+          if (!response.ok) {
+            let errorMessage = `Error ${response.status}: ${response.statusText}`;
+            
+            try {
+              const contentType = response.headers.get('content-type');
+              if (contentType && contentType.includes('application/json')) {
+                const errorJson = await response.json();
+                errorMessage = errorJson.message || errorJson.details || errorMessage;
+              } else {
+                const errorText = await response.text();
+                if (errorText) errorMessage = errorText;
+              }
+            } catch (parseError) {
+              console.error('Error parsing error response:', parseError);
+            }
+            
+            throw new Error(errorMessage);
+          }
+          
+          console.log('Topic created successfully:', response.status);
+          return response.json();
+        } catch (networkError) {
+          console.error('Network error in topic creation:', networkError);
+          throw new Error(`Lỗi kết nối: ${networkError instanceof Error ? networkError.message : 'Không thể kết nối tới máy chủ'}`);
+        }
+      } catch (error) {
+        console.error('Error in create topic mutation:', error);
+        throw error instanceof Error ? error : new Error('Lỗi không xác định khi tạo topic');
+      }
     },
     onSuccess: () => {
       // Invalidate topics query to refetch the list

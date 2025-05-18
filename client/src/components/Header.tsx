@@ -13,6 +13,7 @@ import { Bell, LogOut, Moon, Sun, User, UserPlus } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoginModal } from "./LoginModal";
+import "../assets/minecraft-styles.css";
 
 export function Header() {
   const [activeTab, setActiveTab] = useState<"forum" | "chat">("forum");
@@ -40,7 +41,7 @@ export function Header() {
   };
 
   return (
-    <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-sm sticky top-0 z-10 border-b border-gray-200 dark:border-gray-700">
+    <header className="minecraft-navbar sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
@@ -49,11 +50,13 @@ export function Header() {
               className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
               <img
-                src="https://roguecraft.asia/assets/image/bannermc.png"
+                // src="https://roguecraft.asia/assets/image/bannermc.png"
+                src="./src/assets/images/logo.png"
                 alt="Roguecraft Logo"
                 className="h-8 w-auto"
+                style={{ imageRendering: 'pixelated' }}
               />
-              <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
+              <span className="font-['VT323'] text-2xl text-[#ffff55]" style={{ textShadow: '2px 2px 0px #3f3f00' }}>
                 Roguecraft
               </span>
             </Link>
@@ -61,8 +64,8 @@ export function Header() {
 
           <div className="hidden md:flex items-center space-x-4">
             <Button
-              variant="ghost"
-              className={activeTab === "forum" ? "text-primary" : ""}
+              variant="minecraft"
+              className={activeTab === "forum" ? "border-[#ffff55]" : ""}
               onClick={() => handleTabChange("forum")}
             >
               <svg
@@ -82,8 +85,8 @@ export function Header() {
               Diễn Đàn
             </Button>
             <Button
-              variant="ghost"
-              className={activeTab === "chat" ? "text-primary" : ""}
+              variant="minecraft"
+              className={activeTab === "chat" ? "border-[#ffff55]" : ""}
               onClick={() => handleTabChange("chat")}
             >
               <svg
@@ -102,33 +105,42 @@ export function Header() {
           </div>
 
           <div className="flex items-center space-x-3">
-            {/* <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500"></span>
-            </Button> */}
+            <Button
+              variant="minecraft"
+              size="icon"
+              className="rounded-none"
+              onClick={toggleTheme}
+              aria-label="Toggle Theme"
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+            </Button>
 
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    variant="ghost"
-                    className="flex items-center space-x-2 text-sm"
+                    variant="minecraft"
+                    className="flex items-center space-x-2 rounded-none"
                   >
                     <Avatar className="h-8 w-8">
                       {user?.avatar ? (
                         <AvatarImage src={user.avatar} alt={user.username} />
                       ) : (
                         <AvatarFallback className="bg-primary text-primary-foreground">
-                          {user?.username.substring(0, 2).toUpperCase()}
+                          {user?.username?.substring(0, 2).toUpperCase() || "U"}
                         </AvatarFallback>
                       )}
                     </Avatar>
-                    <span className="hidden md:block">{user?.username}</span>
+                    <span className="hidden md:block font-['VT323'] text-lg">{user?.username}</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="minecraft-card rounded-none border-2 border-t-[#6b6b6b] border-l-[#6b6b6b] border-r-[#2d2d2d] border-b-[#2d2d2d] p-0">
                   {/* <DropdownMenuItem
-                    className="cursor-pointer"
+                    className="cursor-pointer font-['VT323'] text-lg hover:bg-[#535353]"
                     onClick={() => {
                       if (user?.isTemporary) {
                         setIsLoginModalOpen(true);
@@ -140,8 +152,8 @@ export function Header() {
                     <User className="mr-2 h-4 w-4" />
                     <span>Trang cá nhân</span>
                   </DropdownMenuItem> */}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="cursor-pointer">
+                  {/* <DropdownMenuSeparator /> */}
+                  <DropdownMenuItem onClick={logout} className="cursor-pointer font-['VT323'] text-lg hover:bg-[#535353] text-red-400">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Đăng xuất</span>
                   </DropdownMenuItem>
@@ -149,35 +161,24 @@ export function Header() {
               </DropdownMenu>
             ) : (
               <Button
-                variant="outline"
-                size="sm"
+                variant="minecraft"
                 onClick={() => setIsLoginModalOpen(true)}
               >
                 <UserPlus className="mr-2 h-4 w-4" />
-                <span>Đăng nhập</span>
+                <span className="font-['VT323'] text-lg">Đăng nhập</span>
               </Button>
             )}
-
-            <Button variant="ghost" size="icon" onClick={toggleTheme}>
-              {theme === "dark" ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-            </Button>
           </div>
         </div>
       </div>
 
       {/* Mobile Tab Navigation */}
-      <div className="md:hidden border-t dark:border-gray-700">
+      <div className="md:hidden">
         <div className="grid grid-cols-2 w-full">
           <Button
-            variant="ghost"
-            className={`text-center py-3 ${
-              activeTab === "forum"
-                ? "border-b-2 border-primary text-primary"
-                : "text-gray-500 dark:text-gray-400"
+            variant="minecraft"
+            className={`text-center py-3 rounded-none ${
+              activeTab === "forum" ? "border-t-[#ffff55] border-l-[#ffff55]" : ""
             }`}
             onClick={() => handleTabChange("forum")}
           >
@@ -195,14 +196,12 @@ export function Header() {
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
               <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
-            Diễn Đàn
+            <span className="font-['VT323'] text-lg">Diễn Đàn</span>
           </Button>
           <Button
-            variant="ghost"
-            className={`text-center py-3 ${
-              activeTab === "chat"
-                ? "border-b-2 border-primary text-primary"
-                : "text-gray-500 dark:text-gray-400"
+            variant="minecraft"
+            className={`text-center py-3 rounded-none ${
+              activeTab === "chat" ? "border-t-[#ffff55] border-l-[#ffff55]" : ""
             }`}
             onClick={() => handleTabChange("chat")}
           >
@@ -217,7 +216,7 @@ export function Header() {
             >
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
-            Nơi xàm lul
+            <span className="font-['VT323'] text-lg">Nơi xàm lul</span>
           </Button>
         </div>
       </div>
