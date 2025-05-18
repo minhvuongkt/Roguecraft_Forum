@@ -13,11 +13,20 @@ import { Bell, LogOut, Moon, Sun, User, UserPlus } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoginModal } from "./LoginModal";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import "../assets/minecraft-styles.css";
 
 export function Header() {
   const [activeTab, setActiveTab] = useState<"forum" | "chat">("forum");
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const { user, logout, isAuthenticated } = useAuth();
   const [location, setLocation] = useLocation();
@@ -38,6 +47,11 @@ export function Header() {
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  const handleLogout = () => {
+    logout();
+    setIsLogoutDialogOpen(false);
   };
 
   return (
@@ -153,10 +167,45 @@ export function Header() {
                     <span>Trang cá nhân</span>
                   </DropdownMenuItem> */}
                   {/* <DropdownMenuSeparator /> */}
-                  <DropdownMenuItem onClick={logout} className="cursor-pointer font-['VT323'] text-lg hover:bg-[#535353] text-red-400">
+                  <DropdownMenuItem
+                    onClick={() => setIsLogoutDialogOpen(true)}
+                    className="cursor-pointer font-['VT323'] text-lg hover:bg-[#535353] text-red-400"
+                  >
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Đăng xuất</span>
                   </DropdownMenuItem>
+
+                  <Dialog
+                    open={isLogoutDialogOpen}
+                    onOpenChange={setIsLogoutDialogOpen}
+                  >
+                    <DialogContent className="minecraft-card rounded-none border-2 border-t-[#6b6b6b] border-l-[#6b6b6b] border-r-[#2d2d2d] border-b-[#2d2d2d] p-6">
+                      <DialogHeader>
+                        <DialogTitle className="font-['VT323'] text-xl">
+                          Cảnh báo
+                        </DialogTitle>
+                      </DialogHeader>
+                      <DialogDescription className="font-['VT323'] text-lg mb-4">
+                        Vì đây là tài khoản tạm thời nên nếu bạn đăng xuất sẽ không thể đăng nhập lại tài khoản này nữa.
+                      </DialogDescription>
+                      <DialogFooter className="flex justify-end space-x-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => setIsLogoutDialogOpen(false)}
+                          className="font-['VT323']"
+                        >
+                          Hủy
+                        </Button>
+                        <Button
+                          variant="minecraft"
+                          onClick={handleLogout}
+                          className="font-['VT323']"
+                        >
+                          Đăng xuất
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
@@ -225,6 +274,39 @@ export function Header() {
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
       />
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog
+        open={isLogoutDialogOpen}
+        onOpenChange={setIsLogoutDialogOpen}
+      >
+        <DialogContent className="minecraft-card rounded-none border-2 border-t-[#6b6b6b] border-l-[#6b6b6b] border-r-[#2d2d2d] border-b-[#2d2d2d] p-6">
+          <DialogHeader>
+            <DialogTitle className="font-['VT323'] text-xl">
+              Xác nhận đăng xuất
+            </DialogTitle>
+          </DialogHeader>
+          <DialogDescription className="font-['VT323'] text-lg mb-4">
+            Bạn có chắc chắn muốn đăng xuất khỏi tài khoản của mình?
+          </DialogDescription>
+          <DialogFooter className="flex justify-end space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsLogoutDialogOpen(false)}
+              className="font-['VT323']"
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="minecraft"
+              onClick={handleLogout}
+              className="font-['VT323']"
+            >
+              Đăng xuất
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
