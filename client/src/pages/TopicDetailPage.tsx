@@ -28,7 +28,13 @@ const CommentItem = ({
 }) => {
   const maxDepth = 3; // Limit nesting depth
   const isReplyable = depth < maxDepth;
-  
+
+  // Fix media if it's stringified JSON or legacy
+  let mediaObj: any = comment.media;
+  if (mediaObj && typeof mediaObj === 'string') {
+    try { mediaObj = JSON.parse(mediaObj); } catch { mediaObj = null; }
+  }
+
   return (
     <div className={`${depth > 0 ? 'ml-6 border-l-2 border-gray-200 dark:border-gray-700 pl-4' : ''}`}>
       <Card className={`mb-3 ${depth > 0 ? 'bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700' : ''}`}>
@@ -62,14 +68,43 @@ const CommentItem = ({
           
           <div className="text-sm" dangerouslySetInnerHTML={{ __html: comment.content }} />
           
-          {comment.media && comment.media.type?.startsWith('image/') && (
-            <img 
-              src={comment.media.url}
-              alt="Comment media"
-              className="rounded-lg mt-2 max-h-48"
-            />
+          {/* Render media (image) if exists */}
+          {mediaObj && (
+            <>
+              {/* New format: { "0": "/path", ... } or old format: { url, ... } */}
+              {typeof mediaObj === 'object' && !mediaObj.url && Object.keys(mediaObj).some(key => /^\d+$/.test(key))
+                ? (
+                  <div className={`mt-2 ${Object.keys(mediaObj).length > 1 ? 'grid grid-cols-2 gap-2' : ''}`}>
+                    {Object.values(mediaObj).map((path, idx) => {
+                      let imagePath = path as string;
+                      if (imagePath.startsWith("public/")) imagePath = imagePath.replace(/^public/, '');
+                      if (!imagePath.startsWith("http") && !imagePath.startsWith("/")) imagePath = "/" + imagePath;
+                      return (
+                        <img
+                          key={idx}
+                          src={imagePath}
+                          alt="Comment media"
+                          className="rounded-lg max-h-48"
+                        />
+                      );
+                    })}
+                  </div>
+                )
+                : mediaObj.url && mediaObj.type?.startsWith('image/') && (
+                  <img
+                    src={
+                      mediaObj.url.startsWith("public/") ? mediaObj.url.replace(/^public/, '') :
+                      (!mediaObj.url.startsWith("http") && !mediaObj.url.startsWith("/")) ? "/" + mediaObj.url :
+                      mediaObj.url
+                    }
+                    alt="Comment media"
+                    className="rounded-lg mt-2 max-h-48"
+                  />
+                )
+              }
+            </>
           )}
-          
+
           {isReplyable && (
             <div className="mt-3 flex justify-end">
               <Button 
@@ -139,11 +174,9 @@ export default function TopicDetailPage() {
     queryKey: [`/api/forum/topics/${topicId}/comments`],
     queryFn: async () => {
       const response = await fetch(`/api/forum/topics/${topicId}/comments`);
-      
       if (!response.ok) {
         throw new Error('Failed to fetch comments');
       }
-      
       return response.json() as Promise<CommentType[]>;
     },
     enabled: !!topicId,
@@ -163,7 +196,6 @@ export default function TopicDetailPage() {
       setIsLoginModalOpen(true);
       return;
     }
-
     toggleLike({ topicId: topicId as number, action: 'like' });
   };
 
@@ -198,29 +230,24 @@ export default function TopicDetailPage() {
       setIsLoginModalOpen(true);
       return;
     }
-    
     setReplyingTo(commentId);
-    
+
     // Get comment user to add @mention
     const foundComment = comments.find(c => c.id === commentId);
     if (foundComment && foundComment.user && !foundComment.isAnonymous) {
-      // Add @username to the comment text if it's not already there
       const mentionText = `@${foundComment.user.username} `;
       if (!comment || !comment.trim().startsWith(mentionText)) {
         setComment(mentionText);
       }
     }
-    
+
     // Scroll to comment form
     if (commentFormRef.current) {
       commentFormRef.current.scrollIntoView({ behavior: 'smooth' });
-      
-      // Focus on textarea after scrolling
       setTimeout(() => {
         const textarea = commentFormRef.current?.querySelector('textarea');
         if (textarea) {
           textarea.focus();
-          // Position cursor at the end of the text
           const length = textarea.value.length;
           textarea.setSelectionRange(length, length);
         }
@@ -230,12 +257,10 @@ export default function TopicDetailPage() {
 
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!isAuthenticated) {
       setIsLoginModalOpen(true);
       return;
     }
-    
     if (!comment.trim()) {
       toast({
         title: 'Lỗi',
@@ -244,7 +269,6 @@ export default function TopicDetailPage() {
       });
       return;
     }
-    
     createComment({
       topicId: topicId as number,
       content: comment,
@@ -252,11 +276,84 @@ export default function TopicDetailPage() {
       media: null,
       parentCommentId: replyingTo === null ? undefined : replyingTo,
     });
-    
     setComment('');
     setIsAnonymous(false);
     setReplyingTo(null);
   };
+
+  // --- MEDIA RENDER FIX FOR TOPIC ---
+  const renderTopicMedia = () => {
+    if (!topic?.media) return null;
+    let mediaObj: any = topic.media;
+    if (typeof mediaObj === "string") {
+      try { mediaObj = JSON.parse(mediaObj); } catch { mediaObj = { 0: mediaObj }; }
+    }
+    // New format: object with numeric keys
+    if (
+      typeof mediaObj === 'object' &&
+      !mediaObj.url &&
+      Object.keys(mediaObj).some(key => /^\d+$/.test(key))
+    ) {
+      return (
+        <div className={`mb-6 ${Object.keys(mediaObj).length > 1 ? 'grid grid-cols-2 gap-3' : ''}`}>
+          {Object.entries(mediaObj).map(([key, path]) => {
+            let imagePath = path as string;
+            if (imagePath.startsWith("public/")) imagePath = imagePath.replace(/^public/, '');
+            if (!imagePath.startsWith("http") && !imagePath.startsWith("/")) imagePath = "/" + imagePath;
+            return (
+              <img 
+                key={key}
+                src={imagePath}
+                alt={`Topic image ${key}`}
+                className="rounded-lg max-h-96 max-w-full cursor-pointer"
+                onClick={() => {
+                  setViewingImageUrl(imagePath);
+                  setImageViewerOpen(true);
+                }}
+                onError={(e) => {
+                  console.error("Failed to load image:", imagePath);
+                  const target = e.currentTarget;
+                  target.src = "";
+                  target.alt = "Image load failed";
+                  target.style.height = "96px";
+                  target.style.opacity = "0.5";
+                }}
+              />
+            );
+          })}
+        </div>
+      );
+    }
+    // Old format: { url, type }
+    if (mediaObj.url) {
+      let mediaUrl = mediaObj.url;
+      if (mediaUrl.startsWith("public/")) mediaUrl = mediaUrl.replace(/^public/, '');
+      if (!mediaUrl.startsWith("http") && !mediaUrl.startsWith("/")) mediaUrl = "/" + mediaUrl;
+      if (mediaObj.type?.startsWith('image/')) {
+        return (
+          <img 
+            src={mediaUrl}
+            alt="Topic media"
+            className="rounded-lg mb-6 max-h-96 max-w-full cursor-pointer"
+            onClick={() => {
+              setViewingImageUrl(mediaUrl);
+              setImageViewerOpen(true);
+            }}
+            onError={(e) => {
+              console.error("Failed to load image:", mediaUrl);
+              const target = e.currentTarget;
+              target.src = "";
+              target.alt = "Image load failed";
+              target.style.height = "96px";
+              target.style.opacity = "0.5";
+            }}
+          />
+        );
+      }
+    }
+    return null;
+  };
+  // --- END MEDIA RENDER FIX ---
 
   if (isLoading) {
     return (
@@ -332,40 +429,7 @@ export default function TopicDetailPage() {
         
         <div className="prose prose-lg dark:prose-invert max-w-none mb-6" dangerouslySetInnerHTML={{ __html: topic.content }} />
         
-        {topic.media && (
-          <>
-            {/* Kiểm tra định dạng media mới {"1":"path1", "2":"path2"} */}
-            {typeof topic.media === 'object' && !topic.media.url && Object.keys(topic.media).some(key => /^\d+$/.test(key)) ? (
-              <div className={`mb-6 ${Object.keys(topic.media).length > 1 ? 'grid grid-cols-2 gap-3' : ''}`}>
-                {Object.entries(topic.media).map(([key, path]) => (
-                  <img 
-                    key={key}
-                    src={path as string}
-                    alt={`Topic image ${key}`}
-                    className="rounded-lg max-h-96 max-w-full cursor-cover"
-                    onClick={() => {
-                      setViewingImageUrl(path as string);
-                      setImageViewerOpen(true);
-                    }}
-                  />
-                ))}
-              </div>
-            ) : (
-              /* Định dạng cũ */
-              topic.media.type?.startsWith('image/') && (
-                <img 
-                  src={topic.media.url}
-                  alt="Topic media"
-                  className="rounded-lg mb-6 max-h-96 max-w-full cursor-pointer"
-                  onClick={() => {
-                    setViewingImageUrl(topic.media.url);
-                    setImageViewerOpen(true);
-                  }}
-                />
-              )
-            )}
-          </>
-        )}
+        {renderTopicMedia()}
         
         <div className="flex items-center gap-4 pb-6 border-b border-gray-200 dark:border-gray-800">
           <Button 

@@ -14,12 +14,12 @@ interface TopicProps {
 
 function TopicComponent({ topic, onClick }: TopicProps) {
   const { formatDate, toggleLike } = useForum();
-  
+
   const handleLikeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     toggleLike({ topicId: topic.id, action: 'like' });
   };
-  
+
   const renderContent = () => {
     return (
       <div
@@ -28,68 +28,125 @@ function TopicComponent({ topic, onClick }: TopicProps) {
       />
     );
   };
-  
+
   const renderMedia = () => {
     if (!topic.media) return null;
-    
+
     try {
-      // Kiểm tra định dạng mới: {"1": "path1", "2": "path2", ...}
-      if (typeof topic.media === 'object' && !topic.media.url && Object.keys(topic.media).some(key => /^\d+$/.test(key))) {
-        // Định dạng mới - object với khóa số
-        if (Object.keys(topic.media).length === 1) {
-          // Chỉ một hình ảnh - hiển thị lớn hơn
-          const path = topic.media['1'];
+      let mediaObj: any = topic.media;
+      // Handle stringified JSON if needed
+      if (typeof mediaObj === "string") {
+        try {
+          mediaObj = JSON.parse(mediaObj);
+        } catch {
+          mediaObj = { 0: mediaObj };
+        }
+      }
+
+      // New format: {"1": "path1", "2": "path2", ...}
+      if (
+        typeof mediaObj === 'object' &&
+        !mediaObj.url &&
+        Object.keys(mediaObj).some(key => /^\d+$/.test(key))
+      ) {
+        const paths = Object.values(mediaObj) as string[];
+        if (paths.length === 1) {
+          let imagePath = paths[0];
+          // Remove "public" if present
+          if (imagePath.startsWith("public/")) imagePath = imagePath.replace(/^public/, '');
+          // Ensure path starts with / or http
+          if (!imagePath.startsWith("http") && !imagePath.startsWith("/")) {
+            imagePath = "/" + imagePath;
+          }
           return (
             <img
-              src={path as string}
+              src={imagePath}
               alt="Topic attachment"
               className="rounded-lg mb-3 w-full max-h-80 object-cover"
+              onError={(e) => {
+                console.error("Failed to load image:", imagePath);
+                const target = e.currentTarget;
+                target.src = "";
+                target.alt = "Image load failed";
+                target.style.height = "80px";
+                target.style.opacity = "0.5";
+              }}
             />
           );
         } else {
-          // Nhiều hình ảnh - hiển thị dạng lưới
+          // Grid for multiple images
           return (
             <div className="grid grid-cols-2 gap-2 mb-3">
-              {Object.entries(topic.media).map(([key, value]) => (
-                <img
-                  key={key}
-                  src={value as string}
-                  alt={`Image ${key}`}
-                  className="rounded-lg w-full max-h-60 object-cover"
-                />
-              ))}
+              {paths.map((imgPath, idx) => {
+                let imagePath = imgPath;
+                if (imagePath.startsWith("public/")) imagePath = imagePath.replace(/^public/, '');
+                if (!imagePath.startsWith("http") && !imagePath.startsWith("/")) {
+                  imagePath = "/" + imagePath;
+                }
+                return (
+                  <img
+                    key={idx}
+                    src={imagePath}
+                    alt={`Image ${idx + 1}`}
+                    className="rounded-lg w-full max-h-60 object-cover"
+                    onError={(e) => {
+                      console.error("Failed to load image:", imagePath);
+                      const target = e.currentTarget;
+                      target.src = "";
+                      target.alt = "Image load failed";
+                      target.style.height = "60px";
+                      target.style.opacity = "0.5";
+                    }}
+                  />
+                );
+              })}
             </div>
           );
         }
       }
-      
-      // Định dạng cũ
-      if (topic.media.type?.startsWith('image/')) {
-        return (
-          <img
-            src={topic.media.url}
-            alt="Topic attachment"
-            className="rounded-lg mb-3 w-full max-h-80 object-cover"
-          />
-        );
-      }
-      
-      if (topic.media.type?.startsWith('video/')) {
-        return (
-          <video
-            src={topic.media.url}
-            controls
-            className="rounded-lg mb-3 w-full max-h-80"
-          />
-        );
+
+      // Old format: { url, type, name... }
+      if (mediaObj.url) {
+        let mediaUrl = mediaObj.url;
+        if (mediaUrl.startsWith("public/")) mediaUrl = mediaUrl.replace(/^public/, '');
+        if (!mediaUrl.startsWith("http") && !mediaUrl.startsWith("/")) {
+          mediaUrl = "/" + mediaUrl;
+        }
+
+        if (mediaObj.type?.startsWith('image/')) {
+          return (
+            <img
+              src={mediaUrl}
+              alt="Topic attachment"
+              className="rounded-lg mb-3 w-full max-h-80 object-cover"
+              onError={(e) => {
+                console.error("Failed to load image:", mediaUrl);
+                const target = e.currentTarget;
+                target.src = "";
+                target.alt = "Image load failed";
+                target.style.height = "80px";
+                target.style.opacity = "0.5";
+              }}
+            />
+          );
+        }
+        if (mediaObj.type?.startsWith('video/')) {
+          return (
+            <video
+              src={mediaUrl}
+              controls
+              className="rounded-lg mb-3 w-full max-h-80"
+            />
+          );
+        }
       }
     } catch (err) {
-      console.error("Error rendering topic media:", err);
+      console.error("Error rendering topic media:", err, topic.media);
     }
-    
+
     return null;
   };
-  
+
   return (
     <Card className="hover:shadow-md transition cursor-pointer" onClick={onClick}>
       <CardContent className="p-4">
@@ -117,12 +174,12 @@ function TopicComponent({ topic, onClick }: TopicProps) {
                 <AvatarImage src={topic.user.avatar} alt={topic.user.username} />
               ) : (
                 <AvatarFallback className="bg-primary text-primary-foreground">
-                  {topic.user?.username.substring(0, 2).toUpperCase() || 'U'}
+                  {topic.user?.username?.substring(0, 2).toUpperCase() || 'U'}
                 </AvatarFallback>
               )}
             </Avatar>
           )}
-          
+
           <div className="flex-1">
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center">
@@ -139,28 +196,28 @@ function TopicComponent({ topic, onClick }: TopicProps) {
                 {formatDate(topic.createdAt)}
               </span>
             </div>
-            
+
             <h2 className="text-lg font-semibold mb-2">{topic.title}</h2>
-            
+
             {renderContent()}
             {renderMedia()}
-            
+
             <div className="flex items-center text-sm text-muted-foreground space-x-4">
               <Button variant="ghost" size="sm" className="space-x-1 h-8">
                 <MessageSquare className="h-4 w-4" />
                 <span>{topic.commentCount || 0} bình luận</span>
               </Button>
-              
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="space-x-1 h-8" 
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="space-x-1 h-8"
                 onClick={handleLikeClick}
               >
                 <ThumbsUp className="h-4 w-4" />
                 <span>{topic.likeCount}</span>
               </Button>
-              
+
               <Button variant="ghost" size="sm" className="space-x-1 h-8">
                 <Share className="h-4 w-4" />
                 <span>Chia sẻ</span>
@@ -173,5 +230,4 @@ function TopicComponent({ topic, onClick }: TopicProps) {
   );
 }
 
-// Export memoized component to prevent unnecessary re-renders
 export const Topic = memo(TopicComponent);

@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import { cn } from "@/lib/utils";
 import { ImageViewerModal } from "./ImageViewerModal";
-import { CornerUpLeft, MessageSquare } from "lucide-react";
+import { CornerUpLeft } from "lucide-react";
 
 interface MessageProps {
   message: ChatMessage;
@@ -96,8 +96,6 @@ const MessageComponent = ({
         ...message,
         id: messageId
       };
-      
-      console.log('Replying to message with ID:', messageId);
       onReply(messageToReply);
     }
   };
@@ -165,17 +163,29 @@ const MessageComponent = ({
     return <>{parts}</>;
   };
 
-  // Render media content
+  // --- FIXED renderMedia ---
   const renderMedia = () => {
     if (!message.media) return null;
 
     try {
+      let mediaObj: any = message.media;
+      // If media is a stringified object, parse it
+      if (typeof mediaObj === "string") {
+        try {
+          mediaObj = JSON.parse(mediaObj);
+        } catch {
+          // fallback: treat as single path string
+          mediaObj = { 0: mediaObj };
+        }
+      }
+
+      // Format 1: Object with numeric keys or "image" key
       if (
-        typeof message.media === "object" &&
-        (Object.keys(message.media).some((key) => /^\d+$/.test(key)) ||
-          Object.keys(message.media).some((key) => key === "image"))
+        typeof mediaObj === "object" &&
+        (Object.keys(mediaObj).some((key) => /^\d+$/.test(key)) ||
+          Object.keys(mediaObj).some((key) => key === "image"))
       ) {
-        const mediaCount = Object.keys(message.media).length;
+        const mediaCount = Object.keys(mediaObj).length;
         const gridCols = mediaCount > 1 ? "grid-cols-2" : "";
 
         return (
@@ -183,12 +193,18 @@ const MessageComponent = ({
             className={`mt-2 ${mediaCount > 1 ? "grid gap-2 " + gridCols : "block"} w-full max-w-[240px] isolate`}
             data-message-id={`media-container-${message.id}`}
           >
-            {Object.entries(message.media).map(([key, path]) => {
+            {Object.entries(mediaObj).map(([key, path]) => {
               let imagePath = path as string;
+              // Remove leading "public" if present
+              if (imagePath.startsWith("public/")) {
+                imagePath = imagePath.replace(/^public/, "");
+              }
+              // Ensure path starts with / or http
               if (!imagePath.startsWith("http") && !imagePath.startsWith("/")) {
                 imagePath = "/" + imagePath;
               }
 
+              // Determine file type based on extension
               const isImage = imagePath.match(
                 /\.(jpg|jpeg|png|gif|webp|svg)$/i,
               );
@@ -215,6 +231,7 @@ const MessageComponent = ({
                           setImageViewerOpen(true);
                         }}
                         onError={(e) => {
+                          console.error("Failed to load image:", imagePath);
                           const target = e.currentTarget;
                           target.src = "";
                           target.alt = "Image load failed";
@@ -269,29 +286,46 @@ const MessageComponent = ({
         );
       }
 
-      if (message.media.url) {
+      // Format 2: Object with url property (legacy)
+      if (mediaObj && typeof mediaObj === "object" && mediaObj.url) {
+        let mediaUrl = mediaObj.url;
+        if (mediaUrl.startsWith("public/")) {
+          mediaUrl = mediaUrl.replace(/^public/, "");
+        }
+        if (!mediaUrl.startsWith("http") && !mediaUrl.startsWith("/")) {
+          mediaUrl = "/" + mediaUrl;
+        }
+
         return (
           <div
             className="mt-2 w-full max-w-[240px] isolate"
             style={{ isolation: "isolate" }}
           >
-            {message.media.type?.startsWith("image/") ? (
+            {mediaObj.type?.startsWith("image/") ? (
               <div className="overflow-hidden rounded-lg cursor-pointer bg-gray-100 dark:bg-gray-800">
                 <img
-                  src={message.media.url}
-                  alt={message.media.name || "Image attachment"}
+                  src={mediaUrl}
+                  alt={mediaObj.name || "Image attachment"}
                   className="object-cover w-full max-h-[240px]"
                   loading="lazy"
                   onClick={() => {
-                    setViewingImageUrl(String(message?.media?.url));
+                    setViewingImageUrl(mediaUrl);
                     setImageViewerOpen(true);
+                  }}
+                  onError={(e) => {
+                    console.error("Failed to load image:", mediaUrl);
+                    const target = e.currentTarget;
+                    target.src = "";
+                    target.alt = "Image load failed";
+                    target.style.height = "24px";
+                    target.style.opacity = "0.5";
                   }}
                 />
               </div>
-            ) : message.media.type?.startsWith("video/") ? (
+            ) : mediaObj.type?.startsWith("video/") ? (
               <div className="overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
                 <video
-                  src={message.media.url}
+                  src={mediaUrl}
                   controls
                   className="max-w-full max-h-[240px]"
                   preload="metadata"
@@ -301,15 +335,15 @@ const MessageComponent = ({
               <div className="py-1.5 px-2.5 bg-gray-100 dark:bg-gray-700 rounded-md text-xs flex items-center my-1">
                 <span className="font-medium mr-1.5">Tệp đính kèm:</span>
                 <a
-                  href={message.media.url}
+                  href={mediaUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 dark:text-blue-400 underline"
                 >
-                  {message.media.name || "File"}
-                  {message.media.size && (
+                  {mediaObj.name || "File"}
+                  {mediaObj.size && (
                     <span className="ml-1">
-                      ({Math.round(Number(message.media.size) / 1024)} KB)
+                      ({Math.round(Number(mediaObj.size) / 1024)} KB)
                     </span>
                   )}
                 </a>
@@ -329,6 +363,7 @@ const MessageComponent = ({
       );
     }
   };
+  // --- END FIXED renderMedia ---
 
   return (
     <div
@@ -379,7 +414,7 @@ const MessageComponent = ({
                 )}
               >
                 {isCurrentUser
-                  ? currentUser?.username.substring(0, 2).toUpperCase()
+                  ? currentUser?.username?.substring(0, 2).toUpperCase()
                   : message.user?.username?.substring(0, 2).toUpperCase() ||
                     "U"}
               </AvatarFallback>
