@@ -113,7 +113,6 @@ const MinecraftMessageComponent = ({
     });
   };
 
-  // Parse message content to highlight mentions
   const parseMessageContent = (content: string): JSX.Element => {
     const mentionRegex = /@(\S+)/g;
     const parts = [];
@@ -167,24 +166,18 @@ const MinecraftMessageComponent = ({
 
     return <>{parts}</>;
   };
-
-  // Render media attachments
   const renderMedia = () => {
     if (!message.media) return null;
 
     try {
       let mediaObj: any = message.media;
-      // If media is a stringified object, parse it
       if (typeof mediaObj === "string") {
         try {
           mediaObj = JSON.parse(mediaObj);
         } catch {
-          // fallback: treat as single path string
           mediaObj = { 0: mediaObj };
         }
       }
-
-      // Format 1: Object with numeric keys or "image" key
       if (
         typeof mediaObj === "object" &&
         (Object.keys(mediaObj).some((key) => /^\d+$/.test(key)) ||
@@ -200,20 +193,15 @@ const MinecraftMessageComponent = ({
           >
             {Object.entries(mediaObj).map(([key, path]) => {
               let imagePath = path as string;
-              // Remove leading "public" if present
               if (imagePath.startsWith("public/")) {
                 imagePath = imagePath.replace(/^public/, "");
               }
-              // Ensure path starts with / or http
               if (!imagePath.startsWith("http") && !imagePath.startsWith("/")) {
                 imagePath = "/" + imagePath;
               }
-
-              // Determine file type based on extension
               const isImage = imagePath.match(
                 /\.(jpg|jpeg|png|gif|webp|svg)$/i,
               );
-
               if (isImage) {
                 return (
                   <div
