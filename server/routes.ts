@@ -17,8 +17,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize WebSocket server
   const wsHandler = new WebSocketHandler(httpServer);
   
+  // Add comprehensive request and response logging for debugging
+  app.use('/api', (req: Request, res: Response, next: NextFunction) => {
+    const startTime = Date.now();
+    
+    console.log(`[REQUEST] ${req.method} ${req.originalUrl}`);
+    if (Object.keys(req.body).length > 0) {
+      console.log(`[REQUEST BODY] ${JSON.stringify(req.body)}`);
+    }
+    
+    const originalSend = res.send;
+    res.send = function(body) {
+      const responseTime = Date.now() - startTime;
+      const contentType = res.getHeader('content-type');
+      console.log(`[RESPONSE] ${req.method} ${req.originalUrl} - Status: ${res.statusCode} - ${responseTime}ms - Content-Type: ${contentType}`);
+      
+      if (contentType && contentType.toString().includes('application/json')) {
+        try {
+          const bodyObj = typeof body === 'string' ? JSON.parse(body) : body;
+          console.log(`[RESPONSE BODY] ${JSON.stringify(bodyObj)}`);
+        } catch (error) {
+          console.log(`[RESPONSE BODY] Non-JSON or Invalid JSON: ${body}`);
+        }
+      }
+      
+      return originalSend.call(res, body);
+    };
+    
+    next();
+  });
+  
   // Register upload routes
   app.use('/api/uploads', uploadRoutes);
+
+  // Middleware to enforce JSON responses for API routes
+  app.use('/api', (req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('Content-Type', 'application/json');
+    next();
+  });
+  
+  // Middleware to handle CORS in development
+  if (process.env.NODE_ENV === 'development') {
+    app.use('/api', (req: Request, res: Response, next: NextFunction) => {
+      res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+      }
+      next();
+    });
+  }
   
   // Serve static files from public directory
   app.use('/chat-images', (req, res, next) => {
@@ -68,6 +118,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: error.errors[0].message });
       }
       res.status(400).json({ message: (error as Error).message });
+    }
+  });
+  
+  // Add login route
+  app.post('/api/auth/login', async (req: Request, res: Response) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: 'Username and password are required' });
+      }
+      
+      // Find user by username
+      const user = await storage.getUserByUsername(username);
+      
+      // Check if user exists and password matches
+      if (!user || user.password !== password) {
+        return res.status(401).json({ message: 'Invalid username or password' });
+      }
+      
+      // Update user's last active time
+      await storage.updateUserLastActive(user.id);
+      
+      // Return user info without password
+      const { password: _, ...userWithoutPassword } = user;
+      
+      res.json({
+        ...userWithoutPassword,
+        lastActive: new Date(),
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ message: 'Server error during login' });
     }
   });
   
@@ -443,6 +526,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error updating avatar:', error);
       res.status(500).json({ message: 'Server error' });
     }
+  });
+
+  // API response logging middleware
+  app.use('/api', (req: Request, res: Response, next: NextFunction) => {
+    const originalJson = res.json;
+    res.json = function(body: any) {
+      console.log('API Response:', {
+        url: req.url,
+        method: req.method,
+        status: res.statusCode,
+        contentType: res.get('Content-Type'),
+        body
+      });
+      return originalJson.call(this, body);
+    };
+    next();
   });
 
   return httpServer;

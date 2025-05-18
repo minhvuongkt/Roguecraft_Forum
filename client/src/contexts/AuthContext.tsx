@@ -11,7 +11,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, password: string) => Promise<void>;
   logout: () => void;
-  setTemporaryUser: (username: string) => Promise<void>;
+  setTemporaryUser: (username: string) => Promise<User>;
   updateProfile: (profile: Partial<UserProfile>) => Promise<User>;
   updatePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   updateAvatar: (avatarUrl: string) => Promise<User>;
@@ -24,7 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => {},
   register: async () => {},
   logout: () => {},
-  setTemporaryUser: async () => {},
+  setTemporaryUser: async () => { throw new Error('Not implemented'); },
   updateProfile: async () => { throw new Error('Not implemented'); },
   updatePassword: async () => { throw new Error('Not implemented'); },
   updateAvatar: async () => { throw new Error('Not implemented'); },
@@ -63,27 +63,64 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setIsLoading(false);
   }, []);
-
   const login = async (username: string, password: string) => {
+    if (!username || !password) {
+      throw new Error('Username và mật khẩu không được để trống');
+    }
+
     try {
-      // In a real app, we would send credentials to the server
-      // For now, we'll simulate login with the temp user endpoint
-      const response = await apiRequest('POST', '/api/auth/temp-user', { username });
-      const data = await response.json();
+      const response = await apiRequest('POST', '/api/auth/login', { 
+        username,
+        password 
+      });
       
-      setUser(normalizeUser(data));
-      localStorage.setItem('forum_chat_user', JSON.stringify(normalizeUser(data)));
+      const data = await response.json();
+
+      // Kiểm tra response status
+      if (!response.ok) {
+        // Nếu server trả về thông báo lỗi cụ thể
+        if (data.message) {
+          throw new Error(data.message);
+        }
+        // Fallback cho các trường hợp khác
+        throw new Error(response.status === 401 
+          ? 'Username hoặc mật khẩu không đúng' 
+          : 'Có lỗi xảy ra, vui lòng thử lại sau'
+        );
+      }
+      
+      // Kiểm tra dữ liệu trả về
+      if (!data || !data.id) {
+        throw new Error('Dữ liệu người dùng không hợp lệ');
+      }
+
+      // Kiểm tra người dùng tạm thời
+      if (data.isTemporary) {
+        throw new Error('Tài khoản này là tạm thời. Vui lòng đăng ký để tiếp tục.');
+      }
+
+      const normalizedUser = normalizeUser(data);
+      
+      // Lưu thông tin đăng nhập
+      localStorage.setItem('forum_chat_user', JSON.stringify(normalizedUser));
+      setUser(normalizedUser);
       
       toast({
-        title: "Đăng nhập thành công",
-        description: `Xin chào, ${data.username}!`,
+        title: "Đăng nhập thành công", 
+        description: `Xin chào, ${normalizedUser.username}!`,
       });
     } catch (error) {
+      console.error('Login error:', error);
+      
+      // Hiển thị thông báo lỗi phù hợp
       toast({
         title: "Đăng nhập thất bại",
-        description: (error as Error).message || "Vui lòng thử lại sau",
-        variant: "destructive",
+        description: error instanceof Error 
+          ? error.message 
+          : "Vui lòng thử lại sau",
+        variant: "destructive", 
       });
+      
       throw error;
     }
   };
@@ -124,22 +161,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const setTemporaryUser = async (username: string) => {
+    if (!username) {
+      throw new Error('Username không được để trống');
+    }
+
     try {
-      const response = await apiRequest('POST', '/api/auth/temp-user', { username });
+      // Thêm prefix cho user tạm thời để dễ nhận biết
+      const tempUsername = `${username}`;
+      const response = await apiRequest('POST', '/api/auth/temp-user', { 
+        username: tempUsername,
+        isTemporary: true
+      });
+
+      if (!response.ok) {
+        throw new Error('Không thể tạo người dùng tạm thời');
+      }
+
       const data = await response.json();
+      const normalizedUser = normalizeUser({
+        ...data,
+        isTemporary: true,
+        expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // Hết hạn sau 14 ngày
+      });
       
-      setUser(normalizeUser(data));
-      localStorage.setItem('forum_chat_user', JSON.stringify(normalizeUser(data)));
+      setUser(normalizedUser);
+      localStorage.setItem('forum_chat_user', JSON.stringify(normalizedUser));
       
       toast({
         title: "Đã đặt tên thành công",
-        description: `Xin chào, ${data.username}!`,
+        description: `Xin chào khách ${username}! Lưu ý rằng tài khoản này sẽ hết hạn sau 24 giờ.`,
       });
       
-      return data;
+      return normalizedUser;
     } catch (error) {
       toast({
-        title: "Đặt tên thất bại",
+        title: "Đặt tên thất bại", 
         description: (error as Error).message || "Vui lòng thử lại sau",
         variant: "destructive",
       });

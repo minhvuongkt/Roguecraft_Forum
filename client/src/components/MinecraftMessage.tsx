@@ -101,12 +101,15 @@ const MinecraftMessageComponent = ({
       onReply(messageToReply);
     }
   };
-
-  // Format time
-  const formatTime = (date: Date): string => {
-    return date.toLocaleTimeString("vi-VN", {
+  // Format time with timezone
+  const formatTime = (date: string | Date): string => {
+    const d = new Date(date);
+    // Adjust to Vietnam timezone (UTC+7)
+    d.setHours(d.getHours() + 7);
+    return d.toLocaleTimeString("vi-VN", {
       hour: "2-digit",
       minute: "2-digit",
+      hour12: false
     });
   };
 

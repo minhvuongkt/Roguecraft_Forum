@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { OnlineUser } from '@/types';
 import type { User } from '@/types/index';
 import { Users } from 'lucide-react';
+import { formatRelativeTime } from '@/lib/utils';
 
 interface OnlineUsersProps {
   currentUser: User | null;
@@ -39,23 +40,7 @@ export function OnlineUsers({ currentUser }: OnlineUsersProps) {
       .toUpperCase()
       .substring(0, 2);
   };
-  
-  // Format the time a user has been active
-  const getTimeAgo = (date: Date) => {
-    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
-    
-    if (seconds < 60) return 'bây giờ';
-    
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes} phút trước`;
-    
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} giờ trước`;
-    
-    const days = Math.floor(hours / 24);
-    return `${days} ngày trước`;
-  };
-  
+
   if (sortedUsers.length === 0) {
     return (
       <div className="p-4">
@@ -91,7 +76,6 @@ export function OnlineUsers({ currentUser }: OnlineUsersProps) {
                   className={`flex items-center py-2.5 border-b border-gray-100 dark:border-gray-800 last:border-0 group 
                     hover:bg-gray-50 dark:hover:bg-gray-800/50 -mx-1 px-2 rounded-lg transition-colors cursor-pointer
                     ${user.id === currentUser?.id ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
-                  // onClick={() => navigate(`/user/${user.id}`)}
                 >
                   <div className="relative mr-3 flex-shrink-0">
                     <Avatar className="h-10 w-10 border-2 border-white dark:border-gray-900 shadow-sm">
@@ -119,7 +103,7 @@ export function OnlineUsers({ currentUser }: OnlineUsersProps) {
                         }
                       </p>
                       <span className="text-[10px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-full group-hover:bg-gray-200 dark:group-hover:bg-gray-700 transition-colors">
-                        {getTimeAgo(new Date(user.lastActive))}
+                        {formatRelativeTime(user.lastActive)}
                       </span>
                     </div>
                     <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
@@ -134,7 +118,7 @@ export function OnlineUsers({ currentUser }: OnlineUsersProps) {
                   <p className="font-semibold">{user.username}</p>
                   <p className="text-green-600 dark:text-green-400 flex items-center gap-1 mt-1">
                     <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block"></span>
-                    Online từ {getTimeAgo(new Date(user.lastActive))}
+                    Online từ {formatRelativeTime(user.lastActive)}
                   </p>
                 </div>
               </TooltipContent>

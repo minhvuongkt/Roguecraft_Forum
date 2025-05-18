@@ -41,13 +41,26 @@ app.use((req, res, next) => {
 
 (async () => {
   const server = await registerRoutes(app);
-
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
-    res.status(status).json({ message });
-    throw err;
+    // Always ensure JSON response
+    res.status(status)
+       .setHeader('Content-Type', 'application/json')
+       .json({ 
+          message,
+          status,
+          timestamp: new Date().toISOString(),
+          ...(process.env.NODE_ENV === 'development' ? { stack: err.stack } : {})
+       });
+
+    // Only rethrow in development
+    if (process.env.NODE_ENV === 'development') {
+      throw err;
+    } else {
+      console.error('Server error:', err);
+    }
   });
 
   if (app.get("env") === "development") {
