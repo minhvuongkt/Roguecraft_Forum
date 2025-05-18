@@ -20,18 +20,37 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [username, setUsername] = useState('');
+  const [mode, setMode] = useState<'login' | 'register'>('login');  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [usernameError, setUsernameError] = useState('');
   
   const { login, register } = useAuth();
   const { toast } = useToast();
-
+  const validateUsername = (username: string): boolean => {
+    // Validate username: only Latin characters, numbers, and underscores
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    return usernameRegex.test(username);
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate username format
+    if (!validateUsername(username)) {
+      setUsernameError('Tên đăng nhập chỉ được chứa chữ cái Latin, số và dấu gạch dưới (_)');
+      toast({
+        title: 'Lỗi',
+        description: 'Tên đăng nhập chỉ được chứa chữ cái Latin, số và dấu gạch dưới (_)',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Clear any existing errors
+    setUsernameError('');
+    
     setIsLoading(true);
     
     try {
@@ -61,11 +80,11 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       setIsLoading(false);
     }
   };
-
   const handleClose = () => {
     setUsername('');
     setPassword('');
     setConfirmPassword('');
+    setUsernameError('');
     setMode('login');
     onClose();
   };
@@ -87,15 +106,26 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="username">Tên đăng nhập</Label>
-              <Input
+              <Label htmlFor="username">Tên đăng nhập</Label>              <Input
                 id="username"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setUsername(value);
+                  
+                  if (value && !validateUsername(value)) {
+                    setUsernameError('Tên đăng nhập chỉ được chứa chữ cái Latin, số và dấu gạch dưới (_)');
+                  } else {
+                    setUsernameError('');
+                  }
+                }}
                 placeholder="Nhập tên đăng nhập"
                 required
                 disabled={isLoading}
               />
+              {usernameError && (
+                <div className="text-xs text-red-500 mt-1">{usernameError}</div>
+              )}
             </div>
             
             <div className="space-y-2">

@@ -110,8 +110,13 @@ export class ChatService {
     // Delete messages older than 4 days
     await storage.deleteChatMessagesOlderThan(4);
   }
-
   async createTemporaryUser(username: string): Promise<User> {
+    // Validate username: only Latin characters, numbers, and underscores
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usernameRegex.test(username)) {
+      throw new Error("Username chỉ được chứa chữ cái Latin, số và dấu gạch dưới (_)");
+    }
+    
     // Check if user already exists
     const existingUser = await storage.getUserByUsername(username);
     if (existingUser) {
@@ -130,8 +135,13 @@ export class ChatService {
 
     return await storage.createUser(user);
   }
-
   async createPermanentUser(username: string, password: string): Promise<User> {
+    // Validate username: only Latin characters, numbers, and underscores
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usernameRegex.test(username)) {
+      throw new Error("Username chỉ được chứa chữ cái Latin, số và dấu gạch dưới (_)");
+    }
+    
     // Check if username already exists
     const existingUser = await storage.getUserByUsername(username);
     if (existingUser) {

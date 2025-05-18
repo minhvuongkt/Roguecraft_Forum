@@ -1,7 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-// Use the shared User type for consistency
 import type { User, UserProfile } from '@/types/index';
 
 interface AuthContextType {
@@ -36,8 +35,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-
-  // Helper to normalize user object to shared User type
   function normalizeUser(data: any): User {
     return {
       id: data.id,
@@ -50,7 +47,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   useEffect(() => {
-    // Check for stored user in localStorage
     const storedUser = localStorage.getItem('forum_chat_user');
     if (storedUser) {
       try {
@@ -73,35 +69,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         username,
         password 
       });
-      
       const data = await response.json();
-
-      // Kiểm tra response status
       if (!response.ok) {
-        // Nếu server trả về thông báo lỗi cụ thể
         if (data.message) {
           throw new Error(data.message);
         }
-        // Fallback cho các trường hợp khác
         throw new Error(response.status === 401 
           ? 'Username hoặc mật khẩu không đúng' 
           : 'Có lỗi xảy ra, vui lòng thử lại sau'
         );
       }
-      
-      // Kiểm tra dữ liệu trả về
       if (!data || !data.id) {
         throw new Error('Dữ liệu người dùng không hợp lệ');
       }
-
-      // Kiểm tra người dùng tạm thời
       if (data.isTemporary) {
         throw new Error('Tài khoản này là tạm thời. Vui lòng đăng ký để tiếp tục.');
       }
-
       const normalizedUser = normalizeUser(data);
-      
-      // Lưu thông tin đăng nhập
       localStorage.setItem('forum_chat_user', JSON.stringify(normalizedUser));
       setUser(normalizedUser);
       
@@ -124,8 +108,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw error;
     }
   };
-
   const register = async (username: string, password: string) => {
+    // Validate username: only Latin characters (a-zA-Z), numbers, and underscores
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usernameRegex.test(username)) {
+      toast({
+        title: "Đăng ký thất bại",
+        description: "Tên đăng nhập chỉ được chứa chữ cái Latin, số và dấu gạch dưới (_)",
+        variant: "destructive",
+      });
+      throw new Error("Tên đăng nhập chỉ được chứa chữ cái Latin, số và dấu gạch dưới (_)");
+    }
+    
     try {
       const response = await apiRequest('POST', '/api/auth/register', { 
         username, 
@@ -159,14 +153,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       description: "Hẹn gặp lại bạn sau!",
     });
   };
-
   const setTemporaryUser = async (username: string) => {
     if (!username) {
       throw new Error('Username không được để trống');
     }
-
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usernameRegex.test(username)) {
+      toast({
+        title: "Đặt tên thất bại",
+        description: "Tên đăng nhập chỉ được chứa chữ cái Latin, số và dấu gạch dưới (_)",
+        variant: "destructive",
+      });
+      throw new Error("Tên đăng nhập chỉ được chứa chữ cái Latin, số và dấu gạch dưới (_)");
+    }    
     try {
-      // Thêm prefix cho user tạm thời để dễ nhận biết
       const tempUsername = `${username}`;
       const response = await apiRequest('POST', '/api/auth/temp-user', { 
         username: tempUsername,
@@ -202,12 +202,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw error;
     }
   };
-
   // Cập nhật thông tin người dùng
   // Accepts a partial profile object for extensibility
   const updateProfile = async (profile: Partial<UserProfile>): Promise<User> => {
     if (!user) {
       throw new Error('User not logged in');
+    }
+
+    // Validate username format if it's being updated
+    if (profile.username) {
+      const usernameRegex = /^[a-zA-Z0-9_]+$/;
+      if (!usernameRegex.test(profile.username)) {
+        toast({
+          title: 'Cập nhật thất bại',
+          description: 'Tên đăng nhập chỉ được chứa chữ cái Latin, số và dấu gạch dưới (_)',
+          variant: 'destructive',
+        });
+        throw new Error('Tên đăng nhập chỉ được chứa chữ cái Latin, số và dấu gạch dưới (_)');
+      }
     }
 
     try {

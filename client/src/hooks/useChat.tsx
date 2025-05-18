@@ -68,9 +68,7 @@ export function useChat() {
       if (input.startsWith("/")) {
         // Command to set username: /ten [name]
         if (input.startsWith("/ten ")) {
-          const username = input.substring(5).trim();
-
-          if (username.length < 3) {
+          const username = input.substring(5).trim();          if (username.length < 3) {
             toast({
               title: "Lỗi",
               description: "Tên phải có ít nhất 3 ký tự",
@@ -83,6 +81,15 @@ export function useChat() {
             toast({
               title: "Lỗi",
               description: "Tên không được quá 20 ký tự",
+              variant: "destructive",
+            });
+            return;
+          }          // Validate username format: only Latin characters, numbers, and underscores
+          const usernameRegex = /^[a-zA-Z0-9_]+$/;
+          if (!usernameRegex.test(username)) {
+            toast({
+              title: "Lỗi",
+              description: "Tên chỉ được chứa chữ cái Latin, số và dấu gạch dưới (_)",
               variant: "destructive",
             });
             return;

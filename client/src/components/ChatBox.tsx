@@ -1173,7 +1173,7 @@ export function ChatBox() {
 
         <div className="mt-1 text-xs text-muted-foreground px-2 flex items-center">
           <Info className="h-3 w-3 mr-1" />
-          Tin nhắn được lưu trữ tối đa trong 4 ngày. Gõ @ để tag người dùng.
+          Tin nhắn được lưu trữ tối đa trong 4 ngày.
         </div>
       </div>
 
@@ -1184,21 +1184,22 @@ export function ChatBox() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Đặt tên để tham gia trò chuyện</DialogTitle>
+            <DialogTitle>Đặt username để tham gia trò chuyện</DialogTitle>
             <DialogDescription>
-              Nhập tên bạn muốn sử dụng trong phòng chat. Tên này sẽ hiển thị
-              khi bạn gửi tin nhắn.
+              Đây là tài khoản tạm thời và sau 14 ngày tài khoản sẽ bị xoá cùng các dữ liệu liên quan.
+              <br />
+              Khi bạn đăng xuất thì sẽ không thể đăng nhập lại với tài khoản này.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Label htmlFor="username" className="text-left">
-              Tên của bạn
+              Username của bạn
             </Label>
             <Input
               id="username"
               value={state.username}
               onChange={handleUsernameChange}
-              placeholder="Nhập tên của bạn"
+              placeholder="Nhập username của bạn..."
               className="mt-1"
               autoFocus
               onKeyDown={(e) => {

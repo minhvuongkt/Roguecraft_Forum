@@ -13,12 +13,19 @@ export const users = mysqlTable("users", {
   isTemporary: boolean("is_temporary").default(true),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-  avatar: true,
-  isTemporary: true,
-});
+export const insertUserSchema = createInsertSchema(users)
+  .pick({
+    username: true,
+    password: true,
+    avatar: true,
+    isTemporary: true,
+  })
+  .extend({
+    username: z.string()
+      .min(3, "Username phải có ít nhất 3 ký tự")
+      .max(20, "Username không được quá 20 ký tự")
+      .regex(/^[a-zA-Z0-9_]+$/, "Username chỉ được chứa chữ cái Latin, số và dấu gạch dưới (_)"),
+  });
 
 // Chat message schema
 export const chatMessages = mysqlTable("chat_messages", {
