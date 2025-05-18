@@ -61,14 +61,14 @@ export function OnlineUsers({ currentUser }: OnlineUsersProps) {
       <div className="p-4">
         <div className="flex items-center gap-2 mb-3">
           <Users className="h-4 w-4 text-gray-500" />
-          <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">Người dùng đang online (0)</h3>
+          <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">Chưa có bé nào</h3>
         </div>
         <div className="rounded-xl bg-gray-50 dark:bg-gray-800/50 p-6 text-center border border-gray-100 dark:border-gray-800">
           <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
             <Users className="h-6 w-6 text-gray-400 dark:text-gray-500" />
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Không có người dùng trực tuyến
+            Kéo các đồng râm vào nói chuyện đê
           </p>
         </div>
       </div>
@@ -79,7 +79,7 @@ export function OnlineUsers({ currentUser }: OnlineUsersProps) {
     <div className="p-4">
       <div className="flex items-center gap-2 mb-3">
         <Users className="h-4 w-4 text-gray-500" />
-        <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">Người dùng đang online ({sortedUsers.length})</h3>
+        <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">Mem còn thở ({sortedUsers.length})</h3>
       </div>
       
       <ScrollArea className="h-[calc(100vh-350px)] pr-3">
@@ -91,7 +91,7 @@ export function OnlineUsers({ currentUser }: OnlineUsersProps) {
                   className={`flex items-center py-2.5 border-b border-gray-100 dark:border-gray-800 last:border-0 group 
                     hover:bg-gray-50 dark:hover:bg-gray-800/50 -mx-1 px-2 rounded-lg transition-colors cursor-pointer
                     ${user.id === currentUser?.id ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
-                  onClick={() => navigate(`/user/${user.id}`)}
+                  // onClick={() => navigate(`/user/${user.id}`)}
                 >
                   <div className="relative mr-3 flex-shrink-0">
                     <Avatar className="h-10 w-10 border-2 border-white dark:border-gray-900 shadow-sm">
@@ -124,7 +124,7 @@ export function OnlineUsers({ currentUser }: OnlineUsersProps) {
                     </div>
                     <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
                       <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block"></span>
-                      Đang hoạt động
+                      Đang thở
                     </p>
                   </div>
                 </div>

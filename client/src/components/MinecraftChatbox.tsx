@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Paperclip, Send, X } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/hooks/use-theme';
 
 interface MinecraftChatboxProps {
   onSend: (message: string, media?: any) => void;
@@ -17,7 +18,7 @@ interface MinecraftChatboxProps {
 export function MinecraftChatbox({
   onSend,
   disabled = false,
-  placeholder = "Type a message...",
+  placeholder = "Nhập gì đó đê...",
   replyPreview,
   colorPicker,
   typingIndicator,
@@ -31,8 +32,7 @@ export function MinecraftChatbox({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
-
-  // Auto-resize textarea based on content
+  const { theme } = useTheme();
   useEffect(() => {
     if (textAreaRef.current) {
       textAreaRef.current.style.height = 'auto';
@@ -40,7 +40,6 @@ export function MinecraftChatbox({
     }
   }, [inputValue]);
 
-  // Handle file upload
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -58,11 +57,9 @@ export function MinecraftChatbox({
     setUploading(true);
 
     try {
-      // Create a FormData instance and append the file
       const formData = new FormData();
       formData.append('file', file);
 
-      // Upload the file to the server
       const response = await fetch('/api/uploads/chat', {
         method: 'POST',
         body: formData,
@@ -75,21 +72,13 @@ export function MinecraftChatbox({
 
       // Determine file type
       const fileType = file.type.startsWith('image/') ? 'image' : 'file';
-
-      // Lấy URL từ phản hồi - API có thể trả về dạng {"1": "/chat-images/filename.jpg"} hoặc {"image": "/chat-images/filename.jpg"}
       let fileUrl = data["1"]; // Lấy giá trị của khóa "1"
-
-      // Nếu không có key "1" thì kiểm tra key "image"
       if (!fileUrl && data["image"]) {
         fileUrl = data["image"];
       }
-
       if (fileUrl) {
-        // Thống nhất định dạng cho client - luôn dùng key "image" để lưu ảnh
         const mediaObj = { image: fileUrl };
         setFilePreview({ url: fileUrl, type: fileType });
-
-        // Lưu media vào state theo định dạng thống nhất
         setUploadedMedia(mediaObj);
       } else {
         console.error('Invalid response format:', data);
@@ -123,12 +112,8 @@ export function MinecraftChatbox({
 
     const trimmedMessage = inputValue.trim();
     if (!trimmedMessage && !filePreview) return;
-
-    // Sử dụng uploadedMedia đã được thiết lập trong quá trình tải lên
-    // Nếu không có media đã upload, sử dụng filePreview nếu có
     const mediaData = uploadedMedia || (filePreview ? { image: filePreview.url } : undefined);
     onSend(trimmedMessage, mediaData);
-    // Reset all states
     setInputValue("");
     setFilePreview(null);
     setUploadedMedia(null);
@@ -144,8 +129,15 @@ export function MinecraftChatbox({
     }
   };
 
+  const panelStyle = theme === 'dark'
+    ? { backgroundColor: '#181818', border: '2px solid #555', color: '#fff' }
+    : { backgroundColor: '#f3f3f3', border: '2px solid #bbb', color: '#222' };
+  const inputStyle = theme === 'dark'
+    ? { backgroundColor: '#181818', border: '2px solid #555', color: '#fff', fontFamily: "'VT323', monospace", fontSize: '18px' }
+    : { backgroundColor: '#fff', border: '2px solid #bbb', color: '#222', fontFamily: "'VT323', monospace", fontSize: '18px' };
+
   return (
-    <div className={cn("relative w-full", className)}>
+    <div className={cn('relative w-full', className)}>
       {replyPreview && (
         <div className="mb-2">
           {replyPreview}
@@ -155,90 +147,143 @@ export function MinecraftChatbox({
       {typingIndicator && (
         <div className="mb-1">{typingIndicator}</div>
       )}
-
-      <div className="flex flex-col bg-gray-800 border-2 border-gray-700 rounded-md overflow-hidden">
-        {filePreview && (
-          <div className="relative p-2 bg-gray-900">
-            {filePreview.type === 'image' ? (
-              <div className="relative w-32 h-32">
-                <img 
-                  src={filePreview.url} 
-                  alt="Preview" 
-                  className="w-full h-full object-cover rounded-md"
-                />
-                <button 
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
-                  onClick={clearFilePreview}
+      {!disabled && (
+        <div className="flex flex-col minecraft-chat-container" style={{ ...panelStyle, borderRadius: '8px' }}
+        >
+          {filePreview && (
+            <div
+              className="relative p-2 border-b"
+              style={theme === 'dark' ? { borderColor: '#333' } : { borderColor: '#ccc' }}
+            >
+              {filePreview.type === 'image' ? (
+                <div className="relative w-32 h-32">
+                  <img
+                    src={filePreview.url}
+                    alt="Preview"
+                    className="minecraft-pixelated-image w-full h-full object-cover"
+                  />
+                  <button
+                    className="absolute -top-2 -right-2 minecraft-styled-button p-1"
+                    onClick={clearFilePreview}
+                    type="button"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  className={cn(
+                    'flex items-center border p-2',
+                    theme === 'dark'
+                      ? 'bg-[#181818] border-[#555]'
+                      : 'bg-[#fff] border-[#bbb]'
+                  )}
                 >
-                  <X size={14} />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center bg-gray-800 rounded-md p-2">
-                <span className="text-white truncate mr-2">{filePreview.url.split('/').pop()}</span>
-                <button 
-                  className="bg-red-500 text-white rounded-full p-1"
-                  onClick={clearFilePreview}
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+                  <span
+                    className={cn(
+                      'truncate mr-2 minecraft-font',
+                      theme === 'dark' ? 'text-white' : 'text-black'
+                    )}
+                  >
+                    {filePreview.url.split('/').pop()}
+                  </span>
+                  <button
+                    className="minecraft-button p-1"
+                    onClick={clearFilePreview}
+                    type="button"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
-        <div className="flex items-end p-2">
-          <div className="flex-1 relative">
-            <textarea
-              ref={textAreaRef}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={placeholder}
-              disabled={disabled}
-              className="w-full p-2 pr-10 bg-gray-900 text-white border-none rounded-md resize-none 
-                         focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[40px] max-h-[120px] minecraft-font"
-              rows={1}
-            />
+          {/* Thanh nhập + nút kẹp giấy + nút gửi */}
+          <div className="flex items-center gap-2 p-1" style={{ background: 'transparent', border: 'none' }}>
+            {/* Ô nhập */}
+            <div className="flex-1 relative">
+              <textarea
+                ref={textAreaRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={placeholder}
+                disabled={disabled}
+                className={cn(
+                  "minecraft-chat-input resize-none w-full",
+                  theme === 'dark' ? 'text-white' : 'text-black'
+                )}
+                rows={1}
+                style={{
+                  ...inputStyle,
+                  backgroundColor: theme === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.8)',
+                  minHeight: 44,
+                }}
+              />
+            </div>
 
-            <label className="absolute bottom-2 right-2 cursor-pointer">
-              <Paperclip 
-                size={18} 
-                className="text-gray-400 hover:text-white transition-colors"
+            {/* Nút đính kèm tệp (Paperclip) - nằm ngoài ô nhập */}
+            <label className="cursor-pointer flex items-center mb-1" title="Đính kèm tệp">
+              <Paperclip
+                size={20}
+                className={theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black'}
               />
               <input
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 className="hidden"
-                accept="image/*,video/*,audio/*,.pdf,.docx,.xlsx,.txt"
-                disabled={disabled || uploading}
+                accept="image/*,video/*,audio/*"
+                disabled={uploading}
               />
             </label>
-          </div>
 
-          <Button
-            size="sm"
-            onClick={handleSendMessage}
-            disabled={disabled || (!inputValue.trim() && !filePreview) || uploading}
-            className="ml-2 bg-green-600 hover:bg-green-700 gaming-font px-3 py-2 h-auto"
-          >
-            <Send size={18} />
-          </Button>
+            {/* Nút gửi - cũng nằm ngoài ô nhập */}
+            <button
+              onClick={handleSendMessage}
+              disabled={(!inputValue.trim() && !filePreview) || uploading}
+              className={cn(
+                'minecraft-styled-button flex items-center justify-center h-10 w-10',
+                theme === 'dark'
+                  ? 'bg-[#222c18] text-white border border-[#444] hover:bg-[#2a3418]'
+                  : 'bg-[#eee] text-black border border-[#bbb] hover:bg-[#fbe98a]'
+              )}
+              style={{
+                borderRadius: '4px',
+                transition: 'opacity 0.2s',
+                minWidth: 40,
+                minHeight: 40,
+                fontSize: '1.2rem'
+              }}
+              type="button"
+              title="Gửi"
+            >
+              {uploading ? (
+                <div className="flex items-center">
+                  <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin mr-1"></div>
+                  <span className="minecraft-font" style={{ fontSize: '1rem' }}>...</span>
+                </div>
+              ) : (
+                <Send size={18} />
+              )}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {colorPicker && (
-        <div className="mt-2">
-          <button 
+        <div className="mt-1">
+          <button
             onClick={() => setShowColorPicker(!showColorPicker)}
-            className="text-xs text-gray-400 hover:text-white mb-1"
+            className={cn('text-xs minecraft-font transition-colors hover:bg-opacity-10', theme === 'dark' ? 'text-blue-400 hover:text-white hover:bg-white' : 'text-blue-700 hover:text-black hover:bg-black')}
+            style={{ background: 'transparent', border: 'none', padding: '4px 8px', color: theme === 'dark' ? 'white' : 'black' }}
           >
             {showColorPicker ? 'Ẩn bảng màu' : 'Chọn màu tin nhắn'}
           </button>
 
           {showColorPicker && (
-            <div className="p-2 bg-gray-800 border border-gray-700 rounded-md">
+            <div className="p-1 mt-1 minecraft-chat-container" style={panelStyle}>
               {colorPicker}
             </div>
           )}

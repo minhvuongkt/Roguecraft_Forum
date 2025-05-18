@@ -984,10 +984,8 @@ export function ChatBox() {
             </span>
           </div>
         )}
-
-        {/* Thanh thời gian hiển thị */}
         <div className="sticky top-0 z-10 flex items-center justify-center pt-3 pb-2" id="chatHistoryNotice" aria-live="polite">
-          <TooltipProvider>
+          {/* <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <div
@@ -997,7 +995,6 @@ export function ChatBox() {
                 >
                   <Clock className="h-3 w-3" aria-hidden="true" />
                   <span>Tin nhắn trong 3 ngày gần đây</span>
-                  {/* Add close button with fade-out animation and accessibility */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1021,14 +1018,11 @@ export function ChatBox() {
                 <p className="text-xs">Tin nhắn cũ hơn sẽ được lưu trữ</p>
               </TooltipContent>
             </Tooltip>
-          </TooltipProvider>
+          </TooltipProvider> */}
         </div>
-
-        {/* Messages Virtualized List */}
         <div className={cn("h-[calc(100%-40px)]", !user && "pt-10")}>
           {flattenedMessages.length > 0 ? (
             <div className="h-full">
-              {/* Nút cuộn xuống - Show when not auto-scrolling or explicitly needed */}
               {state.showScrollButton && (
                 <div className="absolute bottom-4 right-4 z-10">
                   <Button
@@ -1047,8 +1041,6 @@ export function ChatBox() {
                   </Button>
                 </div>
               )}
-
-              {/* AutoSizer đảm bảo VirtualList điền đầy container */}
               <AutoSizer>
                 {({ height, width }) => (
                   <VirtualList
@@ -1094,7 +1086,6 @@ export function ChatBox() {
         </div>
       </div>
 
-      {/* Chat Input */}
       <div className="p-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
         {!user && (
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 mb-3 flex items-center border border-blue-100 dark:border-blue-800/70">
@@ -1111,29 +1102,22 @@ export function ChatBox() {
             </div>
           </div>
         )}
-
-        {/* Hiển thị người đang nhập tin nhắn */}
         {state.typingUsers && state.typingUsers.length > 0 && (
           <div className="mb-2">
             {state.typingUsers.map((typingUser) => (
               <TypingIndicator
                 key={typingUser.id}
                 username={typingUser.username}
-              // avatar prop removed for compatibility
               />
             ))}
           </div>
         )}
-
-        {/* Reply info bar - Using Messenger style reply indicator */}
         {state.replyingTo && (
           <MessengerReplyIndicator
             message={state.replyingTo}
             onCancel={handleCancelReply}
           />
         )}
-
-        {/* Minecraft style chatbox */}
         <MinecraftChatbox
           onSend={handleSendMessage}
           disabled={!user}
@@ -1141,20 +1125,17 @@ export function ChatBox() {
             user
               ? state.replyingTo
                 ? `Trả lời ${state.replyingTo.user?.username || "người dùng"}...`
-                : "Nhập tin nhắn... (Gõ @ để tag người dùng)"
+                : "Nhập gì đó đê... (Gõ @ để tag người dùng)"
               : "Nhập /ten [tên của bạn] để đặt tên"
           }
           colorPicker={
             <MessageColorPicker
               onColorSelect={(color) => {
-                // Lưu màu vào localStorage và cập nhật state
                 localStorage.setItem("userMessageColor", color);
                 setState((prev) => ({
                   ...prev,
                   userMessageColor: color,
                 }));
-
-                // Hiển thị thông báo
                 toast({
                   title: "Đã thay đổi màu tin nhắn",
                   description:
@@ -1166,7 +1147,6 @@ export function ChatBox() {
           }
         />
 
-        {/* @ mention selector - Pass current user ID to filter themselves out */}
         {state.mentionState.active && (
           <UserMentionSelector
             users={onlineUsers.map((u) => ({

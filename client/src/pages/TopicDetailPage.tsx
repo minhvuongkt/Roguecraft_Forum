@@ -36,42 +36,40 @@ const CommentItem = ({
   }
 
   return (
-    <div className={`${depth > 0 ? 'ml-6 border-l-2 border-gray-200 dark:border-gray-700 pl-4' : ''}`}>
-      <Card className={`mb-3 ${depth > 0 ? 'bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700' : ''}`}>
+    <div className={`${depth > 0 ? 'ml-6 border-l-2 border-gray-600 pl-4' : ''}`}>
+      <Card className={`mb-3 minecraft-comment ${depth > 0 ? 'border-gray-600' : ''} minecraft-hover-sound`}>
         <CardContent className="p-4">
           <div className="flex items-center gap-3 mb-2">
             {comment.isAnonymous ? (
               <div className="flex items-center">
-                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                  <span className="text-sm font-bold">?</span>
+                <div className="w-8 h-8 minecraft-panel flex items-center justify-center">
+                  <span className="minecraft-font text-sm font-bold text-white">?</span>
                 </div>
                 <div className="ml-2">
-                  <div className="text-sm font-medium">Ẩn danh</div>
+                  <div className="minecraft-font text-white">Ẩn danh</div>
                 </div>
               </div>
             ) : comment.user ? (
               <div className="flex items-center">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={comment.user.avatar || undefined} />
-                  <AvatarFallback>{(comment.user.username || '?').substring(0, 2).toUpperCase()}</AvatarFallback>
+                <Avatar className="h-8 w-8 minecraft-panel">
+                  <AvatarImage src={comment.user.avatar || undefined} className="pixelated" />
+                  <AvatarFallback className="minecraft-font">{(comment.user.username || '?').substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="ml-2">
-                  <div className="text-sm font-medium">{comment.user.username}</div>
+                  <div className="minecraft-font text-white">{comment.user.username}</div>
                 </div>
               </div>
             ) : null}
             
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="minecraft-font text-xs text-green-300">
               {formatDate(typeof comment.createdAt === 'string' ? comment.createdAt : comment.createdAt.toISOString())}
             </span>
           </div>
           
-          <div className="text-sm" dangerouslySetInnerHTML={{ __html: comment.content }} />
+          <div className="minecraft-font text-white" dangerouslySetInnerHTML={{ __html: comment.content }} />
           
-          {/* Render media (image) if exists */}
           {mediaObj && (
             <>
-              {/* New format: { "0": "/path", ... } or old format: { url, ... } */}
               {typeof mediaObj === 'object' && !mediaObj.url && Object.keys(mediaObj).some(key => /^\d+$/.test(key))
                 ? (
                   <div className={`mt-2 ${Object.keys(mediaObj).length > 1 ? 'grid grid-cols-2 gap-2' : ''}`}>
@@ -84,7 +82,7 @@ const CommentItem = ({
                           key={idx}
                           src={imagePath}
                           alt="Comment media"
-                          className="rounded-lg max-h-48"
+                          className="border-2 border-gray-600 pixelated max-h-48"
                         />
                       );
                     })}
@@ -98,7 +96,7 @@ const CommentItem = ({
                       mediaObj.url
                     }
                     alt="Comment media"
-                    className="rounded-lg mt-2 max-h-48"
+                    className="border-2 border-gray-600 pixelated mt-2 max-h-48"
                   />
                 )
               }
@@ -110,18 +108,17 @@ const CommentItem = ({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="flex items-center gap-1"
+                className="minecraft-button flex items-center gap-1"
                 onClick={() => onReply(comment.id)}
               >
                 <Reply className="h-3 w-3" />
-                <span className="text-xs">Trả lời</span>
+                <span className="minecraft-font">Trả lời</span>
               </Button>
             </div>
           )}
         </CardContent>
       </Card>
       
-      {/* Render replies if they exist */}
       {comment.replies && comment.replies.length > 0 && (
         <div className="space-y-3 mt-2">
           {comment.replies.map((reply: CommentType) => (
@@ -151,7 +148,6 @@ export default function TopicDetailPage() {
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const commentFormRef = useRef<HTMLDivElement>(null);
   
-  // Image viewer state
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState("");
 
@@ -166,7 +162,6 @@ export default function TopicDetailPage() {
     enabled: !!topicId,
   });
 
-  // Comments query
   const {
     data: comments = [],
     isLoading: isCommentsLoading,
@@ -232,7 +227,6 @@ export default function TopicDetailPage() {
     }
     setReplyingTo(commentId);
 
-    // Get comment user to add @mention
     const foundComment = comments.find(c => c.id === commentId);
     if (foundComment && foundComment.user && !foundComment.isAnonymous) {
       const mentionText = `@${foundComment.user.username} `;
@@ -241,7 +235,6 @@ export default function TopicDetailPage() {
       }
     }
 
-    // Scroll to comment form
     if (commentFormRef.current) {
       commentFormRef.current.scrollIntoView({ behavior: 'smooth' });
       setTimeout(() => {
@@ -280,15 +273,12 @@ export default function TopicDetailPage() {
     setIsAnonymous(false);
     setReplyingTo(null);
   };
-
-  // --- MEDIA RENDER FIX FOR TOPIC ---
   const renderTopicMedia = () => {
     if (!topic?.media) return null;
     let mediaObj: any = topic.media;
     if (typeof mediaObj === "string") {
       try { mediaObj = JSON.parse(mediaObj); } catch { mediaObj = { 0: mediaObj }; }
     }
-    // New format: object with numeric keys
     if (
       typeof mediaObj === 'object' &&
       !mediaObj.url &&
@@ -301,68 +291,74 @@ export default function TopicDetailPage() {
             if (imagePath.startsWith("public/")) imagePath = imagePath.replace(/^public/, '');
             if (!imagePath.startsWith("http") && !imagePath.startsWith("/")) imagePath = "/" + imagePath;
             return (
-              <img 
+              <div 
                 key={key}
-                src={imagePath}
-                alt={`Topic image ${key}`}
-                className="rounded-lg max-h-96 max-w-full cursor-pointer"
+                className="minecraft-panel p-2 cursor-pointer pixelated transition-all hover:scale-105 minecraft-hover-sound"
                 onClick={() => {
                   setViewingImageUrl(imagePath);
                   setImageViewerOpen(true);
                 }}
-                onError={(e) => {
-                  console.error("Failed to load image:", imagePath);
-                  const target = e.currentTarget;
-                  target.src = "";
-                  target.alt = "Image load failed";
-                  target.style.height = "96px";
-                  target.style.opacity = "0.5";
-                }}
-              />
+              >
+                <img 
+                  src={imagePath}
+                  alt={`Topic image ${key}`}
+                  className="border-2 border-gray-600 max-h-96 max-w-full pixelated"
+                  onError={(e) => {
+                    console.error("Failed to load image:", imagePath);
+                    const target = e.currentTarget;
+                    target.src = "";
+                    target.alt = "Image load failed";
+                    target.style.height = "96px";
+                    target.style.opacity = "0.5";
+                  }}
+                />
+              </div>
             );
           })}
         </div>
       );
     }
-    // Old format: { url, type }
     if (mediaObj.url) {
       let mediaUrl = mediaObj.url;
       if (mediaUrl.startsWith("public/")) mediaUrl = mediaUrl.replace(/^public/, '');
       if (!mediaUrl.startsWith("http") && !mediaUrl.startsWith("/")) mediaUrl = "/" + mediaUrl;
       if (mediaObj.type?.startsWith('image/')) {
         return (
-          <img 
-            src={mediaUrl}
-            alt="Topic media"
-            className="rounded-lg mb-6 max-h-96 max-w-full cursor-pointer"
+          <div 
+            className="minecraft-panel p-2 mb-6 cursor-pointer pixelated transition-all hover:scale-105 minecraft-hover-sound"
             onClick={() => {
               setViewingImageUrl(mediaUrl);
               setImageViewerOpen(true);
             }}
-            onError={(e) => {
-              console.error("Failed to load image:", mediaUrl);
-              const target = e.currentTarget;
-              target.src = "";
-              target.alt = "Image load failed";
-              target.style.height = "96px";
-              target.style.opacity = "0.5";
-            }}
-          />
+          >
+            <img 
+              src={mediaUrl}
+              alt="Topic media"
+              className="border-2 border-gray-600 max-h-96 max-w-full pixelated"
+              onError={(e) => {
+                console.error("Failed to load image:", mediaUrl);
+                const target = e.currentTarget;
+                target.src = "";
+                target.alt = "Image load failed";
+                target.style.height = "96px";
+                target.style.opacity = "0.5";
+              }}
+            />
+          </div>
         );
       }
     }
     return null;
-  };
-  // --- END MEDIA RENDER FIX ---
-
-  if (isLoading) {
+  };if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mt-2"></div>
-          <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded mt-4"></div>
-          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded mt-4"></div>
+      <div className="max-w-4xl mx-auto px-4 py-8 minecraft-dirt">
+        <div className="minecraft-panel p-4">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-700 w-3/4"></div>
+            <div className="h-4 bg-gray-700 w-1/4 mt-2"></div>
+            <div className="h-48 bg-gray-700 mt-4"></div>
+            <div className="h-10 bg-gray-700 mt-4"></div>
+          </div>
         </div>
       </div>
     );
@@ -370,109 +366,109 @@ export default function TopicDetailPage() {
 
   if (error || !topic) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8 text-center">
-        <h1 className="text-2xl font-bold text-red-500 mb-4">Error</h1>
-        <p className="mb-4">Không thể tải bài viết. Vui lòng thử lại sau.</p>
-        <Link to="/forum">
-          <Button variant="outline">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Quay lại Forum
-          </Button>
-        </Link>
+      <div className="max-w-4xl mx-auto px-4 py-8 text-center minecraft-dirt">
+        <div className="minecraft-panel p-4">
+          <h1 className="minecraft-heading text-2xl text-red-500 mb-4">Error</h1>
+          <p className="mb-4 minecraft-font text-white">Không thể tải bài viết. Vui lòng thử lại sau.</p>
+          <Link to="/forum">
+            <Button variant="outline" className="minecraft-button">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              <span className="minecraft-font">Quay lại Forum</span>
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }
-
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-8 minecraft-dirt">
       <Link to="/forum">
-        <Button variant="ghost" className="mb-6 pl-0">
+        <Button variant="ghost" className="minecraft-button mb-6 pl-0">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Quay lại Forum
+          <span className="minecraft-font">Quay lại Forum</span>
         </Button>
       </Link>
       
-      <div className="mb-8">
+      <div className="mb-8 minecraft-panel p-4">
         <div className="flex items-center gap-2 mb-2">
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="minecraft-item text-xs minecraft-font">
             {topic.category}
           </Badge>
-          <span className="text-sm text-gray-500 dark:text-gray-400">
+          <span className="minecraft-font text-sm text-green-300">
             {formatDate(topic.createdAt)}
           </span>
         </div>
         
-        <h1 className="text-3xl font-bold mb-6">{topic.title}</h1>
+        <h1 className="minecraft-heading text-3xl mb-6">{topic.title}</h1>
         
         <div className="flex items-center mb-6">
           {topic.isAnonymous ? (
             <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                <span className="text-lg font-bold">?</span>
+              <div className="w-10 h-10 minecraft-panel flex items-center justify-center">
+                <span className="minecraft-font text-lg font-bold text-white">?</span>
               </div>
               <div className="ml-3">
-                <div className="text-sm font-medium">Ẩn danh</div>
+                <div className="minecraft-font text-white">Ẩn danh</div>
               </div>
             </div>
           ) : topic.user ? (
             <div className="flex items-center">
-              <Avatar>
-                <AvatarImage src={topic.user.avatar || undefined} />
-                <AvatarFallback>{(topic.user.username || '?').substring(0, 2).toUpperCase()}</AvatarFallback>
+              <Avatar className="minecraft-panel">
+                <AvatarImage src={topic.user.avatar || undefined} className="pixelated" />
+                <AvatarFallback className="minecraft-font">{(topic.user.username || '?').substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="ml-3">
-                <div className="text-sm font-medium">{topic.user.username}</div>
+                <div className="minecraft-font text-white">{topic.user.username}</div>
               </div>
             </div>
           ) : null}
         </div>
         
-        <div className="prose prose-lg dark:prose-invert max-w-none mb-6" dangerouslySetInnerHTML={{ __html: topic.content }} />
+        <div className="prose prose-lg max-w-none mb-6 minecraft-font text-white" dangerouslySetInnerHTML={{ __html: topic.content }} style={{fontSize: "1.2rem"}} />
         
         {renderTopicMedia()}
         
-        <div className="flex items-center gap-4 pb-6 border-b border-gray-200 dark:border-gray-800">
+        <div className="flex items-center gap-4 pb-6 border-b-2 border-gray-600">
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex items-center gap-2"
+            className="minecraft-button flex items-center gap-2 minecraft-hover-sound"
             onClick={handleLike}
           >
             <ThumbsUp className="h-4 w-4" />
-            <span>{topic.likeCount}</span>
+            <span className="minecraft-font">{topic.likeCount}</span>
           </Button>
           
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex items-center gap-2"
+            className="minecraft-button flex items-center gap-2 minecraft-hover-sound"
             onClick={handleShare}
           >
             <Share className="h-4 w-4" />
-            <span>Chia sẻ</span>
+            <span className="minecraft-font">Chia sẻ</span>
           </Button>
         </div>
       </div>
-      
-      {/* Comment form */}
-      <div className="mb-8" ref={commentFormRef}>
-        <h2 className="text-xl font-bold mb-4">
+        {/* Comment form */}
+      <div className="mb-8 minecraft-panel p-4" ref={commentFormRef}>
+        <h2 className="minecraft-heading text-xl mb-4">
           {replyingTo ? 'Trả lời bình luận' : 'Bình luận'}
         </h2>
         
         {replyingTo && (
-          <div className="mb-3 p-3 border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+          <div className="mb-3 p-3 minecraft-comment">
             <div className="flex justify-between items-center">
-              <p className="text-sm text-blue-600 dark:text-blue-400">
+              <p className="minecraft-font text-green-300">
                 Đang trả lời bình luận của {comments.find(c => c.id === replyingTo)?.user?.username || 'người dùng'}
               </p>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setReplyingTo(null)}
-                className="h-6 text-xs"
+                className="minecraft-button h-6"
               >
-                Hủy
+                <span className="minecraft-font">Hủy</span>
               </Button>
             </div>
           </div>
@@ -483,7 +479,7 @@ export default function TopicDetailPage() {
             placeholder={replyingTo ? "Viết câu trả lời của bạn..." : "Viết bình luận của bạn..."}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            className="mb-3 min-h-[100px]"
+            className="minecraft-textarea mb-3 min-h-[100px] w-full"
             disabled={isCreatingComment}
           />
           
@@ -494,42 +490,45 @@ export default function TopicDetailPage() {
                 id="anonymousComment"
                 checked={isAnonymous}
                 onChange={(e) => setIsAnonymous(e.target.checked)}
-                className="mr-2"
+                className="minecraft-checkbox mr-2"
                 disabled={isCreatingComment}
               />
-              <label htmlFor="anonymousComment" className="text-sm">Bình luận ẩn danh</label>
+              <label htmlFor="anonymousComment" className="minecraft-font text-white">Bình luận ẩn danh</label>
             </div>
             
-            <Button type="submit" disabled={isCreatingComment}>
-              {isCreatingComment ? 'Đang gửi...' : replyingTo ? 'Gửi trả lời' : 'Gửi bình luận'}
+            <Button 
+              type="submit" 
+              disabled={isCreatingComment}
+              className="minecraft-button minecraft-hover-sound"
+            >
+              <span className="minecraft-font">
+                {isCreatingComment ? 'Đang gửi...' : replyingTo ? 'Gửi trả lời' : 'Gửi bình luận'}
+              </span>
             </Button>
           </div>
         </form>
       </div>
-      
-      {/* Comments list */}
-      <div>
-        <h3 className="text-lg font-semibold mb-4">
-          {comments.length} bình luận {comments.length > 0 && `(${
-            comments.filter(c => !c.parentCommentId).length} bình luận gốc, ${
-            comments.filter(c => c.parentCommentId).length} phản hồi)`}
+        {/* Comments list */}
+      <div className="minecraft-panel p-4">
+        <h3 className="minecraft-heading text-lg mb-4">
+          {comments.length} bình luận
         </h3>
         
         {isCommentsLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map(i => (
-              <div key={i} className="animate-pulse">
+              <div key={i} className="animate-pulse minecraft-comment p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-                  <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <div className="w-10 h-10 bg-gray-700"></div>
+                  <div className="h-4 w-32 bg-gray-700"></div>
                 </div>
-                <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                <div className="h-16 bg-gray-700"></div>
               </div>
             ))}
           </div>
         ) : comments.length === 0 ? (
-          <div className="text-center py-8 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
-            <p className="text-muted-foreground">Chưa có bình luận nào. Hãy là người đầu tiên bình luận!</p>
+          <div className="text-center py-8 minecraft-comment p-4">
+            <p className="minecraft-font text-white">Chưa có bình luận nào. Hãy là người đầu tiên bình luận!</p>
           </div>
         ) : (
           <div className="space-y-6">

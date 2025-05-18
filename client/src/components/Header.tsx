@@ -97,7 +97,7 @@ export function Header() {
               >
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
               </svg>
-              Xàm lul cùng các đồng râm
+              Nơi xàm lul
             </Button>
           </div>
 
@@ -127,7 +127,7 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem
+                  {/* <DropdownMenuItem
                     className="cursor-pointer"
                     onClick={() => {
                       if (user?.isTemporary) {
@@ -139,7 +139,7 @@ export function Header() {
                   >
                     <User className="mr-2 h-4 w-4" />
                     <span>Trang cá nhân</span>
-                  </DropdownMenuItem>
+                  </DropdownMenuItem> */}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout} className="cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" />
@@ -217,7 +217,7 @@ export function Header() {
             >
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
-            Xàm lul cùng các đồng râm
+            Nơi xàm lul
           </Button>
         </div>
       </div>

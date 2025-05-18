@@ -25,12 +25,12 @@ export function Forum() {
 
   const categories = [
     { id: "all", name: "Tất cả" },
-    { id: "survival", name: "Survival" },
-    { id: "creative", name: "Creative" },
-    { id: "mods", name: "Mods" },
-    { id: "redstone", name: "Redstone" },
-    { id: "pvp", name: "PvP" },
-    { id: "servers", name: "Servers" },
+    // { id: "survival", name: "Survival" },
+    // { id: "creative", name: "Creative" },
+    // { id: "mods", name: "Mods" },
+    // { id: "redstone", name: "Redstone" },
+    // { id: "pvp", name: "PvP" },
+    // { id: "servers", name: "Servers" },
   ];
 
   const handleCreateTopicClick = () => {

@@ -60,10 +60,10 @@ export default function Home() {
         <Card className="overflow-hidden hover:shadow-lg transition-shadow">
           <CardHeader className="pb-4">
             <CardTitle className="text-2xl">
-              Xàm lul cùng các đồng râm
+              Nơi xàm lul
             </CardTitle>
             <CardDescription>
-              Trò chuyện thời gian thực với các thành viên khác trong cộng đồng
+              Cùng xàm lul với các đồng râm trong phòng chat
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0">

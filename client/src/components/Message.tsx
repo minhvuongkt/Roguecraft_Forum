@@ -446,11 +446,11 @@ const MessageComponent = ({
                   " Tôi "
                 ) : (
                   <button
-                    onClick={() => {
-                      if (message.user?.id) {
-                        navigate(`/user/${message.user.id}`);
-                      }
-                    }}
+                    // onClick={() => {
+                    //   if (message.user?.id) {
+                    //     navigate(`/user/${message.user.id}`);
+                    //   }
+                    // }}
                     className="hover:underline"
                   >
                     {message.user?.username || " Unknown "}
@@ -463,32 +463,28 @@ const MessageComponent = ({
                 {"]"}
               </span>
             </div>
-          )}
-
-          <div className="relative flex items-center">
+          )}          <div className="relative flex items-center">
             {isCurrentUser && (
               <button
                 onClick={handleReply}
-                className="mr-1 p-1 bg-white dark:bg-gray-800 rounded-full shadow-sm opacity-70 hover:opacity-100 transition-opacity duration-150"
+                className="mr-1 p-1 bg-white dark:bg-gray-800 minecraft-button opacity-70 hover:opacity-100 transition-opacity duration-150"
                 title="Trả lời tin nhắn này"
               >
                 <CornerUpLeft className="h-3 w-3 text-gray-600 dark:text-gray-300" />
               </button>
-            )}
-
-            {message.content && (
+            )}            {message.content && (
               <div
                 className={cn(
-                  "p-2 px-3 mb-1 break-words max-w-full text-base",
+                  "minecraft-message-box mb-1 break-words",
                   isCurrentUser
-                    ? `discord-my-bubble text-white ${isCurrentUser ? localStorage.getItem("userMessageColor") || "bg-purple-600" : "bg-purple-600"}`
-                    : "discord-bubble dark:text-white bg-gray-700",
-                  isReplyMessage ? "relative pt-6 mt-2" : "",
+                    ? `${isCurrentUser ? localStorage.getItem("userMessageColor") || "" : ""}`
+                    : "",
+                  isReplyMessage ? "minecraft-reply-box" : "",
                 )}
               >
                 {isReplyMessage && (
                   <div
-                    className="absolute top-0 left-0 flex items-center gap-1 text-xs px-3 pt-1 text-gray-300 cursor-pointer w-full overflow-hidden hover:bg-gray-800/30 rounded-t-md transition-colors duration-200"
+                    className="minecraft-reply-reference cursor-pointer"
                     onClick={() =>
                       replyToId && scrollToMessageById(replyToId)
                     }
@@ -512,13 +508,13 @@ const MessageComponent = ({
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className="text-purple-400 flex-shrink-0"
+                      className="text-green-400 flex-shrink-0"
                     >
                       <polyline points="9 14 4 9 9 4"></polyline>
                       <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
                     </svg>
-                    <span className="truncate">
-                      <span className="text-purple-400 hover:underline">
+                    <span className="truncate minecraft-font">
+                      <span className="text-green-400 hover:underline">
                         {originalMessage?.user?.username || "Unknown User"}
                       </span>
                       <span className="opacity-80">
@@ -539,13 +535,13 @@ const MessageComponent = ({
                   !message.content.includes(
                     `@${originalMessage.user.username}`,
                   ) && (
-                    <span className="text-purple-400 font-semibold mr-1">
+                    <span className="text-green-400 font-semibold mr-1">
                       @{originalMessage.user.username}
                     </span>
                   )}
 
                 {isReplyMessage && !originalMessage && (
-                  <div className="absolute -top-3 left-2 text-xs px-2 py-1 rounded bg-amber-100 dark:bg-amber-800/60 text-amber-700 dark:text-amber-300">
+                  <div className="absolute -top-3 left-2 text-xs px-2 py-1 minecraft-panel border border-yellow-700 text-yellow-400">
                     Trả lời tin nhắn đã bị xóa hoặc hết hạn
                   </div>
                 )}
@@ -554,12 +550,10 @@ const MessageComponent = ({
                   {parseMessageContent(message.content)}
                 </div>
               </div>
-            )}
-
-            {!isCurrentUser && (
+            )}            {!isCurrentUser && (
               <button
                 onClick={handleReply}
-                className="ml-1.5 p-1 bg-white dark:bg-gray-800 rounded-full shadow-sm opacity-70 hover:opacity-100 transition-opacity duration-150"
+                className="ml-1.5 p-1 bg-white dark:bg-gray-800 minecraft-button opacity-70 hover:opacity-100 transition-opacity duration-150"
                 title="Trả lời tin nhắn này"
               >
                 <CornerUpLeft className="h-3 w-3 text-gray-600 dark:text-gray-300" />

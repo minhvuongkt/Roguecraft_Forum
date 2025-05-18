@@ -148,11 +148,11 @@ function TopicComponent({ topic, onClick }: TopicProps) {
   };
 
   return (
-    <Card className="hover:shadow-md transition cursor-pointer" onClick={onClick}>
+    <Card className="hover:shadow-md transition cursor-pointer minecraft-panel border-2 border-gray-600" onClick={onClick}>
       <CardContent className="p-4">
         <div className="flex items-start space-x-3">
           {topic.isAnonymous ? (
-            <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+            <div className="w-10 h-10 minecraft-button flex items-center justify-center">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -160,7 +160,7 @@ function TopicComponent({ topic, onClick }: TopicProps) {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="w-5 h-5 text-gray-500 dark:text-gray-400"
+                className="w-5 h-5 text-gray-300"
               >
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                 <circle cx="9" cy="7" r="4"></circle>
@@ -169,58 +169,58 @@ function TopicComponent({ topic, onClick }: TopicProps) {
               </svg>
             </div>
           ) : (
-            <Avatar className="w-10 h-10">
+            <div className="w-10 h-10 minecraft-button flex items-center justify-center overflow-hidden">
               {topic.user?.avatar ? (
-                <AvatarImage src={topic.user.avatar} alt={topic.user.username} />
+                <img src={topic.user.avatar} alt={topic.user.username} className="w-full h-full object-cover" />
               ) : (
-                <AvatarFallback className="bg-primary text-primary-foreground">
+                <span className="text-white font-bold text-sm">
                   {topic.user?.username?.substring(0, 2).toUpperCase() || 'U'}
-                </AvatarFallback>
+                </span>
               )}
-            </Avatar>
+            </div>
           )}
 
           <div className="flex-1">
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center">
-                <h3 className="font-medium">
+                <h3 className="font-medium minecraft-font text-white">
                   {topic.isAnonymous ? 'Ẩn danh' : topic.user?.username}
                 </h3>
                 {!topic.isAnonymous && (
-                  <Badge variant="outline" className="ml-2 px-2 py-0">
+                  <Badge variant="outline" className="ml-2 px-2 py-0 border-green-500 text-green-400">
                     Online
                   </Badge>
                 )}
               </div>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-gray-400 minecraft-font">
                 {formatDate(topic.createdAt)}
               </span>
             </div>
 
-            <h2 className="text-lg font-semibold mb-2">{topic.title}</h2>
+            <h2 className="text-lg font-semibold mb-2 minecraft-font text-yellow-300">{topic.title}</h2>
 
-            {renderContent()}
+            <div className="text-gray-300 mb-3 minecraft-font" dangerouslySetInnerHTML={{ __html: topic.content }} />
             {renderMedia()}
 
-            <div className="flex items-center text-sm text-muted-foreground space-x-4">
-              <Button variant="ghost" size="sm" className="space-x-1 h-8">
+            <div className="flex items-center text-sm text-gray-400 space-x-4 mt-2 pt-2 border-t border-gray-700">
+              <Button variant="ghost" size="sm" className="space-x-1 h-8 minecraft-button">
                 <MessageSquare className="h-4 w-4" />
-                <span>{topic.commentCount || 0} bình luận</span>
+                <span className="minecraft-font">{topic.commentCount || 0}</span>
               </Button>
 
               <Button
                 variant="ghost"
                 size="sm"
-                className="space-x-1 h-8"
+                className="space-x-1 h-8 minecraft-button"
                 onClick={handleLikeClick}
               >
                 <ThumbsUp className="h-4 w-4" />
-                <span>{topic.likeCount}</span>
+                <span className="minecraft-font">{topic.likeCount}</span>
               </Button>
 
-              <Button variant="ghost" size="sm" className="space-x-1 h-8">
+              <Button variant="ghost" size="sm" className="space-x-1 h-8 minecraft-button">
                 <Share className="h-4 w-4" />
-                <span>Chia sẻ</span>
+                <span className="minecraft-font">Chia sẻ</span>
               </Button>
             </div>
           </div>

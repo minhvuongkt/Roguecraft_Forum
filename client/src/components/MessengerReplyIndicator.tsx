@@ -6,28 +6,32 @@ import { cn } from '@/lib/utils';
 interface MessengerReplyIndicatorProps {
   message: ChatMessage;
   onCancel: () => void;
+  className?: string;
 }
 
-export function MessengerReplyIndicator({ message, onCancel }: MessengerReplyIndicatorProps) {
-  // Hàm để rút gọn nội dung tin nhắn nếu quá dài
+export function MessengerReplyIndicator({ 
+  message, 
+  onCancel,
+  className 
+}: MessengerReplyIndicatorProps) {
   const truncateContent = (content: string, maxLength = 50) => {
     if (content.length <= maxLength) return content;
     return content.substring(0, maxLength) + '...';
   };
 
   return (
-    <div className="flex items-center py-2 px-3 bg-gray-800 rounded-md mb-2 messenger-reply-animation">
+    <div className={cn(
+      "flex items-center py-2 px-3 minecraft-panel mb-2 messenger-reply-animation",
+      className
+    )}>
       <div className="flex-1 min-w-0">
         <div className="flex items-center">
-          <div className="w-1 h-6 bg-blue-500 rounded-full mr-2" />
+          <div className="w-1 h-6 bg-green-500 mr-2" />
           <div>
-            <p className="text-xs text-gray-400">
+            <p className="minecraft-font text-yellow-300">
               Đang trả lời {message.user?.username || 'Người dùng'}
             </p>
-            <p className={cn(
-              "text-sm text-gray-300 truncate max-w-full",
-              "minecraft-font"
-            )}>
+            <p className="minecraft-font text-white truncate max-w-full">
               {message.content ? truncateContent(message.content) : 'Media'}
             </p>
           </div>
@@ -36,7 +40,7 @@ export function MessengerReplyIndicator({ message, onCancel }: MessengerReplyInd
       
       <button
         onClick={onCancel}
-        className="ml-2 text-gray-400 hover:text-white transition-colors"
+        className="minecraft-styled-button ml-2"
         aria-label="Cancel reply"
       >
         <X size={18} />

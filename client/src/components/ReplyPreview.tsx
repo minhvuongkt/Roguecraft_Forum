@@ -10,18 +10,13 @@ interface ReplyPreviewProps {
 }
 
 export function ReplyPreview({ message, onCancel }: ReplyPreviewProps) {
-  // Reference để có thể scroll tới element này khi cần
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // Lấy nội dung trích dẫn từ tin nhắn gốc, tối đa 20 ký tự
   const quoteContent =
-    message.content.length > 20
-      ? message.content.substring(0, 20) + "..."
+    message.content.length > 50
+      ? message.content.substring(0, 50) + "..."
       : message.content;
-
-  // Hiệu ứng khi component được mounted
   useEffect(() => {
-    // Flash animation cho element khi xuất hiện
     if (previewRef.current) {
       previewRef.current.classList.add("bg-purple-500/20");
       setTimeout(() => {
