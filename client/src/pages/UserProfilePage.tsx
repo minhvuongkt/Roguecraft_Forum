@@ -26,6 +26,7 @@ import {
   CheckCircle2,
   X
 } from "lucide-react";
+import { formatDateTime } from '@/lib/dayjs';
 
 interface UserProfile {
   id: number;
@@ -298,18 +299,11 @@ export default function UserProfilePage() {
     setAvatarFile(null);
     setAvatarPreview(null);
   };
-
-  // Format join date
   const formatDate = (dateString?: string) => {
     if (!dateString) return "Unknown";
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    return formatDateTime(dateString, 'DD MMMM YYYY');
   };
 
-  // Loading state
   if (isDataLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -319,7 +313,6 @@ export default function UserProfilePage() {
     );
   }
 
-  // Error state
   if (error || !data) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8 text-center">
@@ -365,7 +358,7 @@ export default function UserProfilePage() {
             {isCurrentUserProfile && !avatarPreview && (
               <label className="absolute inset-0 bg-black bg-opacity-40 rounded-full flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity">
                 <Camera className="h-8 w-8 text-white" />
-                <input 
+                <input
                   type="file"
                   className="hidden"
                   accept="image/*"
@@ -379,24 +372,24 @@ export default function UserProfilePage() {
           {avatarPreview && (
             <div className="absolute -top-12 left-6 border-4 border-white dark:border-gray-800 rounded-full">
               <div className="relative">
-                <img 
-                  src={avatarPreview} 
-                  alt="Avatar preview" 
+                <img
+                  src={avatarPreview}
+                  alt="Avatar preview"
                   className="h-24 w-24 rounded-full object-cover"
                 />
                 <div className="absolute -top-2 -right-2 flex space-x-1">
-                  <Button 
-                    size="sm" 
-                    variant="destructive" 
-                    className="h-6 w-6 p-0 rounded-full" 
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="h-6 w-6 p-0 rounded-full"
                     onClick={handleCancelAvatarUpload}
                   >
                     <X className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    size="sm" 
-                    variant="default" 
-                    className="h-6 w-6 p-0 rounded-full" 
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="h-6 w-6 p-0 rounded-full"
                     onClick={handleAvatarUpload}
                     disabled={isAvatarUploading}
                   >
@@ -508,7 +501,7 @@ export default function UserProfilePage() {
                   <Button variant="outline" onClick={handleCancelEdit}>
                     Hủy
                   </Button>
-                  <Button 
+                  <Button
                     onClick={handleUpdateProfile}
                     disabled={isLoading}
                   >
@@ -539,8 +532,8 @@ export default function UserProfilePage() {
                     <p className="text-gray-500 dark:text-gray-400">
                       Bạn chưa thêm thông tin giới thiệu
                     </p>
-                    <Button 
-                      variant="link" 
+                    <Button
+                      variant="link"
                       onClick={() => setIsEditing(true)}
                       className="mt-2"
                     >
@@ -633,8 +626,8 @@ export default function UserProfilePage() {
                   <p className="mt-1 text-amber-700 dark:text-amber-300">
                     Bạn đang sử dụng tài khoản tạm thời. Để đặt mật khẩu và chuyển đổi thành tài khoản thường trực, vui lòng đăng ký một tài khoản mới.
                   </p>
-                  <Button 
-                    className="mt-3" 
+                  <Button
+                    className="mt-3"
                     variant="outline"
                     onClick={() => setIsLoginModalOpen(true)}
                   >
@@ -681,7 +674,7 @@ export default function UserProfilePage() {
                   )}
 
                   <div className="pt-4">
-                    <Button 
+                    <Button
                       onClick={handleUpdatePassword}
                       disabled={isPasswordUpdating}
                     >
@@ -702,9 +695,9 @@ export default function UserProfilePage() {
         </Tabs>
       </div>
 
-      <LoginModal 
-        isOpen={isLoginModalOpen} 
-        onClose={() => setIsLoginModalOpen(false)} 
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
       />
     </div>
   );

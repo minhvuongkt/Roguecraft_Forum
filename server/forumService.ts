@@ -66,7 +66,7 @@ export class ForumService {
         }
         
         const user = topic.userId 
-          ? await storage.getUser(topic.userId)
+          ? await storage.getUserById(topic.userId)
           : undefined;
         
         return {
@@ -93,7 +93,7 @@ export class ForumService {
     // Get user info if not anonymous
     let userInfo = null;
     if (!topic.isAnonymous && topic.userId) {
-      const user = await storage.getUser(topic.userId);
+      const user = await storage.getUserById(topic.userId);
       if (user) {
         userInfo = {
           id: user.id,
@@ -116,7 +116,7 @@ export class ForumService {
         }
         
         const user = comment.userId 
-          ? await storage.getUser(comment.userId)
+          ? await storage.getUserById(comment.userId)
           : undefined;
         
         return {
@@ -164,7 +164,7 @@ export class ForumService {
       // Get user info if not anonymous
       let userInfo = null;
       if (!newTopic.isAnonymous && newTopic.userId) {
-        const user = await storage.getUser(newTopic.userId);
+        const user = await storage.getUserById(newTopic.userId);
         if (user) {
           userInfo = {
             id: user.id,
@@ -195,7 +195,7 @@ export class ForumService {
     // Get user info if not anonymous
     let userInfo = null;
     if (!newComment.isAnonymous && newComment.userId) {
-      const user = await storage.getUser(newComment.userId);
+      const user = await storage.getUserById(newComment.userId);
       if (user) {
         userInfo = {
           id: user.id,

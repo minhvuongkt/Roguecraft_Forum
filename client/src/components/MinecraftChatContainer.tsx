@@ -61,7 +61,6 @@ export function MinecraftChatContainer({
         )}
       </div>
       
-      {/* Chat Input */}
       <div className="mt-1">
         <MinecraftChatbox
           onSend={handleSendMessage}

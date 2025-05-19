@@ -51,7 +51,7 @@ app.use((req, res, next) => {
        .json({ 
           message,
           status,
-          timestamp: new Date().toISOString(),
+          timestamp: new Date().toLocaleString(),
           ...(process.env.NODE_ENV === 'development' ? { stack: err.stack } : {})
        });
 

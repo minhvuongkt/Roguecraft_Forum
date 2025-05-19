@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { toVNTime, timeFromNow, formatDateTime } from '@/lib/dayjs';
 // Use the correct import for Topic and Comment types
 import type { Topic, Comment } from '@/types/index';
 
@@ -306,43 +307,9 @@ export function useForum() {
     return response.json();
   };
 
-  // Helper function to format date for display (memoized)
-  const formatDate = useCallback((dateInput: string | Date) => {
-    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    
-    // Less than a minute
-    if (diff < 60 * 1000) {
-      return 'Vừa xong';
-    }
-    
-    // Less than an hour
-    if (diff < 60 * 60 * 1000) {
-      const minutes = Math.floor(diff / (60 * 1000));
-      return `${minutes} phút trước`;
-    }
-    
-    // Less than a day
-    if (diff < 24 * 60 * 60 * 1000) {
-      const hours = Math.floor(diff / (60 * 60 * 1000));
-      return `${hours} giờ trước`;
-    }
-    
-    // Less than a week
-    if (diff < 7 * 24 * 60 * 60 * 1000) {
-      const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-      return `${days} ngày trước`;
-    }
-    
-    // Format as date
-    return date.toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: 'numeric',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-    });
+  // Format date based on how recent it is
+  const formatDate = useCallback((dateInput: string | number | Date) => {
+    return formatDateTime(dateInput, 'DD/MM/YYYY HH:mm:ss');
   }, []);
   
   // Memoized selectors for filtered topics

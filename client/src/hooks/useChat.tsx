@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ChatMessage } from "@/types";
 import React from "react";
 import { number } from "zod";
+import { toVNTime } from '@/lib/dayjs';
 
 export function useChat() {
   const {
@@ -19,24 +20,17 @@ export function useChat() {
   >({});
   const { toast } = useToast();
 
-  // Group messages by date
   useEffect(() => {
-    // Filter messages from the last 3 days
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-
+    const threeDaysAgo = toVNTime(new Date()).subtract(3, 'day').toDate();
     const filtered = messages.filter(
       (msg) => new Date(msg.createdAt) >= threeDaysAgo,
     );
 
     setFilteredMessages(filtered);
 
-    // Group messages by date
-    const groups: Record<string, ChatMessage[]> = {};
-
-    filtered.forEach((message) => {
-      const date = new Date(message.createdAt);
-      const dateString = date.toLocaleDateString("vi-VN");
+    const groups: Record<string, ChatMessage[]> = {};    filtered.forEach((message) => {
+      const date = toVNTime(message.createdAt);
+      const dateString = date.format("DD/MM/YYYY");
 
       if (!groups[dateString]) {
         groups[dateString] = [];
@@ -136,14 +130,8 @@ export function useChat() {
         });
         return;
       }
-
-      // Extract @mentions from the message
       const mentions = extractMentions(input);
-
-      // Set reply ID if replying to a message
       const replyToId = replyTo ? replyTo.id : null;
-
-      // If replying, make sure to add the username mention if not already included
       let finalMessage = input;
       if (
         replyTo &&
@@ -151,13 +139,10 @@ export function useChat() {
         !input.includes(`@${replyTo.user.username}`)
       ) {
         finalMessage = `@${replyTo.user.username} ${input}`;
-        // Add the username to mentions if not already included
         if (!mentions.includes(replyTo.user.username)) {
           mentions.push(replyTo.user.username);
         }
       }
-
-      // Send the message with any media attachment and replyToId
       wsSendMessage(
         finalMessage,
         media,

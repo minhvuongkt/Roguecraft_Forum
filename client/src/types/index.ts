@@ -1,8 +1,3 @@
-/**
- * Các kiểu dữ liệu dùng chung cho ứng dụng
- */
-
-// Kiểu cho người dùng
 export interface User {
   id: number;
   username: string;
@@ -10,9 +5,9 @@ export interface User {
   isTemporary: boolean;
   createdAt: string | Date;
   lastActive: string | Date;
+  expiresAt?: string | Date; // Added expiresAt for temporary user expiration tracking
 }
 
-// Kiểu cho tin nhắn chat
 export interface ChatMessage {
   id: number;
   userId: number;
@@ -27,7 +22,6 @@ export interface ChatMessage {
   } | null;
 }
 
-// Kiểu cho chủ đề forum
 export interface Topic {
   id: number;
   userId?: number;
@@ -40,7 +34,6 @@ export interface Topic {
   commentCount: number;
   media?: any; // Có thể là {"1": "path1", "2": "path2"} hoặc trống
   isAnonymous?: boolean;
-  // Thông tin người tạo - được thêm trong một số API
   user?: {
     id: number;
     username: string;
@@ -48,7 +41,6 @@ export interface Topic {
   };
 }
 
-// Kiểu cho bình luận
 export interface Comment {
   id: number;
   topicId: number;
@@ -60,7 +52,6 @@ export interface Comment {
   parentCommentId?: number | null;
   // Các bình luận phản hồi
   replies?: Comment[];
-  // Thông tin người bình luận
   user?: {
     id: number;
     username: string;
@@ -68,7 +59,6 @@ export interface Comment {
   };
 }
 
-// Kiểu cho người dùng online
 export interface OnlineUser {
   id: number;
   username: string;
@@ -76,7 +66,6 @@ export interface OnlineUser {
   lastActive: Date;
 }
 
-// Kiểu cho hồ sơ người dùng (profile)
 export interface UserProfile extends User {
   bio?: string;
   joinDate?: string;

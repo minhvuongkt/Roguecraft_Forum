@@ -9,13 +9,11 @@ import { useAuth } from "./AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { WebSocketMessageType } from "@shared/schema";
 import { ChatMessage, OnlineUser } from "@/types";
+import { toVNTime } from "@/lib/dayjs";
 
-// Extended WebSocket type with retries property
 interface ExtendedWebSocket extends WebSocket {
   retries?: number;
 }
-
-// Define the WebSocket context type
 interface WebSocketContextType {
   isConnected: boolean;
   messages: ChatMessage[];
@@ -35,8 +33,8 @@ const WebSocketContext = createContext<WebSocketContextType>({
   isConnected: false,
   messages: [],
   onlineUsers: [],
-  sendMessage: () => {},
-  setUsername: () => {},
+  sendMessage: () => { },
+  setUsername: () => { },
   findMessagesByUsername: () => [],
   findMessageById: () => undefined,
 });
@@ -53,24 +51,17 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Function to create and connect WebSocket
   const connectWebSocket = useCallback(() => {
-    // Close existing socket if it exists
     if (socket) {
       socket.close();
     }
-
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
-
-    console.log("Connecting to WebSocket...", wsUrl);
     const ws = new WebSocket(wsUrl) as ExtendedWebSocket;
 
     ws.onopen = () => {
       console.log("WebSocket connected");
       setIsConnected(true);
-
-      // If user is already authenticated, send username
       if (user) {
         ws.send(
           JSON.stringify({
@@ -82,14 +73,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     ws.onclose = (event) => {
-      console.log(`WebSocket disconnected: ${event.code} ${event.reason}`);
       setIsConnected(false);
-
-      // Try to reconnect after a delay - using exponential backoff
-      // Starting with 1s, max 30s
       const delay = Math.min(30000, 1000 * 2 ** Math.min(5, ws.retries || 0));
-      console.log(`Attempting to reconnect in ${delay}ms`);
-
       setTimeout(() => {
         if (ws.retries === undefined) {
           ws.retries = 0;
@@ -112,23 +97,14 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
         console.error("Error parsing WebSocket message:", error);
       }
     };
-
-    // Add custom property to track reconnection attempts
     ws.retries = 0;
-
     setSocket(ws);
-
     return ws;
   }, [user]);
 
-  // Initialize WebSocket connection
   useEffect(() => {
     const ws = connectWebSocket();
-
-    // Fetch initial messages
     fetchRecentMessages();
-
-    // Clean up WebSocket connection on unmount
     return () => {
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.close();
@@ -136,7 +112,6 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
-  // Handle reconnection when user changes
   useEffect(() => {
     if (socket && isConnected && user) {
       socket.send(
@@ -145,18 +120,14 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
           payload: { username: user.username },
         }),
       );
-
-      // Request online users status
       const statusMsg = JSON.stringify({
         type: WebSocketMessageType.USER_STATUS,
         payload: {},
       });
-      console.log("Sending USER_STATUS request:", statusMsg);
       socket.send(statusMsg);
     }
   }, [user, isConnected]);
 
-  // Periodically refresh online users
   useEffect(() => {
     if (!isConnected || !socket) return;
 
@@ -166,31 +137,28 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
           type: WebSocketMessageType.USER_STATUS,
           payload: {},
         });
-        console.log("Sending periodic USER_STATUS request:", statusMsg);
         socket.send(statusMsg);
       }
-    }, 15000); // Every 15 seconds
+    }, 5000); // Every 5 seconds
 
     return () => clearInterval(interval);
   }, [isConnected, socket]);
 
-  // Fetch recent messages from API
   const fetchRecentMessages = async () => {
     try {
       const response = await fetch("/api/chat/messages");
       if (!response.ok) throw new Error("Failed to fetch messages");
-
       const data = await response.json();
+      console.log("Fetching messages...", data);
       const processedMessages = data
         .map((msg: any) => ({
           ...msg,
-          createdAt: new Date(msg.createdAt),
+          createdAt: msg.createdAt,
         }))
         .sort(
           (a: ChatMessage, b: ChatMessage) =>
-            a.createdAt.getTime() - b.createdAt.getTime(),
+            toVNTime(a.createdAt).millisecond() - toVNTime(b.createdAt).millisecond(),
         );
-
       setMessages(processedMessages);
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -198,7 +166,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const handleWebSocketMessage = (data: any) => {
-    console.log("Received WebSocket message:", data);
+    // console.log("Received WebSocket message:", data);
     switch (data.type) {
       case WebSocketMessageType.CHAT_MESSAGE:
         if (data.payload.error) {
@@ -212,7 +180,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
             ...prev,
             {
               ...data.payload,
-              createdAt: new Date(data.payload.createdAt),
+              createdAt: toVNTime(data.payload.createdAt).toDate(),
             },
           ]);
           if (data.payload.userId !== user?.id) {
@@ -232,11 +200,10 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
         break;
 
       case WebSocketMessageType.USER_JOINED:
-        // Show toast for user joined
-        // toast({
-        //   title: 'Thông báo',
-        //   description: `${data.payload.username} đã tham gia chat`,
-        // });
+        toast({
+          title: 'Thông báo',
+          description: `${data.payload.username} đã vào thở cùng`,
+        });
         if (data.payload.user) {
           setOnlineUsers((prevUsers) => {
             // Check if user already exists
@@ -245,10 +212,9 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
             );
             if (!userExists) {
               return [
-                ...prevUsers,
-                {
+                ...prevUsers, {
                   ...data.payload.user,
-                  lastActive: new Date(),
+                  lastActive: toVNTime(new Date()).toDate(),
                 },
               ];
             }
@@ -258,10 +224,9 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
         break;
 
       case WebSocketMessageType.USER_LEFT:
-        // Show toast for user left
         toast({
           title: "Thông báo",
-          description: `${data.payload.username} đã rời khỏi chat`,
+          description: `${data.payload.username} đã tắt thở`,
         });
 
         // Remove user from online users
@@ -273,12 +238,11 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
         break;
 
       case WebSocketMessageType.USER_STATUS:
-        // Update online users list
         if (data.payload.users && Array.isArray(data.payload.users)) {
           setOnlineUsers(
             data.payload.users.map((user: any) => ({
               ...user,
-              lastActive: new Date(user.lastActive || Date.now()),
+              lastActive: toVNTime(user.lastActive || Date.now()).toDate(),
             })),
           );
         }
@@ -299,7 +263,6 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Send a chat message
   const sendMessage = (
     content: string,
     media?: any,
@@ -314,17 +277,10 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       });
       return;
     }
-    console.log("Sending message with reply ?", replyToMessageId);
     // let processedReplyId: number | string | null = null;
     // if (replyToMessageId !== undefined && replyToMessageId !== null) {
     //   const parsed = Number(replyToMessageId);
     //   processedReplyId = Number.isInteger(parsed) && parsed > 0 ? parsed : null;
-    //   // Log để debug
-    //   console.log("Sending message with replyToMessageId:", {
-    //     original: replyToMessageId,
-    //     processed: processedReplyId,
-    //     type: typeof processedReplyId,
-    //   });
     // }
 
     const message = {
@@ -340,13 +296,12 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     socket.send(JSON.stringify(message));
   };
 
-  // Set username via WebSocket
   const setUsername = useCallback(
     (username: string) => {
       if (!socket || socket.readyState !== WebSocket.OPEN) {
         toast({
           title: "Lỗi kết nối",
-          description: "Không thể đặt tên. Vui lòng thử lại sau.",
+          description: "Không thể đặt username lúc này. Vui lòng thử lại sau.",
           variant: "destructive",
         });
         return;
@@ -362,7 +317,6 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     [socket, toast],
   );
 
-  // Hàm tìm tin nhắn dựa trên tên người dùng
   const findMessagesByUsername = useCallback(
     (username: string) => {
       return messages.filter(
@@ -373,19 +327,22 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     [messages],
   );
 
-  // Hàm tìm kiếm tin nhắn theo ID
   const findMessageById = useCallback(
     (messageId: number) => {
       return messages.find((message) => message.id === messageId);
     },
     [messages],
   );
+  const adjustedMessages = messages.map((msg) => ({
+    ...msg,
+    createdAt: toVNTime(msg.createdAt).toDate(),
+  }));
 
   return (
     <WebSocketContext.Provider
       value={{
         isConnected,
-        messages,
+        messages: adjustedMessages,
         onlineUsers,
         sendMessage,
         setUsername,

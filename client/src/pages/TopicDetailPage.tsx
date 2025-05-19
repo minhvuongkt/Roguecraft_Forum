@@ -62,7 +62,7 @@ const CommentItem = ({
             ) : null}
             
             <span className="minecraft-font text-xs text-green-300">
-              {formatDate(typeof comment.createdAt === 'string' ? comment.createdAt : comment.createdAt.toISOString())}
+              {formatDate(typeof comment.createdAt === 'string' ? comment.createdAt : comment.createdAt.toLocaleString())}
             </span>
           </div>
           

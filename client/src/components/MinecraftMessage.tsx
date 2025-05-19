@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { ImageViewerModal } from "./ImageViewerModal";
 import { CornerUpLeft } from "lucide-react";
 import { useTheme } from '@/hooks/use-theme';
+import { formatDateTime, toVNTime } from "@/lib/dayjs";
 
 interface MessageProps {
   message: ChatMessage;
@@ -101,16 +102,8 @@ const MinecraftMessageComponent = ({
       onReply(messageToReply);
     }
   };
-  // Format time with timezone
   const formatTime = (date: string | Date): string => {
-    const d = new Date(date);
-    // Adjust to Vietnam timezone (UTC+7)
-    d.setHours(d.getHours() + 7);
-    return d.toLocaleTimeString("vi-VN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false
-    });
+    return formatDateTime(toVNTime(date).toDate(), "HH:mm:ss");
   };
 
   const parseMessageContent = (content: string): JSX.Element => {
@@ -392,10 +385,9 @@ const MinecraftMessageComponent = ({
               </span>
             )}
             <span className={cn('minecraft-font text-xs', theme === 'dark' ? 'text-gray-400' : 'text-gray-700')}>
-              [{formatTime(new Date(message.createdAt))}]
+              [{(message.createdAt.getDate())}]
             </span>
           </div>
-          {/* Khung xem tin nhắn gốc tách biệt phía trên nội dung trả lời */}
           {isReplyMessage && originalMessage && (
             <div
               className={cn(

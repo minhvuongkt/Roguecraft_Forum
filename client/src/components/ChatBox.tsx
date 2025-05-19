@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { ReplyPreview } from "./ReplyPreview";
 import { useChat } from "@/hooks/useChat";
+import { MinecraftMessage } from "@/components/MinecraftMessage";
 import { Message } from "@/components/Message";
 import { MessageInput } from "@/components/ui/message-input";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { TypingIndicator } from "./TypingIndicator";
 import { MessageColorPicker } from "./MessageColorPicker";
 import { MessengerReplyIndicator } from "./MessengerReplyIndicator";
 import { MinecraftChatbox } from "./MinecraftChatbox";
+import { toVNTime } from '@/lib/dayjs';
 import {
   MoreVertical,
   Send,
@@ -31,6 +33,7 @@ import {
   Settings,
   Moon,
   Sun,
+  AlertTriangle,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
@@ -64,6 +67,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Warning } from "postcss";
+import { Alert } from "./ui/alert";
 
 // Kích thước tin nhắn mặc định và với media
 const DEFAULT_MESSAGE_HEIGHT = 60;
@@ -281,7 +286,6 @@ export function ChatBox() {
   const [notifications, setNotifications] = useState(true);
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
-  // Count total messages across all days - Define this early
   const totalMessageCount = useMemo(() => {
     return Object.values(groupedMessages).reduce(
       (acc, messages) => acc + messages.length,
@@ -317,10 +321,9 @@ export function ChatBox() {
   // Define flattenedMessages before using it in any useEffect or functions
   const flattenedMessages = useMemo(() => {
     return Object.entries(filteredGroupedMessages).reduce(
-      (acc, [date, messages]) => {
-        // Add date header
+      (acc, [date, messages]) => {        // Add date header
         const dateString =
-          date === new Date().toLocaleDateString("vi-VN") ? "Hôm nay" : date;
+          date === toVNTime(new Date()).format("DD/MM/YYYY") ? "Hôm nay" : date;
 
         // Chỉ thêm tiêu đề ngày nếu có tin nhắn
         if (messages.length > 0) {
@@ -367,11 +370,8 @@ export function ChatBox() {
     );
   }, [filteredGroupedMessages]);
 
-  // Check for new messages and trigger auto-scroll - AFTER flattenedMessages is defined
   useEffect(() => {
-    // If message count increased, we have new messages
     if (totalMessageCount > prevMessageCountRef.current) {
-      // Auto-scroll if enabled
       if (shouldAutoScrollRef.current && !isUserScrollingRef.current) {
         setTimeout(() => {
           if (listRef.current) {
@@ -380,7 +380,6 @@ export function ChatBox() {
           }
         }, 100);
       } else {
-        // Show the scroll button if we're not auto-scrolling
         setState((prev) => ({ ...prev, showScrollButton: true }));
       }
     }
@@ -399,56 +398,42 @@ export function ChatBox() {
     }
   }, [flattenedMessages.length]);
 
-  // Ước tính chiều cao mỗi item để VirtualList render chính xác
   const getItemSize = useCallback(
     (index: number): number => {
       const item = flattenedMessages[index];
       if (!item) return DEFAULT_MESSAGE_HEIGHT;
 
-      // Nếu đã có chiều cao được lưu trữ, sử dụng nó
       if (messageHeightsRef.current[item.id]) {
         return messageHeightsRef.current[item.id];
       }
-
-      // Tính chiều cao dựa vào loại item
       if (item.type === "date-header") {
         return 40; // Date header height
       }
-
-      // Nếu là tin nhắn có media, cho nhiều không gian hơn
       if (item.message?.media) {
         return MESSAGE_WITH_MEDIA_HEIGHT;
       }
-
-      // Tin nhắn văn bản thông thường
       return DEFAULT_MESSAGE_HEIGHT;
     },
     [flattenedMessages],
   );
 
-  // Lưu trữ thực tế chiều cao của phần tử đã render
   const setItemSize = useCallback((id: string, height: number) => {
     if (messageHeightsRef.current[id] !== height) {
       messageHeightsRef.current[id] = height;
-      // Thông báo với VirtualList để cập nhật lại kích thước
       if (listRef.current) {
         listRef.current.resetAfterIndex(0);
       }
     }
   }, []);
 
-  // Mention system: Handle input events for @ mentions
   useEffect(() => {
     const handleInputChange = () => {
       if (!inputRef.current) return;
 
       const text = inputRef.current.value;
       const cursorPosition = inputRef.current.selectionStart || 0;
-
-      // Find @ symbol before cursor
       const textBeforeCursor = text.substring(0, cursorPosition);
       const atIndex = textBeforeCursor.lastIndexOf("@");
-
       if (
         atIndex >= 0 &&
         (atIndex === 0 ||
@@ -456,21 +441,15 @@ export function ChatBox() {
           text[atIndex - 1] === "\n")
       ) {
         const searchTerm = textBeforeCursor.substring(atIndex + 1);
-
-        // Only activate if there's no space after @ (we're still typing a username)
         if (!searchTerm.includes(" ")) {
-          // Calculate position for mention popup
           const inputRect = inputRef.current.getBoundingClientRect();
           const lineHeight = parseInt(
             window.getComputedStyle(inputRef.current).lineHeight,
           );
-
-          // Approximate position based on textarea content
           const lines = textBeforeCursor.split("\n");
           const currentLineIndex = lines.length - 1;
-          const top = inputRect.top + currentLineIndex * lineHeight - 200; // Position above the @ symbol
-          const left = inputRect.left + 10; // Position to the right of @ symbol
-
+          const top = inputRect.top + currentLineIndex * lineHeight - 200;
+          const left = inputRect.left + 10;
           setState((prev) => ({
             ...prev,
             mentionState: {
@@ -512,7 +491,6 @@ export function ChatBox() {
     };
   }, [state.mentionState.active]);
 
-  // Sửa hàm handleSelectMentionUser để xử lý mention người dùng đúng cách
   const handleSelectMentionUser = useCallback(
     (selectedUser: { id: string; username: string }) => {
       if (!inputRef.current) return;
@@ -521,40 +499,30 @@ export function ChatBox() {
       const cursorPosition = inputRef.current.selectionStart || 0;
       const textBeforeCursor = text.substring(0, cursorPosition);
 
-      // Tìm vị trí của @ gần nhất trước con trỏ
       const atIndex = textBeforeCursor.lastIndexOf("@");
 
       if (atIndex >= 0) {
-        // Kiểm tra xem có phần username đang được nhập không
         const existingMentionMatch = text.substring(atIndex).match(/^@(\S+)/);
         const existingMention = existingMentionMatch
           ? existingMentionMatch[0]
           : "@";
-
-        // Tính toán vị trí kết thúc của mention hiện tại
         const endOfMentionIndex = atIndex + existingMention.length;
-
-        // Thay thế @partial_name với @selected_username
         const newText =
           text.substring(0, atIndex) +
           `@${selectedUser.username} ` +
           text.substring(endOfMentionIndex);
 
-        // Cập nhật giá trị input
         inputRef.current.value = newText;
 
-        // Di chuyển con trỏ sau username đã chèn
-        const newCursorPosition = atIndex + selectedUser.username.length + 2; // +2 cho @ và khoảng trắng
+        const newCursorPosition = atIndex + selectedUser.username.length + 2;
         inputRef.current.setSelectionRange(
           newCursorPosition,
           newCursorPosition,
         );
 
-        // Focus lại vào input
         inputRef.current.focus();
       }
 
-      // Đóng dropdown mention
       setState((prev) => ({
         ...prev,
         mentionState: {
@@ -567,7 +535,6 @@ export function ChatBox() {
     [],
   );
 
-  // Xử lý sự kiện cuộn
   const handleScroll = useCallback(
     ({
       scrollOffset,
@@ -576,18 +543,11 @@ export function ChatBox() {
       scrollOffset: number;
       scrollUpdateWasRequested: boolean;
     }) => {
-      // Ignore programmatic scrolls
       if (scrollUpdateWasRequested) return;
-
-      // Track that the user is scrolling
       isUserScrollingRef.current = true;
-
-      // Clear any existing timeout
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
-
-      // After a short delay, consider scrolling finished
       scrollTimeoutRef.current = setTimeout(() => {
         isUserScrollingRef.current = false;
       }, 100);
@@ -596,15 +556,10 @@ export function ChatBox() {
         ...prev,
         isScrolling: true,
       }));
-
-      // Reset scrolling state after a delay
       setTimeout(() => {
         setState((prev) => ({ ...prev, isScrolling: false }));
       }, 150);
-
-      // Check if we're near the bottom to determine auto-scroll behavior
       if (listRef.current) {
-        // Use public API instead of private _outerRef/_instanceProps
         const listElement = listRef.current as any;
         const listHeight = listElement.props.height;
         const contentHeight = listElement.getTotalSize ? listElement.getTotalSize() : 0;
@@ -755,8 +710,8 @@ export function ChatBox() {
     try {
       await setTemporaryUser(newUsername);
       toast({
-        title: "Đặt tên thành công",
-        description: `Bạn có thể chat với tên hiển thị là "${newUsername}"`,
+        title: "Đặt username thành công",
+        description: `Bạn có thể chat với username là "${newUsername}"`,
         variant: "default",
       });
       setState((prev) => ({
@@ -768,7 +723,7 @@ export function ChatBox() {
     } catch (error) {
       toast({
         title: "Lỗi khi đặt tên",
-        description: "Không thể đặt tên. Vui lòng thử lại sau",
+        description: `${error}`,
         variant: "destructive",
       });
       setState((prev) => ({ ...prev, isSubmitting: false }));
@@ -865,7 +820,6 @@ export function ChatBox() {
       );
     }
 
-    // Message with additional wrapper for isolation
     if (item.type === "message" && item.message) {
       return (
         <div
@@ -873,6 +827,7 @@ export function ChatBox() {
           ref={itemRef}
           className="clear-both" // Ensure nothing floats around this message
         >
+          {/* <MinecraftMessage */}
           <Message
             key={item.id}
             message={item.message}
@@ -934,8 +889,8 @@ export function ChatBox() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuLabel>Cài đặt</DropdownMenuLabel>
-              <DropdownMenuSeparator />
+              {/* <DropdownMenuLabel>Cài đặt</DropdownMenuLabel>
+              <DropdownMenuSeparator /> */}
               <DropdownMenuItem onClick={handleToggleNotifications}>
                 {notifications ? (
                   <BellOff className="mr-2 h-4 w-4" />
@@ -944,7 +899,7 @@ export function ChatBox() {
                 )}
                 {notifications ? "Tắt thông báo" : "Bật thông báo"}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleToggleTheme}>
+              {/* <DropdownMenuItem onClick={handleToggleTheme}>
                 {theme === "light" ? (
                   <Moon className="mr-2 h-4 w-4" />
                 ) : (
@@ -959,7 +914,7 @@ export function ChatBox() {
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Xóa trò chuyện
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -967,8 +922,7 @@ export function ChatBox() {
 
       {/* Chat Messages */}
       <div ref={containerRef} className="flex-1 relative overflow-hidden">
-        {/* Thông báo người dùng chưa đăng nhập */}
-        {!user && (
+        {/* {!user && (
           <div className="absolute top-0 left-0 right-0 bg-amber-50 dark:bg-amber-950/30 p-3 text-center z-10 flex items-center justify-center border-b border-amber-100 dark:border-amber-800/50 backdrop-blur-sm" role="alert" aria-live="polite">
             <AlertCircle className="h-4 w-4 text-amber-500 mr-2 flex-shrink-0" aria-hidden="true" />
             <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -976,14 +930,14 @@ export function ChatBox() {
               <button
                 onClick={() => toggleUsernameDialog(true)}
                 className="font-bold underline hover:text-amber-900 dark:hover:text-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-400 rounded"
-                aria-label="Đặt tên hiển thị để tham gia trò chuyện"
+                aria-label="Đặt username để tham gia trò chuyện"
               >
-                đặt tên hiển thị
+                đặt username
               </button>{" "}
-              để tham gia trò chuyện
+              để tham gia trò chuyện.
             </span>
           </div>
-        )}
+        )} */}
         <div className="sticky top-0 z-10 flex items-center justify-center pt-3 pb-2" id="chatHistoryNotice" aria-live="polite">
           {/* <TooltipProvider>
             <Tooltip>
@@ -1096,9 +1050,9 @@ export function ChatBox() {
                 onClick={() => toggleUsernameDialog(true)}
                 className="font-semibold text-blue-600 dark:text-blue-300 hover:underline"
               >
-                đặt tên hiển thị
+                đặt username
               </button>{" "}
-              trước khi có thể gửi tin nhắn
+              để gửi tin nhắn (Lưu ý: tài khoản này sẽ bị xoá sau 7 ngày).
             </div>
           </div>
         )}
@@ -1172,8 +1126,12 @@ export function ChatBox() {
         )}
 
         <div className="mt-1 text-xs text-muted-foreground px-2 flex items-center">
-          <Info className="h-3 w-3 mr-1" />
-          Tin nhắn được lưu trữ tối đa trong 4 ngày.
+          <AlertTriangle className="h-3 w-3 mr-1 text-red-500" />
+          Tài khoản đặt tạm thời sẽ bị xoá sau 7 ngày.
+        </div>
+        <div className="mt-1 text-xs text-muted-foreground px-2 flex items-center">
+          <Info className="h-3 w-3 mr-1 text-blue-500" />
+          Tin nhắn được lưu trữ tối đa trong 3 ngày.
         </div>
       </div>
 
@@ -1185,10 +1143,10 @@ export function ChatBox() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Đặt username để tham gia trò chuyện</DialogTitle>
-            <DialogDescription>
-              Đây là tài khoản tạm thời và sau 14 ngày tài khoản sẽ bị xoá cùng các dữ liệu liên quan.
+            <DialogDescription >
+              <span className="text-sm text-red-500 dark:text-red-400">Đây là tài khoản tạm thời và sau 7 ngày tài khoản sẽ bị xoá cùng các dữ liệu liên quan.</span>
               <br />
-              Khi bạn đăng xuất thì sẽ không thể đăng nhập lại với tài khoản này.
+              <span className="text-sm text-red-500 dark:text-red-400">Khi bạn đăng xuất thì sẽ không thể đăng nhập lại với tài khoản này.</span>
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">

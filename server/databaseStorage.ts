@@ -13,7 +13,7 @@ import { eq, and, gte, lt, desc, asc, sql } from 'drizzle-orm';
 
 export class DatabaseStorage implements IStorage {
   // User operations
-  async getUser(id: number): Promise<User | undefined> {
+  async getUserById(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
@@ -89,7 +89,7 @@ export class DatabaseStorage implements IStorage {
     const insertId = Number(result[0]?.insertId);
     const [createdMessage] = await db.select().from(chatMessages).where(eq(chatMessages.id, insertId));
     // Join user info
-    const user = createdMessage.userId ? await this.getUser(createdMessage.userId) : null;
+    const user = createdMessage.userId ? await this.getUserById(createdMessage.userId) : null;
     return {
       ...createdMessage,
       user: user ? { id: user.id, username: user.username, avatar: user.avatar } : null

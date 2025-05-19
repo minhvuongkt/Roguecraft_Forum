@@ -1,5 +1,12 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { 
+  toVNTime, 
+  formatDateTime, 
+  formatDate, 
+  formatVietnameseDate,
+  timeFromNow 
+} from './dayjs';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -19,49 +26,21 @@ export function formatVietnameseDateTime(
     hour12: false,
   }
 ): string {
-  const d = new Date(date);
-  // Adjust to Vietnam timezone (UTC+7)
-  d.setHours(d.getHours() + 7);
-  return d.toLocaleString("vi-VN", options);
+  // Sử dụng dayjs thay vì xử lý thủ công
+  return formatDateTime(date, 'HH:mm DD/MM/YYYY');
 }
 
 export function formatRelativeTime(date: string | Date): string {
-  const d = new Date(date);
-  // Adjust to Vietnam timezone (UTC+7)
-  d.setHours(d.getHours() + 7);
-  const now = new Date();
-  const diff = now.getTime() - d.getTime();
-
-  // Less than 1 minute
-  if (diff < 60 * 1000) {
-    return "vừa xong";
-  }
-
-  // Less than 1 hour
-  if (diff < 60 * 60 * 1000) {
-    const minutes = Math.floor(diff / (60 * 1000));
-    return `${minutes} phút trước`;
-  }
-
-  // Less than 24 hours
-  if (diff < 24 * 60 * 60 * 1000) {
-    const hours = Math.floor(diff / (60 * 60 * 1000));
-    return `${hours} giờ trước`;
-  }
-
-  // Less than 7 days
-  if (diff < 7 * 24 * 60 * 60 * 1000) {
-    const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-    return `${days} ngày trước`;
-  }
-
-  // Format as full date
-  return d.toLocaleDateString("vi-VN", {
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  // Sử dụng dayjs để hiển thị thời gian tương đối
+  return timeFromNow(date);
 }
+
+/**
+ * Adjust a date to Vietnam's timezone (UTC+7)
+ * @param date The date to adjust
+ * @returns Adjusted date in Vietnam timezone
+ */
+export const adjustToVietnamTimezone = (date: Date): Date => {
+  // Sử dụng dayjs và chuyển đổi về đối tượng Date
+  return toVNTime(date).toDate();
+};

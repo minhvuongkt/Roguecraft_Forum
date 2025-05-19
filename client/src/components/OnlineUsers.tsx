@@ -9,11 +9,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { OnlineUser } from '@/types';
 import type { User } from '@/types/index';
 import { Users } from 'lucide-react';
-import { formatRelativeTime } from '@/lib/utils';
+import { timeFromNow } from '@/lib/dayjs';
 
 interface OnlineUsersProps {
   currentUser: User | null;
 }
+
+// Sử dụng trực tiếp hàm timeFromNow từ dayjs
+const formatRelativeTime = (date: string | Date): string => {
+  return timeFromNow(date);
+};
 
 export function OnlineUsers({ currentUser }: OnlineUsersProps) {
   const { onlineUsers } = useWebSocket();

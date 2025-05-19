@@ -364,7 +364,7 @@ export class WebSocketHandler {
 
       const fetchPromises = Array.from(userIds).map((userId) =>
         storage
-          .getUser(userId)
+          .getUserById(userId)
           .then((user) => {
             if (user) {
               users.push({

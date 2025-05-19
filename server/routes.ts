@@ -14,10 +14,8 @@ import uploadRoutes from "./routes/uploads";
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
 
-  // Initialize WebSocket server
   const wsHandler = new WebSocketHandler(httpServer);
 
-  // Add comprehensive request and response logging for debugging
   app.use('/api', (req: Request, res: Response, next: NextFunction) => {
     const startTime = Date.now();
 
@@ -47,16 +45,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
-  // Register upload routes
   app.use('/api/uploads', uploadRoutes);
 
-  // Middleware to enforce JSON responses for API routes
   app.use('/api', (req: Request, res: Response, next: NextFunction) => {
     res.setHeader('Content-Type', 'application/json');
     next();
   });
 
-  // Middleware to handle CORS in development
   if (process.env.NODE_ENV === 'development') {
     app.use('/api', (req: Request, res: Response, next: NextFunction) => {
       res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173');
@@ -167,7 +162,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(400).json({ message: (error as Error).message });
     }
   });
+  app.post('/api/auth/get-user/', async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.body;
 
+      if (!userId) {
+        return res.status(400).json({ message: 'User ID is required' });
+      }
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      res.status(200).json({ message: 'User found' });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch user' });
+    }
+  });
   // Chat Routes
   app.get('/api/chat/messages', async (req: Request, res: Response) => {
     try {
@@ -240,47 +250,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch comments' });
     }
-  });  app.post('/api/forum/topics', async (req: Request, res: Response) => {
+  });
+  app.post('/api/forum/topics', async (req: Request, res: Response) => {
     console.log('[Topic Creation] Request received');
-    
+
     try {
       // Log the request body with our debug helper
       console.log('[Topic Creation] Request body:', JSON.stringify(debugObject(req.body), null, 2));
-      
+
       // Validate request format
       if (!req.body || typeof req.body !== 'object') {
         console.error('[Topic Creation] Invalid request format');
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: 'Invalid request format',
           details: 'Request body must be a valid JSON object'
         });
       }
-      
+
       // 2. Check for missing required fields first
       if (!req.body.userId) {
         console.error('[Topic Creation] Missing user ID');
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: 'User ID is required',
           details: 'A valid user ID must be provided to create a topic'
         });
       }
-      
+
       if (!req.body.title || String(req.body.title).trim() === '') {
         console.error('[Topic Creation] Missing title');
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: 'Title is required',
           details: 'Topic title cannot be empty'
         });
       }
-      
+
       if (!req.body.content || String(req.body.content).trim() === '') {
         console.error('[Topic Creation] Missing content');
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: 'Content is required',
           details: 'Topic content cannot be empty'
         });
       }
-      
+
       // 3. Validate user exists
       let userId: number;
       try {
@@ -290,23 +301,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } catch (e) {
         console.error('[Topic Creation] Invalid user ID format:', req.body.userId);
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: 'Invalid user ID format',
           details: 'User ID must be a positive number'
         });
       }
-      
-      const user = await storage.getUser(userId);
+
+      const user = await storage.getUserById(userId);
       if (!user) {
         console.error(`[Topic Creation] User not found: ${userId}`);
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: 'Invalid user ID',
           details: `User with ID ${userId} does not exist`
         });
       }
-      
+
       console.log(`[Topic Creation] User validated: ${user.username} (ID: ${user.id})`);
-      
+
       try {        // Pre-validate and sanitize data
         const preparedData: {
           userId: number;
@@ -323,26 +334,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isAnonymous: Boolean(req.body.isAnonymous),
           media: null
         };
-        
+
         // Handle media specially to avoid DB errors
         if (req.body.media) {
           try {
             // First check if media is serializable
             const mediaTest = JSON.stringify(req.body.media);
-            
+
             // Now validate the structure
             if (typeof req.body.media === 'object' && req.body.media !== null) {
               // Convert to proper format: Record<string, string>
               const processedMedia: Record<string, string> = {};
               let hasValidEntries = false;
-              
+
               Object.entries(req.body.media).forEach(([key, value]) => {
                 if (typeof value === 'string') {
                   processedMedia[key] = value;
                   hasValidEntries = true;
                 }
               });
-              
+
               if (hasValidEntries) {
                 preparedData.media = processedMedia;
                 console.log('[Topic Creation] Media validated successfully');
@@ -359,16 +370,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             preparedData.media = null;
           }
         }
-        
+
         console.log('[Topic Creation] Running schema validation');
         const validatedData = insertTopicSchema.parse(preparedData);
-        
+
         console.log('[Topic Creation] Data validated successfully');
-        
+
         // 5. Create the topic
         const topic = await forumService.createTopic(validatedData);
         console.log(`[Topic Creation] Topic created successfully with ID: ${topic.id}`);
-        
+
         res.status(201).json(topic);
       } catch (error) {
         if (error instanceof z.ZodError) {
@@ -376,8 +387,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error.errors.forEach(err => {
             console.error(`- ${err.path.join('.')}: ${err.message}`);
           });
-          
-          return res.status(400).json({ 
+
+          return res.status(400).json({
             message: 'Validation failed',
             details: error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
           });
@@ -386,12 +397,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       console.error('[Topic Creation] Unhandled error:', error);
-      
+
       // Provide more descriptive error responses
       let statusCode = 400;
       let errorMessage = 'Failed to create topic';
       let errorDetails = error instanceof Error ? error.message : 'Unknown error';
-      
+
       // Handle specific known database errors
       if (errorDetails.includes('ER_DATA_TOO_LONG')) {
         errorMessage = 'Content too long';
@@ -399,9 +410,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (errorDetails.includes('ER_DUP_ENTRY')) {
         errorMessage = 'Duplicate entry';
         errorDetails = 'This topic appears to be a duplicate';
-      } else if (errorDetails.includes('ER_JSON_DOCUMENT_TOO_DEEP') || 
-                errorDetails.includes('ER_JSON_DOCUMENT_NULL_KEY') || 
-                errorDetails.includes('ER_JSON')) {
+      } else if (errorDetails.includes('ER_JSON_DOCUMENT_TOO_DEEP') ||
+        errorDetails.includes('ER_JSON_DOCUMENT_NULL_KEY') ||
+        errorDetails.includes('ER_JSON')) {
         errorMessage = 'Invalid media format';
         errorDetails = 'The uploaded media is in an invalid format';
       } else if (errorDetails.includes('connect')) {
@@ -409,8 +420,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         errorMessage = 'Database connection error';
         errorDetails = 'Unable to connect to the database';
       }
-      
-      res.status(statusCode).json({ 
+
+      res.status(statusCode).json({
         message: errorMessage,
         details: errorDetails
       });
@@ -529,7 +540,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid user ID' });
       }
 
-      const user = await storage.getUser(userId);
+      const user = await storage.getUserById(userId);
 
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
@@ -590,7 +601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { username } = req.body;
 
       // Kiểm tra user có tồn tại không
-      const user = await storage.getUser(userId);
+      const user = await storage.getUserById(userId);
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
@@ -635,7 +646,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Kiểm tra user có tồn tại không
-      const user = await storage.getUser(userId);
+      const user = await storage.getUserById(userId);
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
@@ -670,7 +681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Kiểm tra user có tồn tại không
-      const user = await storage.getUser(userId);
+      const user = await storage.getUserById(userId);
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
@@ -707,11 +718,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Debug helper function
   function debugObject(obj: any, depth = 0, maxDepth = 2): any {
     if (depth > maxDepth) return '[Object]';
-    
+
     if (!obj || typeof obj !== 'object') return obj;
-    
+
     const result: any = {};
-    
+
     for (const [key, value] of Object.entries(obj)) {
       if (key === 'password' || key === 'token') {
         result[key] = '[REDACTED]';
@@ -727,7 +738,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         result[key] = value;
       }
     }
-    
+
     return result;
   }
 

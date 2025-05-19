@@ -43,7 +43,7 @@ export class ChatService {
       ...message,
       // Return ISO string to ensure consistent parsing on frontend
       createdAt: message.createdAt instanceof Date 
-        ? message.createdAt.toISOString() 
+        ? message.createdAt.toLocaleString() 
         : message.createdAt
     }));
   }
@@ -78,7 +78,7 @@ export class ChatService {
 
       // Get user info
       const user = newMessage.userId
-        ? await storage.getUser(newMessage.userId)
+        ? await storage.getUserById(newMessage.userId)
         : undefined;
 
       if (newMessage.userId) {

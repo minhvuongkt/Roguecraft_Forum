@@ -60,7 +60,7 @@ async function getExpiredTemporaryUsers(): Promise<User[]> {
   try {
     const users: User[] = await storage.getAllUsers() || [];
     const now = Date.now();
-    const SEVEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000; // 14 ngày
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000; // 7 ngày
     return users.filter(
       (u) =>
         u.isTemporary &&

@@ -5,6 +5,7 @@ import { ChatMessage } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import { cn } from "@/lib/utils";
+import { formatDateTime, toVNTime } from "@/lib/dayjs";
 import { ImageViewerModal } from "./ImageViewerModal";
 import { CornerUpLeft } from "lucide-react";
 
@@ -99,19 +100,7 @@ const MessageComponent = ({
       onReply(messageToReply);
     }
   };
-  // Format time with timezone
-  const formatTime = (date: string | Date): string => {
-    const d = new Date(date);
-    // Adjust to Vietnam timezone (UTC+7)
-    d.setHours(d.getHours() + 7);
-    return d.toLocaleTimeString("vi-VN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false
-    });
-  };
 
-  // Parse message content to highlight mentions
   const parseMessageContent = (content: string): JSX.Element => {
     const mentionRegex = /@(\S+)/g;
     const parts = [];
@@ -141,9 +130,8 @@ const MessageComponent = ({
 
             if (userMessages.length > 0) {
               const sortedMessages = [...userMessages].sort(
-                (a, b) =>
-                  new Date(b.createdAt).getTime() -
-                  new Date(a.createdAt).getTime(),
+                (a, b) => toVNTime(b.createdAt).valueOf() -
+                  toVNTime(a.createdAt).valueOf(),
               );
 
               scrollToMessageById(sortedMessages[0].id);
@@ -366,15 +354,14 @@ const MessageComponent = ({
       );
     }
   };
-  // --- END FIXED renderMedia ---
-
+  const adjustedTimestamp = formatDateTime(message.createdAt, "HH:mm:ss");
   return (
     <div
       className={cn(
         "w-full py-1 clear-both",
         "my-0.5 relative isolate",
         highlightOriginal &&
-          "bg-yellow-100 dark:bg-yellow-900/30 transition-all duration-300 ease-in-out",
+        "bg-yellow-100 dark:bg-yellow-900/30 transition-all duration-300 ease-in-out",
       )}
       style={{ isolation: "isolate" }}
       data-message-id={typeof message.id === 'string' ? parseInt(message.id) : message.id}
@@ -419,7 +406,7 @@ const MessageComponent = ({
                 {isCurrentUser
                   ? currentUser?.username?.substring(0, 2).toUpperCase()
                   : message.user?.username?.substring(0, 2).toUpperCase() ||
-                    "U"}
+                  "U"}
               </AvatarFallback>
             )}
           </Avatar>
@@ -462,7 +449,7 @@ const MessageComponent = ({
               </span>
               <span className="text-gray-500 p-1 dark:text-gray-400">
                 {"["}
-                {formatTime(new Date(message.createdAt))}
+                {adjustedTimestamp}
                 {"]"}
               </span>
             </div>
@@ -523,7 +510,7 @@ const MessageComponent = ({
                       <span className="opacity-80">
                         {" "}
                         {originalMessage?.content &&
-                        originalMessage.content.length > 0
+                          originalMessage.content.length > 0
                           ? originalMessage.content.length > 20
                             ? originalMessage.content.substring(0, 20) + "..."
                             : originalMessage.content

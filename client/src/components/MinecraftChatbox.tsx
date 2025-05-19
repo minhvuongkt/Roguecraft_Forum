@@ -70,7 +70,6 @@ export function MinecraftChatbox({
         throw new Error(data.message || 'Failed to upload file');
       }
 
-      // Determine file type
       const fileType = file.type.startsWith('image/') ? 'image' : 'file';
       let fileUrl = data["1"]; // Lấy giá trị của khóa "1"
       if (!fileUrl && data["image"]) {
@@ -167,7 +166,7 @@ export function MinecraftChatbox({
                     onClick={clearFilePreview}
                     type="button"
                   >
-                    <X size={14} />
+                    <X size={15} />
                   </button>
                 </div>
               ) : (
@@ -192,14 +191,13 @@ export function MinecraftChatbox({
                     onClick={clearFilePreview}
                     type="button"
                   >
-                    <X size={14} />
+                    <X size={15} />
                   </button>
                 </div>
               )}
             </div>
           )}
 
-          {/* Thanh nhập + nút kẹp giấy + nút gửi */}
           <div className="flex items-center gap-2 p-1" style={{ background: 'transparent', border: 'none' }}>
             {/* Ô nhập */}
             <div className="flex-1 relative">
@@ -222,8 +220,6 @@ export function MinecraftChatbox({
                 }}
               />
             </div>
-
-            {/* Nút đính kèm tệp (Paperclip) - nằm ngoài ô nhập */}
             <label className="cursor-pointer flex items-center mb-1" title="Đính kèm tệp">
               <Paperclip
                 size={20}
@@ -238,8 +234,6 @@ export function MinecraftChatbox({
                 disabled={uploading}
               />
             </label>
-
-            {/* Nút gửi - cũng nằm ngoài ô nhập */}
             <button
               onClick={handleSendMessage}
               disabled={(!inputValue.trim() && !filePreview) || uploading}
@@ -276,8 +270,10 @@ export function MinecraftChatbox({
         <div className="mt-1">
           <button
             onClick={() => setShowColorPicker(!showColorPicker)}
-            className={cn('text-xs minecraft-font transition-colors hover:bg-opacity-10', theme === 'dark' ? 'text-blue-400 hover:text-white hover:bg-white' : 'text-blue-700 hover:text-black hover:bg-black')}
-            style={{ background: 'transparent', border: 'none', padding: '4px 8px', color: theme === 'dark' ? 'white' : 'black' }}
+            className={cn('text-xs minecraft-font transition-colors hover:bg-opacity-10', theme === 'dark' ? 
+              'text-blue-400 hover:text-white hover:bg-white' : 'text-blue-700 hover:text-black hover:bg-black')}
+            style={{ background: 'transparent', border: 'none', padding: '4px 8px', color: theme === 'dark' ?
+               'white' : 'black' }}
           >
             {showColorPicker ? 'Ẩn bảng màu' : 'Chọn màu tin nhắn'}
           </button>
