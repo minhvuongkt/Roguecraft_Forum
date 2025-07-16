@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell, LogOut, Moon, Sun, User, UserPlus } from "lucide-react";
+import { Bell, LogOut, Moon, Sun, User, UserPlus, Bot } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoginModal } from "./LoginModal";
@@ -98,6 +98,14 @@ export function Header() {
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
               </svg>
               Xàm lul cùng các đồng râm
+            </Button>
+            <Button
+              variant="ghost"
+              className={location.includes("/auto-poster") ? "text-primary" : ""}
+              onClick={() => setLocation("/auto-poster")}
+            >
+              <Bot className="w-4 h-4 mr-2" />
+              Auto Poster
             </Button>
           </div>
 

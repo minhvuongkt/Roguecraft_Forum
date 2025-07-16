@@ -10,6 +10,7 @@ import { insertChatMessageSchema, insertUserSchema, insertTopicSchema, insertCom
 import { db } from "./db";
 import { and, eq, desc, count, sql } from "drizzle-orm";
 import uploadRoutes from "./routes/uploads";
+import autoPosterRoutes from "../auto-poster/routes.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -19,6 +20,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register upload routes
   app.use('/api/uploads', uploadRoutes);
+  
+  // Register auto-poster routes
+  app.use('/api/auto-poster', autoPosterRoutes);
   
   // Serve static files from public directory
   app.use('/chat-images', (req, res, next) => {
